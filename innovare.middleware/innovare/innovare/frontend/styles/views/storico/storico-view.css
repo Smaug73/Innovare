@@ -1,0 +1,61 @@
+.storico-view vaadin-grid {
+  line-height: var(--lumo-line-height-m);
+}
+
+.storico-view vaadin-grid,
+.storico-view vaadin-grid-cell-content {
+  background-color: var(--lumo-contrast-10pct);
+}
+
+.storico-view .card {
+  background-color: var(--lumo-base-color);
+  border-radius: var(--lumo-border-radius);
+  box-shadow: var(--lumo-box-shadow-xs);
+  padding: calc(var(--lumo-space-s) * 1.5) var(--lumo-space-m);
+}
+
+.storico-view img {
+  border-radius: 50%;
+  flex-shrink: 0;
+  height: var(--lumo-size-m);
+  width: var(--lumo-size-m);
+}
+
+.storico-view .header {
+  align-items: baseline;
+}
+
+.storico-view .name {
+  font-size: var(--lumo-font-size-s);
+  font-weight: bold;
+}
+
+.storico-view .date {
+  color: var(--lumo-tertiary-text-color);
+  font-size: var(--lumo-font-size-xs);
+}
+
+.storico-view .post {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+  margin-bottom: var(--lumo-space-s);
+  white-space: normal;
+}
+
+.storico-view .actions {
+  align-items: center;
+}
+
+.storico-view iron-icon {
+  color: var(--lumo-tertiary-text-color);
+  height: calc(var(--lumo-icon-size-s) * 0.8);
+  width: calc(var(--lumo-icon-size-s) * 0.8);
+}
+
+.storico-view .likes,
+.storico-view .comments,
+.storico-view .shares {
+  color: var(--lumo-tertiary-text-color);
+  font-size: var(--lumo-font-size-xs);
+  margin-right: var(--lumo-space-l);
+}
