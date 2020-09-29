@@ -25,6 +25,12 @@ import com.innovare.views.main.MainView;
 @JsModule("@vaadin/vaadin-lumo-styles/badge.js")
 public class StoricoView extends Div implements AfterNavigationObserver {
 
+	@Override
+	public void afterNavigation(AfterNavigationEvent event) {
+		// TODO Auto-generated method stub
+		
+	}
+
     
    
 

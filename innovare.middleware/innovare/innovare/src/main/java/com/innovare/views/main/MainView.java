@@ -21,6 +21,7 @@ import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.Theme;
 import com.innovare.views.main.MainView;
+import com.innovare.view.prova.MyView;
 import com.innovare.views.home.HomeView;
 import com.innovare.views.storico.StoricoView;
 import com.innovare.views.login.LoginView;
@@ -90,7 +91,8 @@ public class MainView extends AppLayout {
             createTab("Home", HomeView.class),
             createTab("Storico", StoricoView.class),
             createTab("Login", LoginView.class),
-            createTab("Innovare", InnovareView.class)
+            createTab("Innovare", InnovareView.class),
+            createTab("Prova",MyView.class)
         };
     }
 
