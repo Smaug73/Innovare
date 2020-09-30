@@ -23,7 +23,7 @@ import com.innovare.views.main.MainView;
 @PageTitle("Storico")
 @CssImport(value = "./styles/views/storico/storico-view.css", include = "lumo-badge")
 @JsModule("@vaadin/vaadin-lumo-styles/badge.js")
-public class StoricoView extends Div implements AfterNavigationObserver {
+public class StoricoView extends Div{
 
     
    
