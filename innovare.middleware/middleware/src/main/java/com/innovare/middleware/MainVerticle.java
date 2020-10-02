@@ -83,34 +83,40 @@ public class MainVerticle extends AbstractVerticle {
     	    	 .end(new JsonArray(getAllConfiguration()).encode())
     	    		);
     	    
-    	    //Login
-    	    
-    	    
-    	   
-    	     
-    	     
+    	    //Login     
     	    routerFactory.addHandlerByOperationId("login", routingContext ->{
-    	    	RequestParameters params = routingContext.get("parsedParameters"); 
-    	    	JsonObject userJson = params.body().getJsonObject();
-    	    	System.out.println(userJson.toString());
+    	    	String username= routingContext.request().getParam("username").toString();
+    	    	String password= routingContext.request().getParam("password").toString();
+    	    	System.out.print(username+" "+password);
+    	    	/*RequestParameters params = routingContext.get("parsedParameters"); // (1)
+    	    	String username = params.pathParameter("username").toString();
+    	    	String password = params.pathParameter("password").toString();*/
+    	    	
+    	    	routingContext
+   	    	 	.response()
+   	    	 	.setStatusCode(200)
+   	    	 	.end("Conferma login effettuato");
+    	    		
     	    	/*
     	    	 * Dalla dashboard dobbiamo capire se si sta cercando di entrare come admin o user. 
     	    	 * Da definire i dati comunicati dalla dashboard, questo è solo un test.
     	    	 * 
     	    	 *
     	    	 * 
-    	    	 */ 
+    	    	 * 
     	    	try {
 					userLog= User.convertJsonToUser(userJson.toString());	//variabile dove si salva l'utente loggato correttamente
 					routingContext
 	    	    	 .response()
 	    	    	 .setStatusCode(200)
-	    	    	 .end();
+	    	    	 .end("Conferma login effettu");
 				} catch (JsonMappingException e1) {
 					// TODO Auto-generated catch block
+					System.out.println("Errore");
 					e1.printStackTrace();
 				} catch (JsonProcessingException e1) {
 					// TODO Auto-generated catch block
+					System.out.println("Errore");
 					e1.printStackTrace();
 				}
     	    	/*

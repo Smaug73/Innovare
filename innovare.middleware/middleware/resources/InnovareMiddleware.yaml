@@ -28,7 +28,8 @@ paths:
         in: query
         required: true
       - name: password
-        description: ""
+        description: "L'utilizzo del tipo password ha generato errori, \nutilizzo\
+          \ per test del tipo string normale"
         schema:
           type: string
         in: query
