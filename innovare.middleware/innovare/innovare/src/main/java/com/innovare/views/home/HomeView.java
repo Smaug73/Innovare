@@ -8,10 +8,10 @@ import com.vaadin.flow.router.Route;
 import com.innovare.views.main.MainView;
 import com.vaadin.flow.router.RouteAlias;
 
-@Route(value = "home", layout = MainView.class)
+//@Route(value = "home", layout = MainView.class)
 @PageTitle("Home")
 @CssImport("./styles/views/home/home-view.css")
-@RouteAlias(value = "", layout = MainView.class)
+//@RouteAlias(value = "", layout = MainView.class)
 public class HomeView extends Div {
 
     public HomeView() {

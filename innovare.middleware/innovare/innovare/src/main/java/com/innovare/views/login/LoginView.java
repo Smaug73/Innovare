@@ -7,7 +7,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.innovare.views.main.MainView;
 
-@Route(value = "empty", layout = MainView.class)
+//@Route(value = "empty", layout = MainView.class)
 @PageTitle("Login")
 @CssImport("./styles/views/login/login-view.css")
 public class LoginView extends Div {

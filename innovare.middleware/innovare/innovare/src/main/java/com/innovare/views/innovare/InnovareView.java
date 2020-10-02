@@ -7,7 +7,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.innovare.views.main.MainView;
 
-@Route(value = "about", layout = MainView.class)
+//@Route(value = "about", layout = MainView.class)
 @PageTitle("Innovare")
 @CssImport("./styles/views/innovare/innovare-view.css")
 public class InnovareView extends Div {

@@ -1,18 +1,8 @@
 package com.innovare.views.main;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Objects;
-import java.util.Optional;
-
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-
+import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.applayout.AppLayout;
@@ -27,7 +17,6 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
-import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.tabs.TabsVariant;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -36,105 +25,33 @@ import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.Theme;
 import com.innovare.views.main.MainView;
+
+import java.util.Optional;
+
 import com.innovare.views.home.HomeView;
 import com.innovare.views.storico.StoricoView;
 import com.innovare.views.login.LoginView;
 import com.innovare.views.innovare.InnovareView;
 import com.vaadin.flow.theme.lumo.Lumo;
 
-/**
- * The main view is a top-level placeholder for other views.
- */
-//@JsModule("./styles/shared-styles.js")
-//@Theme(value = Lumo.class, variant = Lumo.DARK)
-//@CssImport("./styles/views/main/main-view.css")
-@Route("")
-@PWA(name = "Innovare", shortName = "Innovare", enableInstallPrompt = false)
-public class MainView extends VerticalLayout {
-
-    //private final Tabs menu;
-    //private H1 viewTitle;
-
-    public MainView() {
-        /*setPrimarySection(Section.DRAWER);
+@JsModule("./styles/shared-styles.js")
+@Theme(value = Lumo.class, variant = Lumo.DARK)
+@CssImport("./styles/views/main/main-view.css")
+@Route("/main")
+public class ContentView extends AppLayout{
+	
+	private final Tabs menu;
+    private H1 viewTitle;
+	
+	public ContentView ( )
+    {
+		setPrimarySection(Section.DRAWER);
         addToNavbar(true, createHeaderContent());
         menu = createMenu();
-        addToDrawer(createDrawerContent(menu));*/
-    	System.out.println("Sono in MainView");
-    	this.display();
+        addToDrawer(createDrawerContent(menu));
     }
-    
-    private void display ( )
-    {
-        if ( Objects.isNull( VaadinSession.getCurrent().getAttribute( User.class ) ) )
-        {
-            this.removeAll();
-            this.add( this.makeLoginForm() );
-        } else
-        { // Else we have a User, so must be authenticated.
-            this.removeAll();
-            this.add( new ContentView() );
-        }
-    }
-
-    private LoginForm makeLoginForm ( )
-    {
-        Authenticator authenticator = new Authenticator();
-        LoginForm component = new LoginForm();
-        component.addLoginListener( ( AbstractLogin.LoginEvent loginEvent ) -> {
-        	URIBuilder builder = new URIBuilder();
-        	builder.setScheme("http").setHost("localhost:8888").setPath("/login")
-        		.setParameter("username", loginEvent.getUsername())
-        		.setParameter("password", loginEvent.getPassword());
-        	
-        	URI uri = null;
-        	try {
-				uri = builder.build();
-			} catch (URISyntaxException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-        	
-        	HttpGet get = new HttpGet(uri);
-        	CloseableHttpClient client = HttpClients.createDefault();
-        	
-        	try(CloseableHttpResponse response = client.execute(get)){
-        		String status = response.getStatusLine().toString();
-        		System.out.println(status);
-        		if(status.contains("200")) {
-        			System.out.println("OK!");
-        			Optional < User > user = authenticator.authenticate( loginEvent.getUsername() , loginEvent.getPassword() );
-        			VaadinSession.getCurrent().setAttribute( User.class , user.get() );
-                    this.display();
-        		}else
-                {
-        			System.out.println("Errore");
-                    component.setError( true );
-                }
-        	} catch (ClientProtocolException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				System.out.println("Errore");
-			}
-        	
-        	
-            /*Optional < User > user = authenticator.authenticate( loginEvent.getUsername() , loginEvent.getPassword() );
-            if ( user.isPresent() )
-            {
-                VaadinSession.getCurrent().setAttribute( User.class , user.get() );
-                this.display();
-            } else
-            {
-                component.setError( true );
-            }*/
-        } );
-        return component;
-    }
-
-    /*private Component createHeaderContent() {
+	
+	private Component createHeaderContent() {
         HorizontalLayout layout = new HorizontalLayout();
         layout.setId("header");
         layout.getThemeList().set("dark", true);
@@ -205,5 +122,6 @@ public class MainView extends VerticalLayout {
 
     private String getCurrentPageTitle() {
         return getContent().getClass().getAnnotation(PageTitle.class).value();
-    }*/
+    }
+
 }
