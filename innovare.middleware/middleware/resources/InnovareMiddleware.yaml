@@ -1,0 +1,101 @@
+---
+openapi: 3.0.2
+info:
+  title: InnovareMiddleware
+  version: 1.0.0
+  description: ""
+paths:
+  /configuration:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConfigurationItem'
+          description: Configuration response
+      operationId: actualConfiguration
+      description: Return the actual configuration.
+  /login:
+    get:
+      parameters:
+      - name: username
+        description: ""
+        schema:
+          type: string
+        in: query
+        required: true
+      - name: password
+        description: "L'utilizzo del tipo password ha generato errori, \nutilizzo\
+          \ per test del tipo string normale"
+        schema:
+          type: string
+        in: query
+        required: true
+      responses:
+        "200":
+          description: Login is done correctly.
+      operationId: login
+components:
+  schemas:
+    ConfigurationItem:
+      description: Configurazione piattaforma, comprende il gateway e il modello
+      required:
+      - id
+      - properties
+      type: object
+      properties:
+        id:
+          description: ""
+          type: string
+        properties:
+          description: ""
+          type: array
+          items:
+            $ref: '#/components/schemas/Property'
+      example:
+        id: sensor-gateway
+        properties:
+        - id: indirizzo
+          value: 192.168.55.5
+        - id: porta
+          value: "8888"
+    Property:
+      description: ""
+      required:
+      - id
+      type: object
+      properties:
+        id:
+          description: ""
+          type: string
+        value:
+          description: ""
+          type: string
+    User:
+      description: ""
+      required:
+      - username
+      - password
+      - role
+      type: object
+      properties:
+        username:
+          description: ""
+          type: string
+        password:
+          format: password
+          description: ""
+          type: string
+        role:
+          description: ""
+          enum:
+          - USER
+          - ADMIN
+          type: string
+      example:
+        password: iUPse124#
+        role: ADMIN
+        username: administrator
