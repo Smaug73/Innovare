@@ -19,7 +19,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.innovare.views.main.MainView;
 
-@Route(value = "storico", layout = MainView.class)
+//@Route(value = "storico", layout = MainView.class)
 @PageTitle("Storico")
 @CssImport(value = "./styles/views/storico/storico-view.css", include = "lumo-badge")
 @JsModule("@vaadin/vaadin-lumo-styles/badge.js")
