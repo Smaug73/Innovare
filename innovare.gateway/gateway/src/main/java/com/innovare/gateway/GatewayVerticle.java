@@ -62,13 +62,13 @@ public class GatewayVerticle extends AbstractVerticle {
 		    		  false,
 		    		  false);
 	    	
-	    	 client.publish("test",
+	    	/* client.publish("test",
 	    			 //Configurazione di test salvata come oggetto json
 		    		  Buffer.buffer("test"),
 		    		  MqttQoS.AT_LEAST_ONCE,
 		    		  false,
 		    		  false);
-	    	
+	    	*/
 	    
 	    	
 	    });

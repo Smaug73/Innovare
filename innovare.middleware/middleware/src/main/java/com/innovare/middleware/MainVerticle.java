@@ -35,9 +35,11 @@ public class MainVerticle extends AbstractVerticle {
 	 */
 	
 	
-	final List<JsonObject> configuration = new ArrayList<>(Arrays.asList(
+	final List<JsonObject> configuration = new ArrayList<>(
+			//Arrays.asList(
 		 //   new JsonObject().put("Gateway", "prova").put("Model", "prova")	    
-		  ));
+		  //)
+			);
 	
 	private User userLog;
 	/*
@@ -58,20 +60,16 @@ public class MainVerticle extends AbstractVerticle {
 	  
 	  //Creazione client MQTT
 	    MqttClient client = MqttClient.create(vertx);
+	    
+	    //Il client può supportare solo un handler alla volta
 	    client.connect(1883, "localhost", s -> {
-	    	
-	    	client.publishHandler(l -> {
-	    		  System.out.println("There are new message in topic: " + l.topicName());
-	    		  System.out.println("Content(as string) of the message: " + l.payload().toString());
-	    		  System.out.println("QoS: " + l.qosLevel());
-	    		})
-	    		  .subscribe("test", 2);
-	    	
+	 
 	    	client.publishHandler(c -> {
 				System.out.println("There are new message in topic: " + c.topicName());
 	    		  System.out.println("Content(as string) of the message: " + c.payload().toString());
-	    		  System.out.println("QoS: " + c.qosLevel());	    		  
-	    		  configuration.add(new JsonObject(c.payload().toString()));
+	    		  System.out.println("QoS: " + c.qosLevel());	     
+	    		  configuration.add(new JsonObject( c.payload().toString() ) );
+	    		  //JsonObject confJson= new JsonObject( c.payload().toString());
 	    		})
 	    		  .subscribe("Configuration", 2);	    
 	    });
