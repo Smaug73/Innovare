@@ -4,22 +4,23 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.innovare.model.Role;
+
 import com.innovare.model.User;
 
+import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import io.vertx.ext.web.Router;
-import io.vertx.ext.web.api.RequestParameters;
 import io.vertx.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
+import io.vertx.mqtt.MqttClient;
+import io.vertx.mqtt.messages.MqttPublishMessage;
 
 public class MainVerticle extends AbstractVerticle {
 
@@ -35,7 +36,7 @@ public class MainVerticle extends AbstractVerticle {
 	
 	
 	final List<JsonObject> configuration = new ArrayList<>(Arrays.asList(
-		    new JsonObject().put("Gateway", "prova").put("Model", "prova")	    
+		 //   new JsonObject().put("Gateway", "prova").put("Model", "prova")	    
 		  ));
 	
 	private User userLog;
@@ -55,20 +56,25 @@ public class MainVerticle extends AbstractVerticle {
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
 	  
-	  /*  
-    vertx.createHttpServer().requestHandler(req -> {
-      req.response()
-        .putHeader("content-type", "text/plain")
-        .end("Hello from Vert.x!");
-    }).listen(8888, http -> {
-      if (http.succeeded()) {
-        startPromise.complete();
-        System.out.println("HTTP server started on port 8888");
-      } else {
-        startPromise.fail(http.cause());
-      }
-    });
-    */
+	  //Creazione client MQTT
+	    MqttClient client = MqttClient.create(vertx);
+	    client.connect(1883, "localhost", s -> {
+	    	
+	    	client.publishHandler(l -> {
+	    		  System.out.println("There are new message in topic: " + l.topicName());
+	    		  System.out.println("Content(as string) of the message: " + l.payload().toString());
+	    		  System.out.println("QoS: " + l.qosLevel());
+	    		})
+	    		  .subscribe("test", 2);
+	    	
+	    	client.publishHandler(c -> {
+				System.out.println("There are new message in topic: " + c.topicName());
+	    		  System.out.println("Content(as string) of the message: " + c.payload().toString());
+	    		  System.out.println("QoS: " + c.qosLevel());	    		  
+	    		  configuration.add(new JsonObject(c.payload().toString()));
+	    		})
+	    		  .subscribe("Configuration", 2);	    
+	    });
 	  
     OpenAPI3RouterFactory.create(this.vertx, "resources/InnovareMiddleware.yaml", ar -> {
     	  if (ar.succeeded()) {
@@ -171,7 +177,10 @@ public class MainVerticle extends AbstractVerticle {
     	  }
     	});
     
-   
+    
+    
+    
+    
     
   }
   
@@ -191,6 +200,8 @@ public class MainVerticle extends AbstractVerticle {
   
 
   private List<JsonObject> getAllConfiguration() {
+	  if(this.configuration.isEmpty())
+		  System.out.println("La lista dei gateway è vuota");
     return this.configuration;
   }
   
