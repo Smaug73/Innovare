@@ -1,12 +1,24 @@
+import csv
+import pathlib
+
 import cv2
 import matplotlib.pyplot
 import numpy as np
 import os
 import glob
-
+import hashlib
 import argparse
 
+def get_hash(f):
+    return hashlib.md5(f.read_bytes()).hexdigest()
+
 my_parser = argparse.ArgumentParser(fromfile_prefix_chars='@')
+
+my_parser.add_argument('--delivery_base',
+                       action='store',
+                       default='http://ditai.cerict/',
+                       type=str,
+                       help='base delivery for gernated links')
 
 my_parser.add_argument('--srcdir',
                        action='store',
@@ -62,6 +74,10 @@ my_parser.add_argument('--normalize',
                        action='store_true',
                        help='if src images needs min-max normalization')
 
+my_parser.add_argument('--create_hash_symlinks',
+                       action='store_true',
+                       help='to create symlinks to plant image files hash')
+
 my_parser.add_argument('-v',
                        '--verbose',
                        action='store_true',
@@ -99,6 +115,42 @@ if args.verbose:
 srcParam = srcdir+os.sep+"*"
 flight_session_dirs = glob.glob(srcParam,recursive=True)
 
+if args.verbose:
+    print("Flight session dirs:" + str(flight_session_dirs))
+    if len(flight_session_dirs) == 0:
+        print("Nothing to do. Terminating.")
+
+if not os.path.exists(dstdir):
+    print("Error: destination dir does not exists.")
+
+processed_images_count = 0
+global_generated_images_counter = 0
+metadata = []
+
+def generate_metadata():
+    if args.verbose:
+        print("Writing metadata....")
+    csv_columns = [
+        'date',
+        'kind',
+        'rows',
+        'session',
+        'photo-id',
+        'plant-id',
+        'filename',
+        'hash',
+        'link'
+    ]
+    csv_file = dstdir + os.sep + "metadata.csv"
+    try:
+        with open(csv_file, 'w') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
+            writer.writeheader()
+            for data in metadata:
+                writer.writerow(data)
+    except IOError:
+        print("I/O error")
+
 for flight_session_dir in flight_session_dirs:
 
     flight_session_optical_files = glob.glob(flight_session_dir+os.sep+"Thermal_Optical/*/*/*.jpg",recursive=True)
@@ -107,18 +159,30 @@ for flight_session_dir in flight_session_dirs:
         print(flight_session_dir)
         print(flight_session_optical_files)
 
-    processed_images = -1
     for flight_session_optical_file in flight_session_optical_files:
-        processed_images = processed_images + 1
-        dst_path_prefix = dstdir + os.sep + flight_session_optical_file.replace(srcdir, "")\
+
+        processed_images_count = processed_images_count + 1
+        # if hit hard limit exit.
+        if processed_images_count > g_image_processing_limit:
+            if args.verbose:
+                print("Hit hard image processing limit of {0} images. Stopping.".format(g_image_processing_limit))
+            generate_metadata()
+            exit(0)
+
+        if args.verbose:
+            print("Processing image:"+flight_session_optical_file+" - number="+str(processed_images_count))
+
+        dst_file_name_path = flight_session_optical_file.replace(srcdir, "")\
                                                                     .replace("_Dataset_FontanaDeiFieri/","_")\
                                                                     .replace("./", "")\
                                                                     .replace(os.sep, "-")\
                                                                     .replace(".jpg", "")[1:]
+        dst_path_prefix = dstdir + os.sep + dst_file_name_path
         print("Base:" + dst_path_prefix)
 
+        segments = dst_file_name_path.split("-")
+
         src = cv2.imread(flight_session_optical_file)
-        print("src:"+str(src.shape))
 
         if g_normalize:
             if args.verbose:
@@ -174,13 +238,13 @@ for flight_session_dir in flight_session_dirs:
 
         eroded_image=getConnectedComponentsInfo(eroded, 180)
 
-        print("number of pixels in the plant:", len(eroded_image.nonzero()[0]))
+        print("Number of pixels in the plant:", len(eroded_image.nonzero()[0]))
         distance_top=50
         Area=(pow((0.000122*(distance_top-0.304)/0.304),2) * len(eroded_image.nonzero()[0]))
-        print("leaf area:",round(Area, 2))
+        print("Leaf area:",round(Area, 2))
+
         if round(Area,2) > 1500:
-            print("WARNING: image lights not in range")
-            print("         skipping:"+dst_path_prefix)
+            print("WARNING: image lights not in range skipping:"+dst_path_prefix)
             continue
 
         # Compute new image
@@ -219,10 +283,8 @@ for flight_session_dir in flight_session_dirs:
                     if all==1:
                         cv2.rectangle(imgRect, (x, y), (x+w, y+h), (255, 0, 0), thickness=5)
 
-
         if g_include_black_background==1:
             clipErodedSrc = (img * 255).astype(np.uint8).copy()
-
         clipSrc = src.copy()
         imgRect = (img * 255).astype(np.uint8).copy()
         n_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(th2)
@@ -256,6 +318,7 @@ for flight_session_dir in flight_session_dirs:
             return cv2.Laplacian(image, cv2.CV_64F).var()
 
         counter = 0
+        skipped_image_counter = 0
         for clip in clips:
             x=clip[0]
             y=clip[1]
@@ -291,21 +354,47 @@ for flight_session_dir in flight_session_dirs:
             if var < g_focus_degree:
                 print("Skipped image for not in focus:"+"c"+str(counter)+".jpg\n")
                 cv2.rectangle(imgRect, (x, y), (x+w, y+h), (0, 255, 255), thickness=5)
+                skipped_image_counter+=1
             else:
                 if arearatio >= g_skip_area_threshold:
                     print("Saved image:"+dst_path_prefix + "-plant_" + str(counter) + ".jpg\n")
-                    cv2.imwrite(dst_path_prefix + "-plant_" + str(counter) + ".jpg", roi_original)
+                    roi_original_image_path = dst_path_prefix + "-plant_" + str(counter) + ".jpg"
+                    roi_filename = dst_file_name_path + "-plant_" + str(counter) + ".jpg"
+                    cv2.imwrite(roi_original_image_path, roi_original)
+                    roi_hash = hashlib.md5(pathlib.Path(roi_original_image_path).read_bytes()).hexdigest()
+                    metadata.append({
+                        'date': segments[0][0:10],
+                        'kind': segments[0][11:26],
+                        'rows': segments[1][5:10],
+                        'session': segments[2][7:8],
+                        'photo-id': segments[3],
+                        'plant-id': counter,
+                        'filename': roi_filename,
+                        'hash': roi_hash,
+                        'link': args.delivery_base + "id_"+roi_hash+".jpg"
+                    })
+                    if args.create_hash_symlinks:
+                        if args.verbose:
+                            print("Creating hash symlink:"+dstdir+os.sep+"id_"+roi_hash+".jpg")
+                        if os.path.islink(dstdir+os.sep+"id_"+roi_hash+".jpg"):
+                            print("Removing existing link:"+dstdir+os.sep+"id_"+roi_hash+".jpg")
+                            os.unlink(dstdir+os.sep+"id_"+roi_hash+".jpg")
+                        os.symlink(roi_filename,dstdir+os.sep+"id_"+roi_hash+".jpg")
                     if g_include_black_background==1:
                         print("Saved image:" + dst_path_prefix + "-erased_background_plant_" + str(counter) + ".jpg\n")
                         cv2.imwrite(dst_path_prefix + "-erased_background_plant_" + str(counter) + ".jpg", roi_eroded)
                 else:
                     print("Skipped image for area threshold:"+"c"+str(counter)+".jpg\n")
                     cv2.rectangle(imgRect, (x, y), (x+w, y+h), (0, 255, 255), thickness=5)
-            counter = counter + 1
+                    skipped_image_counter += 1
+            counter += 1
 
+        global_generated_images_counter += counter - skipped_image_counter
+        if args.verbose:
+            print("Generated images for current image:" + str(counter - skipped_image_counter))
+            print("Generated image for so far:" + str(global_generated_images_counter))
         cv2.imwrite(dst_path_prefix + "-erased_background_with_boxes.jpg", imgRect)
         cv2.imwrite(dst_path_prefix + "-erased_background.jpg", (img * 255).astype(np.uint8))
-        if processed_images > g_image_processing_limit:
-            print("Hit hard image processing limit. Stopping.")
-            exit(0)
         #---------------------------------------------------------------------------------
+
+generate_metadata()
