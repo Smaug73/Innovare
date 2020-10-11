@@ -73,7 +73,10 @@ public class MainVerticle extends AbstractVerticle {
 	    		})
 	    		  .subscribe("Configuration", 2);	    
 	    });
-	  
+	    
+	    //////////////////////////////////////////////
+	    
+	  //Impostazioni per l'api rest per la comunicazione con la DASHBOARD
     OpenAPI3RouterFactory.create(this.vertx, "resources/InnovareMiddleware.yaml", ar -> {
     	  if (ar.succeeded()) {
     		  
@@ -91,7 +94,7 @@ public class MainVerticle extends AbstractVerticle {
     	    routerFactory.addHandlerByOperationId("login", routingContext ->{
     	    	String username= routingContext.request().getParam("username").toString();
     	    	String password= routingContext.request().getParam("password").toString();
-    	    	System.out.print(username+" "+password);
+    	    	System.out.print(username+" "+password);	//Stampa di TEST
     	    	/*RequestParameters params = routingContext.get("parsedParameters"); // (1)
     	    	String username = params.pathParameter("username").toString();
     	    	String password = params.pathParameter("password").toString();*/
