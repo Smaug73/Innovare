@@ -15,6 +15,11 @@ public class Property {
 		
 	}
 	
+	public Property(String id, String value) {
+		this.id= id;
+		this.value= value;
+	}
+	
 	public static Property convertJsonProperty(String json) throws JsonMappingException, JsonProcessingException {
 		return new ObjectMapper().readValue(json, Property.class);
 	}

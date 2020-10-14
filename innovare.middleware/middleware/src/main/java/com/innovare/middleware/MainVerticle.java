@@ -17,6 +17,7 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
+import io.vertx.ext.mongo.MongoClient;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
 import io.vertx.mqtt.MqttClient;
@@ -41,6 +42,8 @@ public class MainVerticle extends AbstractVerticle {
 		  //)
 			);
 	
+	//private MongoClient mongo=null;
+	
 	private User userLog;
 	/*
 	 * Usare jackson per fare mapping java / json
@@ -48,15 +51,57 @@ public class MainVerticle extends AbstractVerticle {
 	 * 
 	 * 
 	 * 
-	 * Aggiungere end point login che prende oggetto Utente{nome,password}
+	 *
 	 * 
 	 */
-	
-	
 	private HttpServer server;
+	
+	
 	
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
+	  
+	  //Connessione a MongoDB
+      System.out.println("Starting MongoConnection..");
+
+	  JsonObject config = Vertx.currentContext().config();
+
+	    String uri = config.getString("mongo_uri");
+	    if (uri == null) {
+	      uri = "mongodb://localhost:27017";
+	    }
+	    System.out.println(uri);
+
+	    String db = config.getString("mongo_db");
+	    if (db == null) {
+	      db = "innovare";
+	    }
+	    System.out.println(db);
+	    JsonObject mongoconfig = new JsonObject()
+	        .put("connection_string", uri)
+	        .put("db_name", db);
+	    	
+	    MongoClient mongoClient = MongoClient.createShared(vertx, mongoconfig);
+
+	  
+	  //TEST MONGODB
+		 //Con questo test cercheremmo tutti gli utenti, matchara tutti perchè abbiamo specificato dettagli in particolare
+		 //this.findUser("admin");
+	  JsonObject query = new JsonObject();
+	  mongoClient.find("Utenti", query, res -> {
+	    if (res.succeeded()) {
+	      for (JsonObject json : res.result()) {
+	        System.out.println(json.encodePrettily());
+	        System.out.println("Connessione effettuata con successo al db!");
+	      }
+	    } else {
+	      res.cause().printStackTrace();
+	    
+	    }
+	  });
+	  
+	  
+	  
 	  
 	  //Creazione client MQTT
 	    MqttClient client = MqttClient.create(vertx);
@@ -82,14 +127,36 @@ public class MainVerticle extends AbstractVerticle {
     		  
     		//Router per la richiesta della configuratone attuale  
     	    OpenAPI3RouterFactory routerFactory = ar.result(); // (1)
-    	    routerFactory.addHandlerByOperationId("actualConfiguration", routingContext ->
+    	    routerFactory.addHandlerByOperationId("actualConfiguration", routingContext ->{
+    	    	
+    	    	mongoClient.find("ConfigurationItem", query, res -> {
+    	    		  if (res.succeeded()) {
+    	    			  for (JsonObject json : res.result()) {
+    	    				  System.out.println(json.encodePrettily());
+    	    		      List<JsonObject> configurations= res.result();
+    	    		      
+    	    		      routingContext
+		    	   	      .response()
+			              .setStatusCode(200)
+			              .putHeader(HttpHeaders.CONTENT_TYPE, "applivation/json")
+			              .end(new JsonArray(configurations).encode());	//Ritorniamo la lista dei json dei ConfigurationItem che ci sono fino ad ora.
+    	    		      //Nel json prodotto è presente anche _id di mongodb, da eliminare
+    	    		    }
+    	    		  } else {
+    	    		    res.cause().printStackTrace();
+    	    		  }
+    	    		});
+    	    	
+    	    	
+    	    });
+    	    /*
     	    	routingContext
     	    	 .response()
     	    	 .setStatusCode(200)
     	    	 .putHeader(HttpHeaders.CONTENT_TYPE, "applivation/json")
     	    	 .end(new JsonArray(getAllConfiguration()).encode())
     	    		);
-    	    
+    	    */
     	    //Login     
     	    routerFactory.addHandlerByOperationId("login", routingContext ->{
     	    	String username= routingContext.request().getParam("username").toString();
@@ -99,10 +166,30 @@ public class MainVerticle extends AbstractVerticle {
     	    	String username = params.pathParameter("username").toString();
     	    	String password = params.pathParameter("password").toString();*/
     	    	
-    	    	routingContext
-   	    	 	.response()
-   	    	 	.setStatusCode(200)
-   	    	 	.end("Conferma login effettuato");
+    	    	//Verifichiamo che l'utente loggato sia corretto andando ad effettuare una chiamata al database MongoDb.
+    	    	 JsonObject q = new JsonObject()
+    	    			 .put("username", username)
+    	    			 .put("password", password);
+    	    	 
+    	    	 mongoClient.findOne("Utenti", q, null , res -> {
+    	    		 if (res.succeeded()) {
+    	    			 System.out.println("Conferma login effettuato per utente: user: "+username);
+    	    			 routingContext
+    	    	    	 	.response()
+    	    	    	 	.setStatusCode(200)
+    	    	    	 	.end("Conferma login effettuato per utente!");
+    	    			 
+    	    		 } else {
+		    	   	      res.cause().printStackTrace();
+		    	   	      
+		    	   	      routingContext
+		    	   	      .response()
+			              .setStatusCode(404)
+			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+			              .end();
+		    	   	    }
+		    	   	  });
+    	    	
     	    		
     	    	/*
     	    	 * Dalla dashboard dobbiamo capire se si sta cercando di entrare come admin o user. 
@@ -189,10 +276,10 @@ public class MainVerticle extends AbstractVerticle {
   public static void main(String[] args) {
 	    Vertx vertx = Vertx.vertx();
 	    vertx.deployVerticle(new MainVerticle());
+	    
   }
   
-  
-  
+
  
   
   public JsonObject getConfigurazione(){

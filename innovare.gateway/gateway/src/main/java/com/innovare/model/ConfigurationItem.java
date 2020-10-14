@@ -18,6 +18,11 @@ public class ConfigurationItem {
 	}
 	
 	
+	public ConfigurationItem(String string, Property[] ps) {
+		// TODO Auto-generated constructor stub
+	}
+
+
 	public static ConfigurationItem convertJsonConfigurationItem(String json) throws JsonMappingException, JsonProcessingException {
 		
 		return new ObjectMapper().readValue(json, ConfigurationItem.class);

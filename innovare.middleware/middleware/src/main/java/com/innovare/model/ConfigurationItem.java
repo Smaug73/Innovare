@@ -17,13 +17,18 @@ public class ConfigurationItem {
 		
 	}
 	
+	public ConfigurationItem(String id, Property[] prop) {
+		this.id=id;
+		this.properties=prop;
+	}
+	
 	
 	public static ConfigurationItem convertJsonConfigurationItem(String json) throws JsonMappingException, JsonProcessingException {
 		
 		return new ObjectMapper().readValue(json, ConfigurationItem.class);
 	}
 	
-
+	//ESEMPIO MAPPING JSON
 	/*
 	public static void main(String argv[]) throws JsonMappingException, JsonProcessingException {
 		{

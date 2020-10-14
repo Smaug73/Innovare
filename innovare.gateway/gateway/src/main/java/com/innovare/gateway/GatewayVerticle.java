@@ -6,6 +6,9 @@ import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.innovare.model.ConfigurationItem;
+import com.innovare.model.Property;
 import com.innovare.model.Role;
 import com.innovare.model.User;
 
@@ -47,7 +50,7 @@ public class GatewayVerticle extends AbstractVerticle {
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
 	  
-	 //Metodi di verifica del corretto caricamento del gateway.
+	 //Metodi di verifica del corretto caricamento del gateway. Da aggiungere..
 	  
 	  
 	//Creazione client MQTT
@@ -62,15 +65,6 @@ public class GatewayVerticle extends AbstractVerticle {
 		    		  false,
 		    		  false);
 	    	
-	    	/* client.publish("test",
-	    			 //Configurazione di test salvata come oggetto json
-		    		  Buffer.buffer("test"),
-		    		  MqttQoS.AT_LEAST_ONCE,
-		    		  false,
-		    		  false);
-	    	*/
-	    
-	    	
 	    });
 	    
 	   
@@ -79,8 +73,51 @@ public class GatewayVerticle extends AbstractVerticle {
   
   
   public static void main(String[] args) {
+	  
+	  	//Si deve instanziare l'oggetto ConfigurationItem di questo Gateway
+	  	Property p1= new Property("indirizzo","192.168.55.5");//indirizzo di esempio, sarà settato statico
+	  	Property p2= new Property("porta","8888");			 //dati di esempio
+	  	Property[] ps= new Property[10];					 //Grandezza array di esempio
+	  	
+	  	ConfigurationItem configuration= new ConfigurationItem("SensorGateway",ps);
+	  	
+	  	//test
+	  	ObjectMapper mp = new  ObjectMapper();
+	  	try {
+	  		String provajson= mp.writeValueAsString(configuration);
+	  		System.out.println("TestJson= "+provajson);
+		} catch (JsonProcessingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	  	
+	  	
+	  	
 	    Vertx vertx = Vertx.vertx();
 	    vertx.deployVerticle(new GatewayVerticle());
+	    
+	    
+	    //Creazione evento schedulato di campionamente dei dati dal sensore
+	    long timerId =	vertx.setPeriodic(5000, id ->{
+	    	
+	    	//metodo per la cattura dei dati
+	    	//invio dei dati tramite mqtt
+	    	MqttClient client = MqttClient.create(vertx);
+	    	//Usiamo un metodo di test per ora
+	    	client.connect(1883, "localhost", s -> {	
+		    	//Appena il gateway si collega invia le proprie configurazioni.
+		    	 client.publish("Dati",
+		    			 //Configurazione di test salvata come oggetto json
+			    		  Buffer.buffer("test dati"),
+			    		  MqttQoS.AT_LEAST_ONCE,
+			    		  false,
+			    		  false);
+		    });
+	    	
+	    	
+	    });
+	   
+	    
   }
   
   
