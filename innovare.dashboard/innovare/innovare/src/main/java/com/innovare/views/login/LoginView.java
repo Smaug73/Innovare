@@ -5,6 +5,8 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.login.LoginForm;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
 import com.vaadin.flow.router.PageTitle;
@@ -27,7 +29,7 @@ import org.apache.http.impl.client.HttpClients;
 @Route(value = "login", layout = MainView.class)
 @PageTitle("Login")
 @CssImport("./styles/views/login/login-view.css")
-public class LoginView extends Composite<Div>{
+public class LoginView extends Composite<Div> implements BeforeEnterObserver{
 
 	public static final String ATTRIBUTE_USERNAME = "username";
 	public static final String ATTRIBUTE_IS_AUTH = "auth";
@@ -48,7 +50,7 @@ public class LoginView extends Composite<Div>{
 			.setParameter("username", username)
 			.setParameter("password", password);
 	
-			URI uri = null;
+			/*URI uri = null;
 			try {
 				uri = builder.build();
 			} catch (URISyntaxException e) {
@@ -62,12 +64,12 @@ public class LoginView extends Composite<Div>{
 				String status = response.getStatusLine().toString();
 				System.out.println(status);
 				if(status.contains("200")) {
-					System.out.println("OK!");
+					System.out.println("OK!");*/
 					vaadinSession.setAttribute(ATTRIBUTE_USERNAME , username);
 					vaadinSession.setAttribute(ATTRIBUTE_IS_AUTH , Boolean.TRUE);
 					UI.getCurrent().navigate(parameter);
 			
-				}else
+				/*}else
 				{
 					System.out.println("Errore");
 					loginForm.setError( true );
@@ -77,9 +79,19 @@ public class LoginView extends Composite<Div>{
 			} catch (IOException e) {
 				e.printStackTrace();
 				System.out.println("Errore");
-			}
+			}*/
   
 		});
 		getContent().add(loginForm);
+	}
+
+
+	@Override
+	public void beforeEnter(BeforeEnterEvent event) {
+		VaadinSession vs = getCurrent();
+		if(vs != null) {
+			vs.setAttribute(ATTRIBUTE_USERNAME, null);
+			vs.setAttribute(ATTRIBUTE_IS_AUTH , Boolean.FALSE);
+		}
 	}
 }

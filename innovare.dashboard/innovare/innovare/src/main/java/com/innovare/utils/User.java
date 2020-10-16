@@ -1,29 +1,10 @@
 package com.innovare.utils;
 
-import java.util.Objects;
-
-
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
-
 public class User {
-	@NotEmpty
-	@Email
-	@Size(max = 255)
+	
 	private String email;
-
-	@NotNull
-	@Size(min = 4, max = 255)
 	private String passwordHash;
-
-
-	@NotBlank
-	@Size(max = 255)
 	private String role;
-
 	private boolean locked = false;
 
 

@@ -3,21 +3,29 @@ package com.innovare.views.main;
 
 import static com.vaadin.flow.server.VaadinSession.getCurrent;
 import static java.util.Optional.ofNullable;
+
+import com.vaadin.flow.component.applayout.AppLayout;
+import com.vaadin.flow.component.dependency.CssImport;
+import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.server.PWA;
+import com.vaadin.flow.theme.Theme;
+import com.vaadin.flow.theme.lumo.Lumo;
 import com.innovare.views.main.MainView;
 import com.innovare.views.login.LoginView;
 
 /**
  * The main view is a top-level placeholder for other views.
  */
-//@JsModule("./styles/shared-styles.js")
+@JsModule("./styles/shared-styles.js")
 //@Theme(value = Lumo.class, variant = Lumo.DARK)
-//@CssImport("./styles/views/main/main-view.css")
+@CssImport("./styles/views/main/main-view.css")
 //@Route("")
 //@PWA(name = "Innovare", shortName = "Innovare", enableInstallPrompt = false)
 /*@PWA(name = "Innovare", shortName = "Innovare",
@@ -26,22 +34,18 @@ import com.innovare.views.login.LoginView;
 	offlinePath = "offline-page.html",
 	offlineResources = {"images/offline-login-banner.jpg"},
 	enableInstallPrompt = false)*/
-public class MainView extends VerticalLayout implements RouterLayout, BeforeEnterObserver{
+public class MainView extends AppLayout implements RouterLayout, BeforeEnterObserver{
 
     //private final Tabs menu;
     //private H1 viewTitle;
 
     public MainView() {
-    	setAlignItems(Alignment.CENTER);
-        setJustifyContentMode(JustifyContentMode.CENTER);
-        setSizeFull();
         /*setPrimarySection(Section.DRAWER);
         addToNavbar(true, createHeaderContent());
         menu = createMenu();
         addToDrawer(createDrawerContent(menu));*/
     	//System.out.println("Sono in MainView");
     	//this.display();
-    	add(new H1("INNOVARE"));
     }
 
 	@Override
@@ -53,7 +57,7 @@ public class MainView extends VerticalLayout implements RouterLayout, BeforeEnte
 
 		 if (!isAuthenticated && !path.contains("login")) {
 			      event.forwardTo(LoginView.class);
-			    }
+		 }
 		
 	}
     
