@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.model.ConfigurationItem;
+import com.innovare.model.MisuraTest;
 import com.innovare.model.Property;
 import com.innovare.model.Role;
 import com.innovare.model.User;
@@ -39,13 +40,7 @@ public class GatewayVerticle extends AbstractVerticle {
 	 * 			
 	 */
 	
-	
-	final List<JsonObject> configuration = new ArrayList<>(Arrays.asList(
-		    new JsonObject().put("Gateway", "prova").put("Model", "prova")	    
-		  ));
-	
-	
-	
+
 	
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
@@ -57,10 +52,10 @@ public class GatewayVerticle extends AbstractVerticle {
 	    MqttClient client = MqttClient.create(vertx);
 	    client.connect(1883, "localhost", s -> {
 	    	
-	    	//Appena il gateway si collega invia le proprie configurazioni.
-	    	 client.publish("Configuration",
+	    	//Appena il gateway si collega per avvisare del suo corretto collegamento.
+	    	 client.publish("gatewayLog",
 	    			 //Configurazione di test salvata come oggetto json
-		    		  Buffer.buffer(configuration.get(0).encode()),
+		    		  Buffer.buffer("Gateway collegato."),
 		    		  MqttQoS.AT_LEAST_ONCE,
 		    		  false,
 		    		  false);
@@ -75,7 +70,10 @@ public class GatewayVerticle extends AbstractVerticle {
   public static void main(String[] args) {
 	  
 	  	//Si deve instanziare l'oggetto ConfigurationItem di questo Gateway
-	  	Property p1= new Property("indirizzo","192.168.55.5");//indirizzo di esempio, sarà settato statico
+	  	/*
+	  	 * Il configuration Item è già presente nel db
+	  	 * 
+	  	 * Property p1= new Property("indirizzo","192.168.55.5");//indirizzo di esempio, sarà settato statico
 	  	Property p2= new Property("porta","8888");			 //dati di esempio
 	  	Property[] ps= new Property[10];					 //Grandezza array di esempio
 	  	
@@ -90,28 +88,44 @@ public class GatewayVerticle extends AbstractVerticle {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	  	*/
 	  	
-	  	
+	  /*
+	   * DEFINIRE LA PARTE DI RICONOSCIMENTO SENSORI
+	   * 
+	   * 
+	   * 
+	   */
 	  	
 	    Vertx vertx = Vertx.vertx();
 	    vertx.deployVerticle(new GatewayVerticle());
+	    MqttClient client = MqttClient.create(vertx);
 	    
-	    
-	    //Creazione evento schedulato di campionamente dei dati dal sensore
-	    long timerId =	vertx.setPeriodic(5000, id ->{
+	    //Creazione evento schedulato di campionamente dei dati dal sensore, nel nostro caso ogni 10 secondi
+	    long timerId =	vertx.setPeriodic(10000, id ->{
 	    	
-	    	//metodo per la cattura dei dati
+	    	//metodo per la cattura dei dati-- DA DEFINIRE
+		    MisuraTest misure= new MisuraTest();
+		    System.out.println(misure.toString());
+	    	
 	    	//invio dei dati tramite mqtt
-	    	MqttClient client = MqttClient.create(vertx);
+	    	
 	    	//Usiamo un metodo di test per ora
 	    	client.connect(1883, "localhost", s -> {	
 		    	//Appena il gateway si collega invia le proprie configurazioni.
-		    	 client.publish("Dati",
-		    			 //Configurazione di test salvata come oggetto json
-			    		  Buffer.buffer("test dati"),
-			    		  MqttQoS.AT_LEAST_ONCE,
-			    		  false,
-			    		  false);
+					try {
+						client.publish("misure",
+								 //Configurazione di test salvata come oggetto json
+								  Buffer.buffer(new ObjectMapper().writeValueAsString(misure)),
+								  MqttQoS.AT_LEAST_ONCE,
+								  false,
+								  false);
+					} catch (JsonProcessingException e) {
+						System.err.println("La misurazione non è stata convertita correttamente in json!");
+						e.printStackTrace();
+					}
+					//Il client si disconnette dopo aver inviato il messaggio.-NECESSARIO PER EVITARE BUG SULLA RICONNESSIONE-
+					client.disconnect();
 		    });
 	    	
 	    	

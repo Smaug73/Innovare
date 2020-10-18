@@ -32,7 +32,12 @@ public class MainVerticle extends AbstractVerticle {
 	 * 			
 	 * 			Le get del login in fase di test hanno generato una risposta strana da parte del server che rispondeva
 	 * 			correttamente con codice di ritorno 200 ma generava anche un successivo codice 500 internal server error.
-	 * 			
+	 * 		
+	 * 
+	 * 
+	 * MisuraTest:{      }
+	 * 
+	 * 	
 	 */
 	
 	
@@ -101,25 +106,61 @@ public class MainVerticle extends AbstractVerticle {
 	  });
 	  
 	  
+	  /*
+	   * MQTT CLIENT 
+	   * 
+	   */
+	  
+	  //Creazione client MQTT per cattura log dei gateway
+	  MqttClient clientLog= MqttClient.create(vertx);
+	  clientLog.connect(1883, "localhost", s -> {
+			 
+		  clientLog.publishHandler(c -> {
+	    		//Ogni qual volta viene pubblicata una misura la stampiamo e la salviamo.
+				  System.out.println("There are new message in topic: " + c.topicName());
+	    		  System.out.println("Content(as string) of the message: " + c.payload().toString());
+	    		  System.out.println("QoS: " + c.qosLevel());	
+	    		  System.out.print("LOG-GATEWAY: "+c.payload().toString());
+	    		  //JsonObject confJson= new JsonObject( c.payload().toString());
+	    		})
+	    		  .subscribe("gatewayLog", 2);	    
+	    });
 	  
 	  
-	  //Creazione client MQTT
+	  
+	  //Creazione client MQTT lettura e salvataggio misurazione
 	    MqttClient client = MqttClient.create(vertx);
 	    
 	    //Il client può supportare solo un handler alla volta
+	    //Ci connettiamo al canale nel quale vengono pubblicate le misure
 	    client.connect(1883, "localhost", s -> {
 	 
 	    	client.publishHandler(c -> {
-				System.out.println("There are new message in topic: " + c.topicName());
+	    		
+	    		//Ogni qual volta viene pubblicata una misura la stampiamo e la salviamo.
+				  System.out.println("There are new message in topic: " + c.topicName());
 	    		  System.out.println("Content(as string) of the message: " + c.payload().toString());
 	    		  System.out.println("QoS: " + c.qosLevel());	     
-	    		  configuration.add(new JsonObject( c.payload().toString() ) );
-	    		  //JsonObject confJson= new JsonObject( c.payload().toString());
+	    		  JsonObject misura=new JsonObject( c.payload().toString() );
+	    		  
+	    		  //Salviamo la misura.
+	    		  mongoClient.insert("misure", misura , res ->{
+	    			  if(res.succeeded())
+	    				  System.out.println("Misura salvata correttamente nel DB.");
+	    			  else
+	    				  System.err.println("ERRORE salvataggio misura");  
+	    		  });
+	    		  
 	    		})
-	    		  .subscribe("Configuration", 2);	    
+	    		  .subscribe("misure", 2);	    
 	    });
 	    
 	    //////////////////////////////////////////////
+	    
+	    /*
+	     * DEFINIZIONE CHIAMATE REST
+	     * 
+	     */
 	    
 	  //Impostazioni per l'api rest per la comunicazione con la DASHBOARD
     OpenAPI3RouterFactory.create(this.vertx, "resources/InnovareMiddleware.yaml", ar -> {
@@ -189,7 +230,34 @@ public class MainVerticle extends AbstractVerticle {
 			              .end();
 		    	   	    }
 		    	   	  });
+    	    });
     	    	
+    	    	//misures    
+    	    /*
+    	     * La misura ora è cambiata deve contenere i sample del canale ecc.
+    	     */
+    	    	    routerFactory.addHandlerByOperationId("misures", routingContext ->{
+    	    	    	
+    	    	    	JsonObject q = new JsonObject();
+    	    	    	 mongoClient.find("Utenti", q, res -> {
+    	    	    		 if (res.succeeded()) {
+    	    	    			 
+    	    	    			 routingContext
+    	    	    	    	 	.response()
+    	    	    	    	 	.setStatusCode(200)
+    	    	    	    	 	.end("Conferma login effettuato per utente!");
+    	    	    			 
+    	    	    		 } else {
+    			    	   	      res.cause().printStackTrace();
+    			    	   	      
+    			    	   	      routingContext
+    			    	   	      .response()
+    				              .setStatusCode(404)
+    				              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    				              .end();
+    			    	   	    }
+    			    	   	  });
+    	    	    });  	
     	    		
     	    	/*
     	    	 * Dalla dashboard dobbiamo capire se si sta cercando di entrare come admin o user. 

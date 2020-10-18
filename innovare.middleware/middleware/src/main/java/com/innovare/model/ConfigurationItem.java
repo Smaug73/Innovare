@@ -13,6 +13,7 @@ public class ConfigurationItem {
 	private String id;
 	private Property[] properties;
 	
+	
 	public ConfigurationItem() {
 		
 	}
@@ -91,6 +92,11 @@ public class ConfigurationItem {
 	@Override
 	public String toString() {
 		return "ConfigurationItem [id=" + id + ", properties=" + Arrays.toString(properties) + "]";
+	}
+	
+	public String getJson() throws JsonProcessingException {
+		ObjectMapper mp = new  ObjectMapper();
+		return mp.writeValueAsString(this);
 	}
 	
 	
