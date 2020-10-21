@@ -2,41 +2,30 @@ package com.innovare.views.main;
 
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.applayout.DrawerToggle;
-import com.vaadin.flow.component.applayout.AppLayout.Section;
-import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
-import com.vaadin.flow.component.dependency.CssImport;
-import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Image;
-import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
-import com.vaadin.flow.component.tabs.TabVariant;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.tabs.TabsVariant;
-import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.VaadinServlet;
 import com.vaadin.flow.server.VaadinSession;
-import com.vaadin.flow.theme.Theme;
 import com.innovare.views.home.HomeView;
 import com.innovare.views.storico.StoricoView;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 
-import com.innovare.utils.SecurityUtils;
+import com.innovare.utils.Role;
 import com.innovare.views.configurazione.ConfigurazioneView;
 import com.innovare.views.innovare.InnovareView;
 
@@ -99,11 +88,11 @@ public class ContentView extends MainView{
 		 tabs.add(createTab(VaadinIcon.ARCHIVE, "Storico", StoricoView.class));
 		 tabs.add(createTab(VaadinIcon.QUESTION, "About", InnovareView.class));
 		 VaadinSession vs = VaadinSession.getCurrent();
-		 String username = null;
+		 String role = null;
 		 if(vs != null) {
-			 username = (String) vs.getAttribute("username");
+			 role = (String) vs.getAttribute("role");
 		 }
-		 if (username != null && username.contains("admin")) {
+		 if (role != null && role.equals(Role.ADMIN)) {
 			 tabs.add(createTab(VaadinIcon.COG, "Configurazione",ConfigurazioneView.class));
 		 }
 		 final String contextPath = VaadinServlet.getCurrent().getServletContext().getContextPath();

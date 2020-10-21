@@ -13,6 +13,10 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import static com.vaadin.flow.server.VaadinSession.getCurrent;
+
+import com.innovare.utils.Authenticator;
+import com.innovare.utils.Role;
+import com.innovare.utils.User;
 import com.innovare.views.main.MainView;
 
 import java.io.IOException;
@@ -31,8 +35,7 @@ import org.apache.http.impl.client.HttpClients;
 @CssImport("./styles/views/login/login-view.css")
 public class LoginView extends Composite<Div> implements BeforeEnterObserver{
 
-	public static final String ATTRIBUTE_USERNAME = "username";
-	public static final String ATTRIBUTE_IS_AUTH = "auth";
+	
 
 	private final LoginForm loginForm = new LoginForm();
 	private String parameter = "";
@@ -40,46 +43,14 @@ public class LoginView extends Composite<Div> implements BeforeEnterObserver{
 
 	public LoginView() {
 		loginForm.addLoginListener(event -> {
-			VaadinSession vaadinSession = getCurrent();
 	
 			String username = event.getUsername();
 			String password = event.getPassword();
     
-			URIBuilder builder = new URIBuilder();
-			builder.setScheme("http").setHost("localhost:8888").setPath("/login")
-			.setParameter("username", username)
-			.setParameter("password", password);
-	
-			/*URI uri = null;
-			try {
-				uri = builder.build();
-			} catch (URISyntaxException e) {
-				e.printStackTrace();
+			if(Authenticator.authenticate(username, password)) { 
+				UI.getCurrent().navigate(parameter);
 			}
-	
-			HttpGet get = new HttpGet(uri);
-			CloseableHttpClient client = HttpClients.createDefault();
-	
-			try(CloseableHttpResponse response = client.execute(get)){
-				String status = response.getStatusLine().toString();
-				System.out.println(status);
-				if(status.contains("200")) {
-					System.out.println("OK!");*/
-					vaadinSession.setAttribute(ATTRIBUTE_USERNAME , username);
-					vaadinSession.setAttribute(ATTRIBUTE_IS_AUTH , Boolean.TRUE);
-					UI.getCurrent().navigate(parameter);
-			
-				/*}else
-				{
-					System.out.println("Errore");
-					loginForm.setError( true );
-				}
-			} catch (ClientProtocolException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
-				System.out.println("Errore");
-			}*/
+			else loginForm.setError( true );
   
 		});
 		getContent().add(loginForm);
@@ -90,8 +61,9 @@ public class LoginView extends Composite<Div> implements BeforeEnterObserver{
 	public void beforeEnter(BeforeEnterEvent event) {
 		VaadinSession vs = getCurrent();
 		if(vs != null) {
-			vs.setAttribute(ATTRIBUTE_USERNAME, null);
-			vs.setAttribute(ATTRIBUTE_IS_AUTH , Boolean.FALSE);
+			vs.setAttribute("username", null);
+			vs.setAttribute("auth", false);
+			vs.setAttribute("role", null);
 		}
 	}
 }

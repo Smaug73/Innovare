@@ -18,14 +18,24 @@ import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.Theme;
 import com.vaadin.flow.theme.lumo.Lumo;
 import com.innovare.views.main.MainView;
+import com.innovare.utils.Authenticator;
 import com.innovare.views.login.LoginView;
 
 /**
  * The main view is a top-level placeholder for other views.
  */
-@JsModule("./styles/shared-styles.js")
+//@JsModule("./styles/shared-styles.js")
 //@Theme(value = Lumo.class, variant = Lumo.DARK)
-@CssImport("./styles/views/main/main-view.css")
+@CssImport("./styles/lumo/icon-size.css")
+@CssImport("./styles/lumo/margin.css")
+@CssImport("./styles/lumo/padding.css")
+@CssImport("./styles/lumo/shadow.css")
+@CssImport("./styles/lumo/spacing.css")
+@CssImport("./styles/lumo/typography.css")
+@CssImport("./styles/misc/box-shadow-borders.css")
+@CssImport(value = "./styles/styles.css", include = "lumo-badge")
+@JsModule("@vaadin/vaadin-lumo-styles/badge")
+//@CssImport("./styles/views/main/main-view.css")
 //@Route("")
 //@PWA(name = "Innovare", shortName = "Innovare", enableInstallPrompt = false)
 /*@PWA(name = "Innovare", shortName = "Innovare",
@@ -52,7 +62,7 @@ public class MainView extends AppLayout implements RouterLayout, BeforeEnterObse
 	public void beforeEnter(BeforeEnterEvent event) {
 		String path = event.getLocation().getPath();
 
-		Boolean isAuthenticated = ofNullable((Boolean)getCurrent().getAttribute(LoginView.ATTRIBUTE_IS_AUTH))
+		Boolean isAuthenticated = ofNullable((Boolean)getCurrent().getAttribute(Authenticator.ATTRIBUTE_IS_AUTH))
                 .orElse(Boolean.FALSE);
 
 		 if (!isAuthenticated && !path.contains("login")) {
