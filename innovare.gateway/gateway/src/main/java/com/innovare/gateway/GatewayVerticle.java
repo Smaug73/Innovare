@@ -3,14 +3,17 @@ package com.innovare.gateway;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.innovare.model.Channel;
 import com.innovare.model.ConfigurationItem;
 import com.innovare.model.MisuraTest;
 import com.innovare.model.Property;
 import com.innovare.model.Role;
+import com.innovare.model.Sample;
 import com.innovare.model.User;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
@@ -37,11 +40,20 @@ public class GatewayVerticle extends AbstractVerticle {
 	 * 			
 	 * 			Le get del login in fase di test hanno generato una risposta strana da parte del server che rispondeva
 	 * 			correttamente con codice di ritorno 200 ma generava anche un successivo codice 500 internal server error.
-	 * 			
+	 * 		
+	 * 
+	 * 
+	 * INFORMAZIONI SU COMUNICAZIONE MQTT DEI SAMPLES CATTURATI DAL GATEWAY:
+	 * 	Ogni channel possiede una coda che viene riempita da un Thread di campionamento.
+	 * 	La coda può avere 0,1, >1 elementi al suo interno.
+	 * 	Se numero di elementi = 0, non viene inviato niente.
+	 * 	Se il numero di elementi >=1, viene inviato un array di Sample.
+	 * 	E' da tenere presente che i Samples una volta inviati vengono eliminati dalla coda e memorizzati dal MiddleWare nel suo DataBase. 
+	 * 	Quindi tutti i Samples presenti nelle code, sono Samples ancora non memorizzati
+	 * 	
 	 */
 	
 
-	
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
 	  
@@ -101,32 +113,57 @@ public class GatewayVerticle extends AbstractVerticle {
 	    vertx.deployVerticle(new GatewayVerticle());
 	    MqttClient client = MqttClient.create(vertx);
 	    
-	    //Creazione evento schedulato di campionamente dei dati dal sensore, nel nostro caso ogni 10 secondi
-	    long timerId =	vertx.setPeriodic(10000, id ->{
+	    /*
+	     * Creazione dei Channels disposti al campionamento.(In questo caso di test uno solo)
+	     */
+	    Channel chan= new Channel("1",10000);	//campionamento ogni 10 secondi
+	    chan.start();	//Avvio del Thread di campionamento
+	    
+	    
+	    /*
+	     * Creazione dell'evento di prelevamento di uno o più sample in un dato Channel
+	     */
+	    long timerId =	vertx.setPeriodic(15000, id ->{
+	    	
+	    	
 	    	
 	    	//metodo per la cattura dei dati-- DA DEFINIRE
-		    MisuraTest misure= new MisuraTest();
-		    System.out.println(misure.toString());
+	    	try {
+	    		ArrayList<Sample> misure= chan.getNewSample();
+	    		for(Sample s: misure) {
+	    			System.out.println(s.toString());
+	    		}
+	    		
+	    		
+		    	client.connect(1883, "localhost", s -> {	
+			    	//Appena il gateway si collega invia le proprie configurazioni.
+						try {
+							client.publish("misure",
+									 //Configurazione di test salvata come oggetto json
+									  Buffer.buffer(new ObjectMapper().writeValueAsString(misure)),
+									  MqttQoS.AT_LEAST_ONCE,
+									  false,
+									  false);
+						} catch (JsonProcessingException e) {
+							System.err.println("La misurazione non è stata convertita correttamente in json!");
+							e.printStackTrace();
+						}
+						//Il client si disconnette dopo aver inviato il messaggio.-NECESSARIO PER EVITARE BUG SULLA RICONNESSIONE-
+						client.disconnect();
+			    });
+	    		
+	    		
+	    	}
+	    	catch(NoSuchElementException e){
+	    		System.err.println(e.getMessage());
+	    	}
+	    	
+	    	
+		    
 	    	
 	    	//invio dei dati tramite mqtt
 	    	
-	    	//Usiamo un metodo di test per ora
-	    	client.connect(1883, "localhost", s -> {	
-		    	//Appena il gateway si collega invia le proprie configurazioni.
-					try {
-						client.publish("misure",
-								 //Configurazione di test salvata come oggetto json
-								  Buffer.buffer(new ObjectMapper().writeValueAsString(misure)),
-								  MqttQoS.AT_LEAST_ONCE,
-								  false,
-								  false);
-					} catch (JsonProcessingException e) {
-						System.err.println("La misurazione non è stata convertita correttamente in json!");
-						e.printStackTrace();
-					}
-					//Il client si disconnette dopo aver inviato il messaggio.-NECESSARIO PER EVITARE BUG SULLA RICONNESSIONE-
-					client.disconnect();
-		    });
+	    	
 	    	
 	    	
 	    });
@@ -136,10 +173,6 @@ public class GatewayVerticle extends AbstractVerticle {
   
   
   
- 
-  public JsonObject getConfigurazione(){
-	  return null;
-  }
   
 
   

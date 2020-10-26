@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.model.User;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
@@ -35,7 +35,7 @@ public class MainVerticle extends AbstractVerticle {
 	 * 		
 	 * 
 	 * 
-	 * MisuraTest:{      }
+	 * 
 	 * 
 	 * 	
 	 */
@@ -141,18 +141,28 @@ public class MainVerticle extends AbstractVerticle {
 				  System.out.println("There are new message in topic: " + c.topicName());
 	    		  System.out.println("Content(as string) of the message: " + c.payload().toString());
 	    		  System.out.println("QoS: " + c.qosLevel());	     
-	    		  JsonObject misura=new JsonObject( c.payload().toString() );
+	    		  //JsonObject misura=new JsonObject( c.payload().toString() );
+	    		  JsonArray newMisures= c.payload().toJsonArray();	//Le nuove misure sono fornite tramite un array di json
 	    		  
-	    		  //Salviamo la misura.
-	    		  mongoClient.insert("misure", misura , res ->{
-	    			  if(res.succeeded())
-	    				  System.out.println("Misura salvata correttamente nel DB.");
-	    			  else
-	    				  System.err.println("ERRORE salvataggio misura");  
-	    		  });
+	    		  /*
+	    		   * La misura che è arrivata è un array contenente le nuove misurazioni.
+	    		   */
+	    		  JsonObject singleMisure;
+	    		  //Salviamo le nuove misure.
+	    		  for(int i=0; i<newMisures.size(); i++ ) {
+	    			  singleMisure= newMisures.getJsonObject(i);
+	    			  mongoClient.insert("misuraTest", singleMisure , res ->{
+		    			  if(res.succeeded())
+		    				  System.out.println("Misura salvata correttamente nel DB.");
+		    			  else
+		    				  System.err.println("ERRORE salvataggio misura");  
+		    		  });
+	    		  }
+	    		  
 	    		  
 	    		})
-	    		  .subscribe("misure", 2);	    
+	    		  .subscribe("misure", 2);	  
+	    		  
 	    });
 	    
 	    //////////////////////////////////////////////
@@ -284,7 +294,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	/*
     	    	 * Aggiungere la verifica sul database.
     	    	 */  	    	
-    	    });
+    	   
     	  
     	 
     	    
@@ -333,11 +343,7 @@ public class MainVerticle extends AbstractVerticle {
     	  }
     	});
     
-    
-    
-    
-    
-    
+  
   }
   
   
