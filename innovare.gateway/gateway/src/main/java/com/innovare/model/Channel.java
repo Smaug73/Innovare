@@ -23,7 +23,7 @@ public class Channel extends Thread{
 	public Channel(String id, long periodo) {
 		super();
 		this.periodo=periodo;//calcolo dei secondi di attesa tra un campionamento e l'altro
-		this.ID = ID;
+		this.ID = id;
 		this.samplesQueue = new PriorityQueue<Sample>();
 	}
 	
@@ -96,8 +96,11 @@ public class Channel extends Thread{
 	}
 	
 	
-	
-	
+
+	@Override
+	public String toString() {
+		return "Channel [ID=" + ID + ", periodo=" + periodo + "]";
+	}
 
 	public String getID() {
 		return this.ID;

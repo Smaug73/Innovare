@@ -2,6 +2,7 @@ package com.innovare.gateway;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -54,11 +55,19 @@ public class GatewayVerticle extends AbstractVerticle {
 	 */
 	
 
+	
+ 
+  
+  
+  private int numberOfChannel= 2; //per ora test
+  private HashMap<Channel,MqttClient> mapClient;
+
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
 	  
 	 //Metodi di verifica del corretto caricamento del gateway. Da aggiungere..
 	  
+	
 	  
 	//Creazione client MQTT
 	    MqttClient client = MqttClient.create(vertx);
@@ -67,16 +76,101 @@ public class GatewayVerticle extends AbstractVerticle {
 	    	//Appena il gateway si collega per avvisare del suo corretto collegamento.
 	    	 client.publish("gatewayLog",
 	    			 //Configurazione di test salvata come oggetto json
-		    		  Buffer.buffer("Gateway collegato."),
+		    		  Buffer.buffer("Gateway collegato.Pubblicazione numero canali.."),
 		    		  MqttQoS.AT_LEAST_ONCE,
 		    		  false,
 		    		  false);
-	    	
+	    	 //Comunicazione numero di canali
+	    	 client.publish("gatewayLog",
+	    			 //Configurazione di test salvata come oggetto json
+		    		  Buffer.buffer("channelNumber:"+this.numberOfChannel),
+		    		  MqttQoS.AT_LEAST_ONCE,
+		    		  false,
+		    		  false);
+	    	 
+	    	/*
+	    	 * Richiamo operazione per l'instanziazione dei canali dopo aver comunicato il loro numero
+	    	 */
+	    	 this.channelCreation();
+	    	 
 	    });
-	    
-	   
-    
+  
   }
+  
+
+  
+  
+  /*
+   * Metodo per la creazione dei canali
+   */
+  private void channelCreation() {
+	  /*
+	   * Creo un client per ogni canale e avvio i thread di raccolta dati
+	   */
+	  this.mapClient= new HashMap<Channel,MqttClient>();
+	  	  
+	  /*
+	   * Per ogni canale creo un client mqtt per la pubblicazione dei Samples
+	   */
+	  Channel chan;
+	  for(int i=0; i<this.numberOfChannel; i++) {
+		  System.out.println("Creazione canale numero: "+(i+1));
+		  chan=new Channel(""+i,10000L);
+		  this.mapClient.put(chan,MqttClient.create(vertx));
+		  startingClient(chan);
+	  }
+		  
+  }
+  
+  
+  
+  
+  private void startingClient(Channel chan) {
+	  /*
+	   * Avvio del Thread per il campionamento
+	   */
+	  chan.start();
+
+	  /*
+	   * Creazione dell'evento di prelevamento di uno o più sample in un dato Channel
+	   */
+	  long timerId = vertx.setPeriodic(15000, id ->{	
+    	//metodo per la cattura dei dati-- DA DEFINIRE
+    	try {
+    		ArrayList<Sample> misure= chan.getNewSample();
+    		for(Sample s: misure) {
+    			System.out.println(s.toString());
+    		}	
+    		System.out.println(chan.toString());
+	    	this.mapClient.get(chan).connect(1883, "localhost", s -> {	
+		    	//
+					try {
+						this.mapClient.get(chan).publish(chan.getID(),
+								 //Invio dell'array contenente le misure
+								  Buffer.buffer(new ObjectMapper().writeValueAsString(misure)),
+								  MqttQoS.AT_LEAST_ONCE,
+								  false,
+								  false);
+					} catch (JsonProcessingException e) {
+						System.err.println("La misurazione non è stata convertita correttamente in json!");
+						e.printStackTrace();
+					}
+					//Il client si disconnette dopo aver inviato il messaggio.-NECESSARIO PER EVITARE BUG SULLA RICONNESSIONE-
+					this.mapClient.get(chan).disconnect();
+		    });
+    		
+    	}
+    	catch(NoSuchElementException e){
+    		System.err.println(e.getMessage());
+    	}
+    	//invio dei dati tramite mqtt   		
+    });
+	  
+  }
+  
+  
+  
+  
   
   
   public static void main(String[] args) {
@@ -111,63 +205,6 @@ public class GatewayVerticle extends AbstractVerticle {
 	  	
 	    Vertx vertx = Vertx.vertx();
 	    vertx.deployVerticle(new GatewayVerticle());
-	    MqttClient client = MqttClient.create(vertx);
-	    
-	    /*
-	     * Creazione dei Channels disposti al campionamento.(In questo caso di test uno solo)
-	     */
-	    Channel chan= new Channel("1",10000);	//campionamento ogni 10 secondi
-	    chan.start();	//Avvio del Thread di campionamento
-	    
-	    
-	    /*
-	     * Creazione dell'evento di prelevamento di uno o più sample in un dato Channel
-	     */
-	    long timerId =	vertx.setPeriodic(15000, id ->{
-	    	
-	    	
-	    	
-	    	//metodo per la cattura dei dati-- DA DEFINIRE
-	    	try {
-	    		ArrayList<Sample> misure= chan.getNewSample();
-	    		for(Sample s: misure) {
-	    			System.out.println(s.toString());
-	    		}
-	    		
-	    		
-		    	client.connect(1883, "localhost", s -> {	
-			    	//Appena il gateway si collega invia le proprie configurazioni.
-						try {
-							client.publish("misure",
-									 //Configurazione di test salvata come oggetto json
-									  Buffer.buffer(new ObjectMapper().writeValueAsString(misure)),
-									  MqttQoS.AT_LEAST_ONCE,
-									  false,
-									  false);
-						} catch (JsonProcessingException e) {
-							System.err.println("La misurazione non è stata convertita correttamente in json!");
-							e.printStackTrace();
-						}
-						//Il client si disconnette dopo aver inviato il messaggio.-NECESSARIO PER EVITARE BUG SULLA RICONNESSIONE-
-						client.disconnect();
-			    });
-	    		
-	    		
-	    	}
-	    	catch(NoSuchElementException e){
-	    		System.err.println(e.getMessage());
-	    	}
-	    	
-	    	
-		    
-	    	
-	    	//invio dei dati tramite mqtt
-	    	
-	    	
-	    	
-	    	
-	    });
-	   
 	    
   }
   

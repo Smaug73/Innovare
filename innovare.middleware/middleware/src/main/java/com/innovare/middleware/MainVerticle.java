@@ -2,7 +2,9 @@ package com.innovare.middleware;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.PriorityQueue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.model.User;
@@ -61,6 +63,10 @@ public class MainVerticle extends AbstractVerticle {
 	 */
 	private HttpServer server;
 	
+	private int numberOfChannel;
+	private HashMap<Integer,MqttClient> mqttClients;
+	private HashMap<String,ArrayList<JsonObject>> sampleChannelQueue;
+	private MongoClient mongoClient;
 	
 	
   @Override
@@ -86,7 +92,7 @@ public class MainVerticle extends AbstractVerticle {
 	        .put("connection_string", uri)
 	        .put("db_name", db);
 	    	
-	    MongoClient mongoClient = MongoClient.createShared(vertx, mongoconfig);
+	    mongoClient = MongoClient.createShared(vertx, mongoconfig);
 
 	  
 	  //TEST MONGODB
@@ -120,50 +126,22 @@ public class MainVerticle extends AbstractVerticle {
 				  System.out.println("There are new message in topic: " + c.topicName());
 	    		  System.out.println("Content(as string) of the message: " + c.payload().toString());
 	    		  System.out.println("QoS: " + c.qosLevel());	
-	    		  System.out.print("LOG-GATEWAY: "+c.payload().toString());
+	    		  System.out.println("LOG-GATEWAY: "+c.payload().toString());
+	    		  
+	    		  if(c.payload().toString().startsWith("channelNumber:")) {
+	    			  String num=c.payload().toString().substring(14);
+	    			  System.out.println("Numero di channel: "+num);
+	    			  this.numberOfChannel= Integer.parseInt(num);
+	    			  //Avvio creazione client per la ricezione dei valori dei canali
+	    			  this.mqttClientCreation();
+	    		  }
+	    		  
 	    		  //JsonObject confJson= new JsonObject( c.payload().toString());
 	    		})
 	    		  .subscribe("gatewayLog", 2);	    
 	    });
 	  
 	  
-	  
-	  //Creazione client MQTT lettura e salvataggio misurazione
-	    MqttClient client = MqttClient.create(vertx);
-	    
-	    //Il client può supportare solo un handler alla volta
-	    //Ci connettiamo al canale nel quale vengono pubblicate le misure
-	    client.connect(1883, "localhost", s -> {
-	 
-	    	client.publishHandler(c -> {
-	    		
-	    		//Ogni qual volta viene pubblicata una misura la stampiamo e la salviamo.
-				  System.out.println("There are new message in topic: " + c.topicName());
-	    		  System.out.println("Content(as string) of the message: " + c.payload().toString());
-	    		  System.out.println("QoS: " + c.qosLevel());	     
-	    		  //JsonObject misura=new JsonObject( c.payload().toString() );
-	    		  JsonArray newMisures= c.payload().toJsonArray();	//Le nuove misure sono fornite tramite un array di json
-	    		  
-	    		  /*
-	    		   * La misura che è arrivata è un array contenente le nuove misurazioni.
-	    		   */
-	    		  JsonObject singleMisure;
-	    		  //Salviamo le nuove misure.
-	    		  for(int i=0; i<newMisures.size(); i++ ) {
-	    			  singleMisure= newMisures.getJsonObject(i);
-	    			  mongoClient.insert("misuraTest", singleMisure , res ->{
-		    			  if(res.succeeded())
-		    				  System.out.println("Misura salvata correttamente nel DB.");
-		    			  else
-		    				  System.err.println("ERRORE salvataggio misura");  
-		    		  });
-	    		  }
-	    		  
-	    		  
-	    		})
-	    		  .subscribe("misure", 2);	  
-	    		  
-	    });
 	    
 	    //////////////////////////////////////////////
 	    
@@ -354,7 +332,67 @@ public class MainVerticle extends AbstractVerticle {
   }
   
 
+  
+  private void mqttClientCreation() {
+	  /*
+	   * Creo l'hashmap contenente i client e quello delle priorityqueue
+	   */
+	  this.mqttClients= new HashMap<Integer,MqttClient>();
+	  this.sampleChannelQueue= new HashMap<String,ArrayList<JsonObject>>();
+	  
+	  for(int i=0; i<this.numberOfChannel; i++) {
+		  
+		this.mqttClients.put(i, MqttClient.create(vertx));
+		this.sampleChannelQueue.put(""+i, new ArrayList<JsonObject>());
+		this.defineClient(i);
+	
+	  }  
+  }
  
+  
+  private void defineClient(int i) {
+	  
+	  MqttClient client= this.mqttClients.get(i);
+	  /*
+	   * Colleghiamo ed iscriviamo il client al canale del suo corrispondente channel
+	   */
+	  client.connect(1883, "localhost", s -> {		 
+		this.mqttClients.get(i).publishHandler(c -> {
+	    		//Ogni qual volta viene pubblicata una misura la stampiamo e la salviamo.
+				  System.out.println("There are new message in topic: " + c.topicName());
+	    		  System.out.println("Content(as string) of the message: " + c.payload().toString());
+	    		  System.out.println("QoS: " + c.qosLevel());	
+	    		  System.out.println("LOG-GATEWAY: "+c.payload().toString());
+	    		 /* 
+	    		  * Il contenuto deve essere salvato nel database e nella PriorityQueue
+	    		  */
+	    		  JsonArray newMisures= c.payload().toJsonArray();	//Le nuove misure sono fornite tramite un array di json	    		  
+	    		  /*
+	    		   * La misura che è arrivata è un array contenente le nuove misurazioni.
+	    		   */
+	    		  JsonObject singleMisure;
+	    		  //Salviamo le nuove misure.
+	    		  for(int j=0; j<newMisures.size(); j++ ) {
+	    			  singleMisure= newMisures.getJsonObject(j);
+	    			  //Salviamo la misura nella priorityQueue
+	    			  this.sampleChannelQueue.get(""+i).add(singleMisure);
+	    			  
+	    			  //Salviamo la misura nel DB
+	    			  mongoClient.insert("channel-"+i, singleMisure , res ->{
+		    			  if(res.succeeded())
+		    				  System.out.println("Misura salvata correttamente nel DB.");
+		    			  else
+		    				  System.err.println("ERRORE salvataggio misura");  
+		    		  });
+	    		 
+	    		  }
+				})
+	    		  .subscribe(""+i, 2);	    
+	    });
+	    
+  
+  }
+  
   
   public JsonObject getConfigurazione(){
 	  return null;
