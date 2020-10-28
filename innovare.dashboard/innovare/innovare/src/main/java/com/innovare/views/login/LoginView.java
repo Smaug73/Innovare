@@ -1,10 +1,14 @@
 package com.innovare.views.login;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.login.LoginForm;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.FlexLayout;
+import com.vaadin.flow.component.orderedlayout.FlexLayout.ContentAlignment;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.BeforeEvent;
@@ -14,11 +18,15 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import static com.vaadin.flow.server.VaadinSession.getCurrent;
 
+import com.innovare.ui.utils.BoxSizing;
+import com.innovare.ui.utils.FlexBoxLayout;
+import com.innovare.ui.utils.LumoStyles;
 import com.innovare.utils.Authenticator;
 import com.innovare.utils.Role;
 import com.innovare.utils.User;
 import com.innovare.views.main.MainView;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -42,6 +50,10 @@ public class LoginView extends Composite<Div> implements BeforeEnterObserver{
 
 
 	public LoginView() {
+		FlexBoxLayout content = new FlexBoxLayout(loginForm);
+		content.setAlignItems(FlexComponent.Alignment.CENTER);
+		content.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
+		loginForm.setForgotPasswordButtonVisible(false);
 		loginForm.addLoginListener(event -> {
 	
 			String username = event.getUsername();
@@ -53,9 +65,9 @@ public class LoginView extends Composite<Div> implements BeforeEnterObserver{
 			else loginForm.setError( true );
   
 		});
-		getContent().add(loginForm);
+		getContent().add(content);
 	}
-
+	
 
 	@Override
 	public void beforeEnter(BeforeEnterEvent event) {
