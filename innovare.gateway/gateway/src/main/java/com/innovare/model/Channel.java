@@ -72,7 +72,7 @@ public class Channel extends Thread{
 	 */
 	private synchronized void addNewSample() throws Exception {
 		if(this.samplesQueue!=null)
-			this.samplesQueue.add(new Sample());
+			this.samplesQueue.add(new Sample(this.ID));
 		else
 			throw new Exception("SampleQueue non instanziata");
 	}

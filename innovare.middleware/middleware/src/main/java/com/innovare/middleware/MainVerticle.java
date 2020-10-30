@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.PriorityQueue;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.model.User;
 
@@ -206,8 +207,7 @@ public class MainVerticle extends AbstractVerticle {
     	    			 routingContext
     	    	    	 	.response()
     	    	    	 	.setStatusCode(200)
-    	    	    	 	.end("Conferma login effettuato per utente!");
-    	    			 
+    	    	    	 	.end("Conferma login effettuato per utente!");	 
     	    		 } else {
 		    	   	      res.cause().printStackTrace();
 		    	   	      
@@ -220,33 +220,122 @@ public class MainVerticle extends AbstractVerticle {
 		    	   	  });
     	    });
     	    	
-    	    	//misures    
+    	      
     	    /*
-    	     * La misura ora è cambiata deve contenere i sample del canale ecc.
+    	     * Ultima misura registrata in un determinato canale
     	     */
-    	    	    routerFactory.addHandlerByOperationId("misures", routingContext ->{
+    	    	    routerFactory.addHandlerByOperationId("lastsample", routingContext ->{
+    	    	    	String channel= routingContext.request().getParam("idcanale");
+    	    	    	/*
+    	    	    	 * Fallimento se non il parametro non è stato inserito o non esiste il canale selezionato
+    	    	    	 */
+    	    	    	if(channel==null || !this.sampleChannelQueue.containsKey(channel))
+    	    	    		routingContext
+			    	   	      .response()
+				              .setStatusCode(400)
+				              .end();
+    	    	    	else {
+    	    	    		/*
+    	    	    		 * Restituiamo l'ultimo Sample registrato ma non lo eliminiamo
+    	    	    		 */
+    	    	    		ArrayList<JsonObject> samples= this.sampleChannelQueue.get(channel);
+    	    	    		if(!samples.isEmpty()) {
+            	    	    	routingContext
+        	    	    	 	.response()
+        	    	    	 	.setStatusCode(200)
+        	    	    	 	.end(samples.get(samples.size()-1).toString());
+    	    	    		}else
+    	    	    			/*
+    	    	    			 * Caso nel quale non ci sono nuovi Sample
+    	    	    			 */
+	        	    	    	routingContext
+	    	    	    	 	.response()
+	    	    	    	 	.setStatusCode(200)
+	    	    	    	 	.end("NO-NEW-SAMPLE");
+    	    	    	}
     	    	    	
-    	    	    	JsonObject q = new JsonObject();
-    	    	    	 mongoClient.find("Utenti", q, res -> {
-    	    	    		 if (res.succeeded()) {
-    	    	    			 
-    	    	    			 routingContext
-    	    	    	    	 	.response()
-    	    	    	    	 	.setStatusCode(200)
-    	    	    	    	 	.end("Conferma login effettuato per utente!");
-    	    	    			 
-    	    	    		 } else {
-    			    	   	      res.cause().printStackTrace();
-    			    	   	      
-    			    	   	      routingContext
-    			    	   	      .response()
-    				              .setStatusCode(404)
-    				              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-    				              .end();
-    			    	   	    }
-    			    	   	  });
+    
     	    	    });  	
     	    		
+    	    	/*
+    	    	 * Restituiamo le ultime misure non ancora mostrate da la DashBoard e le eliminiamo dall'array   
+    	    	 */
+    	    	    
+    	    	    routerFactory.addHandlerByOperationId("lastsamples", routingContext ->{
+    	    	    	String channel= routingContext.request().getParam("idcanale");
+    	    	    	/*
+    	    	    	 * Fallimento se non il parametro non è stato inserito o non esiste il canale selezionato
+    	    	    	 */
+    	    	    	if(channel==null || !this.sampleChannelQueue.containsKey(channel))
+    	    	    		routingContext
+			    	   	      .response()
+				              .setStatusCode(400)
+				              .end();
+    	    	    	else {
+    	    	    		/*
+    	    	    		 * Restituiamo gli ultimi Sample e li eliminiamo
+    	    	    		 */
+        	    	    	ArrayList<JsonObject> samples= this.sampleChannelQueue.get(channel);
+        	    	    	System.out.println(samples.toString());
+        	    	    	
+        	    	    	if(!samples.isEmpty()) {
+        	    	    		routingContext
+    								.response()
+    								.setStatusCode(200)
+    								.end(samples.toString());
+    								this.sampleChannelQueue.get(channel).clear();
+    	            	    	 
+    							
+        	    	    	}else {
+        	    	    		routingContext
+	    	    	    	 	.response()
+	    	    	    	 	.setStatusCode(200)
+	    	    	    	 	.end("NO-NEW-SAMPLE");
+        	    	    	}
+        	    	    	
+    	    	    	}
+    	    	    }); 
+    	    	 
+    	    	    
+    	    	    routerFactory.addHandlerByOperationId("allsamples", routingContext ->{
+    	    	    	String channel= routingContext.request().getParam("idcanale");
+    	    	    	/*
+    	    	    	 * Fallimento se non il parametro non è stato inserito o non esiste il canale selezionato
+    	    	    	 */
+    	    	    	if(channel==null || !this.sampleChannelQueue.containsKey(channel))
+    	    	    		routingContext
+			    	   	      .response()
+				              .setStatusCode(400)
+				              .end();
+    	    	    	else {
+    	    	    		/*
+    	    	    		 * Restituiamo tutti i Sample di un determinato canale
+    	    	    		 */
+    	    	    		JsonObject q= new JsonObject().put("channel", channel);
+        	    	    	this.mongoClient.find("channel-"+channel,q, res-> {
+        	    	    		/*
+        	    	    		 * Successo nel trovare i sample nel db
+        	    	    		 */
+        	    	    		if(res.succeeded()) {
+        	    	    			routingContext
+    								.response()
+    								.setStatusCode(200)
+    								.end(res.result().toString());
+        	    	    		}
+        	    	    		/*
+        	    	    		 * Caso di fallimento
+        	    	    		 */
+        	    	    		else {
+        	    	    			routingContext
+      			    	   	      .response()
+      				              .setStatusCode(400)
+      				              .end("No-sample-find");
+        	    	    		}
+        	    	    	});
+        	    	    	
+    	    	    	}
+    	    	    }); 
+    	    	 
     	    	/*
     	    	 * Dalla dashboard dobbiamo capire se si sta cercando di entrare come admin o user. 
     	    	 * Da definire i dati comunicati dalla dashboard, questo è solo un test.
@@ -389,8 +478,6 @@ public class MainVerticle extends AbstractVerticle {
 				})
 	    		  .subscribe(""+i, 2);	    
 	    });
-	    
-  
   }
   
   

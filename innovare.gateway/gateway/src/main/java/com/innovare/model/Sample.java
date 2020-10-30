@@ -12,6 +12,7 @@ public class Sample implements Comparable<Sample>{
 	 */
 	
 	private String timestamp;
+	private String channel="defaultValue";
 	private int misure;	//per ora solo questo
 	
 	public Sample() {
@@ -23,6 +24,15 @@ public class Sample implements Comparable<Sample>{
 		this.misure=30;//solo per il testing
 	}
 	
+	public Sample(String channel) {
+		this.timestamp= (new Timestamp(System.currentTimeMillis())).toString();
+		this.channel=channel;
+		/*
+		 * Durante l'instanziamento del Sample, deve essere avviata la cattura delle informazioni 
+		 * dai sensori, in modo da riempirne i della misura. Questo può ritardare durante l'instanziamento.
+		 */
+		this.misure=30;//solo per il testing
+	}
 
 	public String getTimestamp() {
 		return timestamp;
@@ -39,19 +49,22 @@ public class Sample implements Comparable<Sample>{
 	public void setMisure(int misure) {
 		this.misure = misure;
 	}
-
-	@Override
-	public String toString() {
-		return "Sample [timestamp=" + timestamp + ", misure=" + misure + "]";
+	
+	
+	public String getChannel() {
+		return channel;
 	}
 
 
-	/*@Override
-	public int compare(Sample o1, Sample o2) {
-		//Confronto sui timestamp per ordinarli
-		return o1.getTimestamp().compareTo(o2.getTimestamp());
-		
-	}*/
+	public void setChannel(String channel) {
+		this.channel = channel;
+	}
+
+
+	@Override
+	public String toString() {
+		return "Sample [timestamp=" + timestamp + ", channel=" + channel + ", misure=" + misure + "]";
+	}
 
 
 	@Override

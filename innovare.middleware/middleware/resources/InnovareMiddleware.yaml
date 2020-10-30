@@ -38,6 +38,69 @@ paths:
         "200":
           description: Login is done correctly.
       operationId: login
+  /allsample/{idcanale}:
+    get:
+      parameters:
+      - name: idcanale
+        in: path
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Sample'
+          description: Restituisce tutti i Sample di un dato canale.
+      operationId: allsamples
+      summary: Restituisce tutti i Sample di un certo canale
+      description: Id del canale selezionato.
+    parameters:
+    - name: idcanale
+      in: path
+      required: true
+  /lastsample/{idcanale}:
+    get:
+      parameters:
+      - name: idcanale
+        schema:
+          type: string
+        in: path
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sample'
+          description: Json of the last misure.
+      operationId: lastsample
+      description: |
+        Return json of the last misure.
+    parameters:
+    - name: idcanale
+      in: path
+      required: true
+  /lastsamples/{idcanale}:
+    get:
+      parameters:
+      - name: idcanale
+        schema:
+          type: string
+        in: path
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Sample'
+          description: Ultimi Samples del canale che non sono ancora stati visualizzati.
+      operationId: lastsamples
+      description: Id Channel di riferimento.
 components:
   schemas:
     ConfigurationItem:
@@ -99,3 +162,11 @@ components:
         password: iUPse124#
         role: ADMIN
         username: administrator
+    Sample:
+      description: Dato di misurazione di test.
+      type: object
+      example: |-
+        {
+            "timestamp": "2020-10-16 16:13:11.781",
+            "misure": 30,
+        }
