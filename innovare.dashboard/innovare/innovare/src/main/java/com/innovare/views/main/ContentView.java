@@ -25,6 +25,14 @@ import com.innovare.views.storico.StoricoView;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.innovare.ui.utils.Bottom;
+import com.innovare.ui.utils.FlexBoxLayout;
+import com.innovare.ui.utils.FontSize;
+import com.innovare.ui.utils.Horizontal;
+import com.innovare.ui.utils.IconSize;
+import com.innovare.ui.utils.Right;
+import com.innovare.ui.utils.TextColor;
+import com.innovare.ui.utils.UIUtils;
 import com.innovare.utils.Role;
 import com.innovare.views.configurazione.ConfigurazioneView;
 import com.innovare.views.innovare.InnovareView;
@@ -84,16 +92,16 @@ public class ContentView extends MainView{
 
 	private Tab[] createMenuItems() {
 		final List<Tab> tabs = new ArrayList<>(4);
-		 tabs.add(createTab(VaadinIcon.HOME, "Home", HomeView.class));
-		 tabs.add(createTab(VaadinIcon.ARCHIVE, "Storico", StoricoView.class));
-		 tabs.add(createTab(VaadinIcon.QUESTION, "About", InnovareView.class));
+		 tabs.add(createTab(VaadinIcon.HOME_O, "Home", HomeView.class));
+		 tabs.add(createTab(VaadinIcon.ARCHIVES, "Storico", StoricoView.class));
+		 tabs.add(createTab(VaadinIcon.QUESTION_CIRCLE_O, "About", InnovareView.class));
 		 VaadinSession vs = VaadinSession.getCurrent();
 		 String role = null;
 		 if(vs != null) {
 			 role = (String) vs.getAttribute("role");
 		 }
 		 if (role != null && role.equals(Role.ADMIN)) {
-			 tabs.add(createTab(VaadinIcon.COG, "Configurazione",ConfigurazioneView.class));
+			 tabs.add(createTab(VaadinIcon.COG_O, "Configurazione",ConfigurazioneView.class));
 		 }
 		 final String contextPath = VaadinServlet.getCurrent().getServletContext().getContextPath();
 		 final Tab logoutTab = createTab(createLogoutLink(contextPath));
@@ -103,7 +111,7 @@ public class ContentView extends MainView{
 	}
 
 	private static Anchor createLogoutLink(String contextPath) {
-			final Anchor a = populateLink(new Anchor(), VaadinIcon.ARROW_RIGHT, "Logout");
+			final Anchor a = populateLink(new Anchor(), VaadinIcon.ARROW_CIRCLE_RIGHT_O, "Logout");
 			a.setHref(contextPath + "/login");
 			return a;
 	 }
@@ -119,10 +127,19 @@ public class ContentView extends MainView{
 	 }
 	 
 	 private static <T extends HasComponents> T populateLink(T a, VaadinIcon icon, String title) {
-			a.add(icon.create());
-			a.add(title);
+			a.add(createContent(icon, title));
+			//a.add(title);
 			return a;
 	 }
+	 
+	 private static FlexBoxLayout createContent(VaadinIcon icon, String title) {
+			FlexBoxLayout header = new FlexBoxLayout(
+					UIUtils.createIcon(IconSize.M, TextColor.BODY, icon),
+					UIUtils.createLabel(FontSize.M, title));
+			header.setAlignItems(FlexComponent.Alignment.CENTER);
+			header.setSpacing(Right.L);
+			return header;
+		}
 	 
 	 @Override
 	    protected void afterNavigation() {

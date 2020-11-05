@@ -11,45 +11,22 @@ public class Classification {
 
 	private Status status;
 	private LocalDate date;
+	private int percCarenza;
+	private int percSane;
+	private int percEccesso;
 
 	public enum Status {
-		CARENZA(VaadinIcon.CLOCK, "Carenza",
-				"Piante con carenza di acqua",
-				BadgeColor.CONTRAST), NORMALE(VaadinIcon.QUESTION_CIRCLE,
-				"Sane", "Piante sane",
-				BadgeColor.NORMAL), ECCESSO(VaadinIcon.CHECK,
-				"Eccesso", "Piante con eccesso di acqua",
-				BadgeColor.ERROR);
+		CARENZA("Carenza",
+				"Piante con carenza di acqua"), 
+		NORMALE("Sane", "Piante sane"), 
+		ECCESSO("Eccesso", "Piante con eccesso di acqua");
 
-		private VaadinIcon icon;
 		private String name;
 		private String desc;
-		private BadgeColor theme;
 
-		Status(VaadinIcon icon, String name, String desc, BadgeColor theme) {
-			this.icon = icon;
+		Status(String name, String desc) {
 			this.name = name;
 			this.desc = desc;
-			this.theme = theme;
-		}
-
-		public Icon getIcon() {
-			Icon icon;
-			switch (this) {
-				case CARENZA:
-					icon = UIUtils.createSecondaryIcon(this.icon);
-					break;
-				case NORMALE:
-					icon = UIUtils.createPrimaryIcon(this.icon);
-					break;
-				case ECCESSO:
-					icon = UIUtils.createSuccessIcon(this.icon);
-					break;
-				default:
-					icon = UIUtils.createErrorIcon(this.icon);
-					break;
-			}
-			return icon;
 		}
 
 		public String getName() {
@@ -59,23 +36,40 @@ public class Classification {
 		public String getDesc() {
 			return desc;
 		}
-
-		public BadgeColor getTheme() {
-			return theme;
-		}
 	}
 
-	public Classification(Status status, LocalDate date) {
+	
+
+	public Classification(Status status, LocalDate date, int percCarenza, int percSane, int percEccesso) {
+		super();
 		this.status = status;
 		this.date = date;
+		this.percCarenza = percCarenza;
+		this.percSane = percSane;
+		this.percEccesso = percEccesso;
 	}
 
-	public Status getStatus() {
-		return status;
+
+	public String getStatus() {
+		return status.name;
 	}
 
 
 	public LocalDate getDate() {
 		return date;
 	}
+
+	public int getPercCarenza() {
+		return percCarenza;
+	}
+
+	public int getPercSane() {
+		return percSane;
+	}
+
+	public int getPercEccesso() {
+		return percEccesso;
+	}
+
+	
 }

@@ -2,10 +2,18 @@ package com.innovare.views.home;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.charts.Chart;
+import com.vaadin.flow.component.charts.model.AxisTitle;
+import com.vaadin.flow.component.charts.model.AxisType;
 import com.vaadin.flow.component.charts.model.ChartType;
 import com.vaadin.flow.component.charts.model.Configuration;
+import com.vaadin.flow.component.charts.model.DataSeries;
+import com.vaadin.flow.component.charts.model.DataSeriesItem;
+import com.vaadin.flow.component.charts.model.DateTimeLabelFormats;
 import com.vaadin.flow.component.charts.model.ListSeries;
+import com.vaadin.flow.component.charts.model.PlotOptionsSpline;
+import com.vaadin.flow.component.charts.model.Tooltip;
 import com.vaadin.flow.component.charts.model.XAxis;
+import com.vaadin.flow.component.charts.model.YAxis;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -16,6 +24,11 @@ import com.vaadin.flow.router.Route;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Random;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import com.innovare.ui.utils.BorderRadius;
 import com.innovare.ui.utils.Bottom;
@@ -33,6 +46,7 @@ import com.innovare.ui.utils.UIUtils;
 import com.innovare.ui.utils.Uniform;
 import com.innovare.views.main.ContentView;
 import com.vaadin.flow.router.RouteAlias;
+import com.vaadin.flow.server.Command;
 
 
 @CssImport("./styles/views/main/main-view.css")
@@ -61,7 +75,7 @@ public class HomeView extends Div {
     
     private Component createTemperature() {
 		FlexBoxLayout temperatures = new FlexBoxLayout(
-				createHeader(VaadinIcon.SUN_O, "Temperatura"),
+				createHeader(VaadinIcon.SUN_O, "Temperatura Ambientale"),
 				createAreaChart());
 		temperatures.setBoxSizing(BoxSizing.BORDER_BOX);
 		temperatures.setDisplay(Display.BLOCK);
@@ -82,24 +96,51 @@ public class HomeView extends Div {
 		return header;
 	}
     
+   
+    
     private Component createAreaChart() {
-		Chart chart = new Chart(ChartType.AREASPLINE);
+    	final Random random = new Random();
 
-		Configuration conf = chart.getConfiguration();
-		conf.setTitle(DATE_FORMAT.format(new Date()));
-		conf.getLegend().setEnabled(false);
+        final Chart chart = new Chart();
 
-		XAxis xAxis = new XAxis();
-		
-		xAxis.setCategories("00:00", "01:00", "02:00", "03:00", "04:00", "05:00", "06:00",
-				"07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00",
-				"15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00", "23:00");
-		conf.addxAxis(xAxis);
+        final Configuration configuration = chart.getConfiguration();
+        configuration.getChart().setType(ChartType.SPLINE);
+        configuration.getTitle().setText(DATE_FORMAT.format(new Date()));
+        
+        
 
-		conf.getyAxis().setTitle("Temperatura [°C]");
+        XAxis xAxis = configuration.getxAxis();
+        xAxis.setType(AxisType.DATETIME);
+        xAxis.setTickPixelInterval(150);
 
-		conf.addSeries(new ListSeries(15, 15, 13, 12, 11, 12, 14, 15,
-				15, 19, 20, 21, 25, 26, 26, 26, 27, 25, 23, 23, 22, 20, 19, 19));
+        YAxis yAxis = configuration.getyAxis();
+        yAxis.setTitle(new AxisTitle("Temperatura [°C]"));
+        yAxis.setMin(0);
+
+        configuration.getTooltip().setEnabled(false);
+        configuration.getLegend().setEnabled(false);
+
+        final DataSeries series = new DataSeries();
+        series.setPlotOptions(new PlotOptionsSpline());
+        series.setName("Temperatura");
+        
+        
+        for (int i = -24; i <= 0; i++) {
+            series.add(new DataSeriesItem(System.currentTimeMillis() + i * 3600000, 15 + random.nextInt(15)));
+        }
+
+        configuration.setSeries(series);
+        
+        configuration.getTooltip().setEnabled(true);
+        configuration.getTooltip().setValueSuffix("°C");
+        configuration.getTooltip().setXDateFormat("%d/%m/%Y %H:%M");;
+       
+
+        runWhileAttached(chart, () -> {
+                final long x = System.currentTimeMillis();
+                final double y = 15 + random.nextInt(15);
+                series.add(new DataSeriesItem(x, y), true, true);
+        }, 3600000, 1000);
 
 		FlexBoxLayout card = new FlexBoxLayout(chart);
 		card.setBackgroundColor(LumoStyles.Color.BASE_COLOR);
@@ -110,5 +151,25 @@ public class HomeView extends Div {
 		card.setShadow(Shadow.XS);
 		return card;
 	}
+    
+    public static void runWhileAttached(Component component, Command task,
+            final int interval, final int initialPause) {
+        component.addAttachListener(event -> {
+            ScheduledExecutorService executor = Executors
+                    .newScheduledThreadPool(1);
+
+            component.getUI().ifPresent(ui -> ui.setPollInterval(interval));
+
+            final ScheduledFuture<?> scheduledFuture = executor
+                    .scheduleAtFixedRate(() -> {
+                        component.getUI().ifPresent(ui -> ui.access(task));
+                    }, initialPause, interval, TimeUnit.MILLISECONDS);
+
+            component.addDetachListener(detach -> {
+                scheduledFuture.cancel(true);
+                detach.getUI().setPollInterval(-1);
+            });
+        });
+    }
 
 }

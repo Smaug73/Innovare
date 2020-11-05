@@ -1,5 +1,6 @@
 package com.innovare.ui.utils;
 
+
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -9,6 +10,8 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
+
+import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
@@ -260,6 +263,16 @@ public class UIUtils {
 		label.addClassName(LumoStyles.Heading.H6);
 		return label;
 	}
+	
+	public static String formatUnits(int units) {
+		return NumberFormat.getIntegerInstance().format(units);
+	}
+
+	public static Label createPercentageLabel(int units) {
+		Label label = new Label(formatUnits(units));
+		label.addClassName(LumoStyles.FontFamily.MONOSPACE);
+		return label;
+	}
 
 	
 
@@ -486,6 +499,7 @@ public class UIUtils {
 			component.getElement().getStyle().set("color", textColor.getValue());
 		}
 	}
+	
 
 	public static void setTextOverflow(TextOverflow textOverflow, Component... components) {
 		for (Component component : components) {

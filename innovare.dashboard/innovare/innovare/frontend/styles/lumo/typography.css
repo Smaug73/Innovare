@@ -39,6 +39,7 @@
   color: var(--lumo-success-text-color);
 }
 
+
 .success-contrast-text {
   color: var(--lumo-success-contrast-color);
 }

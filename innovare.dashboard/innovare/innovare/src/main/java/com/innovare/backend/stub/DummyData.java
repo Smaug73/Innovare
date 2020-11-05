@@ -11,15 +11,7 @@ public class DummyData {
 	private DummyData() {
 	}
 
-	static {
-		long i = 0;
-
-		/* === CLASSIFICATIONS ==== */
-
-		for (i = 0; i < 40; i++) {
-			CLASSIFICATIONS.put(i,
-					new Classification(getClassificationStatus(), getDate()));
-		}
+	public static void createClassifications() {
 	}
 
 	
@@ -40,4 +32,5 @@ public class DummyData {
 		return LocalDate.now().minusDays(random.nextInt(20));
 	}
 
+	
 }
