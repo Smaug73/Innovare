@@ -1,7 +1,6 @@
 package com.innovare.model;
 
 import java.sql.Timestamp;
-import java.util.Comparator;
 
 public class Sample implements Comparable<Sample>{
 	
@@ -11,12 +10,12 @@ public class Sample implements Comparable<Sample>{
 	 * specifiche per uno specifico sample.
 	 */
 	
-	private String timestamp;
+	private long timestamp;
 	private String channel="defaultValue";
-	private int misure;	//per ora solo questo
+	private float misure;	//per ora solo questo
 	
 	public Sample() {
-		this.timestamp= (new Timestamp(System.currentTimeMillis())).toString();
+		this.timestamp= System.currentTimeMillis();
 		/*
 		 * Durante l'instanziamento del Sample, deve essere avviata la cattura delle informazioni 
 		 * dai sensori, in modo da riempirne i della misura. Questo può ritardare durante l'instanziamento.
@@ -25,7 +24,7 @@ public class Sample implements Comparable<Sample>{
 	}
 	
 	public Sample(String channel) {
-		this.timestamp= (new Timestamp(System.currentTimeMillis())).toString();
+		this.timestamp= System.currentTimeMillis();
 		this.channel=channel;
 		/*
 		 * Durante l'instanziamento del Sample, deve essere avviata la cattura delle informazioni 
@@ -34,15 +33,15 @@ public class Sample implements Comparable<Sample>{
 		this.misure=30;//solo per il testing
 	}
 
-	public String getTimestamp() {
+	public long getTimestamp() {
 		return timestamp;
 	}
 
-	public void setTimestamp(String timestamp) {
+	public void setTimestamp(long timestamp) {
 		this.timestamp = timestamp;
 	}
 
-	public int getMisure() {
+	public float getMisure() {
 		return misure;
 	}
 
@@ -70,7 +69,11 @@ public class Sample implements Comparable<Sample>{
 	@Override
 	public int compareTo(Sample o) {
 		//Confronto sui timestamp per ordinarli
-			return this.getTimestamp().compareTo(o.getTimestamp());
+		if(this.getTimestamp()> o.getTimestamp())
+			return 1;
+		else if(this.getTimestamp()== o.getTimestamp())
+			return 0;
+		else return -1;
 	}
 	
 	
