@@ -1,18 +1,32 @@
 package com.innovare.views.login;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.login.LoginForm;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.orderedlayout.FlexLayout;
+import com.vaadin.flow.component.orderedlayout.FlexLayout.ContentAlignment;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.BeforeEvent;
 import com.vaadin.flow.router.HasUrlParameter;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import static com.vaadin.flow.server.VaadinSession.getCurrent;
+
+import com.innovare.ui.utils.BoxSizing;
+import com.innovare.ui.utils.FlexBoxLayout;
+import com.innovare.ui.utils.LumoStyles;
+import com.innovare.utils.Authenticator;
+import com.innovare.utils.Role;
+import com.innovare.utils.User;
 import com.innovare.views.main.MainView;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -27,59 +41,41 @@ import org.apache.http.impl.client.HttpClients;
 @Route(value = "login", layout = MainView.class)
 @PageTitle("Login")
 @CssImport("./styles/views/login/login-view.css")
-public class LoginView extends Composite<Div>{
+public class LoginView extends Composite<Div> implements BeforeEnterObserver{
 
-	public static final String ATTRIBUTE_USERNAME = "username";
-	public static final String ATTRIBUTE_IS_AUTH = "auth";
+	
 
 	private final LoginForm loginForm = new LoginForm();
 	private String parameter = "";
 
 
 	public LoginView() {
+		FlexBoxLayout content = new FlexBoxLayout(loginForm);
+		content.setAlignItems(FlexComponent.Alignment.CENTER);
+		content.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
+		loginForm.setForgotPasswordButtonVisible(false);
 		loginForm.addLoginListener(event -> {
-			VaadinSession vaadinSession = getCurrent();
 	
 			String username = event.getUsername();
 			String password = event.getPassword();
     
-			URIBuilder builder = new URIBuilder();
-			builder.setScheme("http").setHost("localhost:8888").setPath("/login")
-			.setParameter("username", username)
-			.setParameter("password", password);
-	
-			URI uri = null;
-			try {
-				uri = builder.build();
-			} catch (URISyntaxException e) {
-				e.printStackTrace();
+			if(Authenticator.authenticate(username, password)) { 
+				UI.getCurrent().navigate(parameter);
 			}
-	
-			HttpGet get = new HttpGet(uri);
-			CloseableHttpClient client = HttpClients.createDefault();
-	
-			try(CloseableHttpResponse response = client.execute(get)){
-				String status = response.getStatusLine().toString();
-				System.out.println(status);
-				if(status.contains("200")) {
-					System.out.println("OK!");
-					vaadinSession.setAttribute(ATTRIBUTE_USERNAME , username);
-					vaadinSession.setAttribute(ATTRIBUTE_IS_AUTH , Boolean.TRUE);
-					UI.getCurrent().navigate(parameter);
-			
-				}else
-				{
-					System.out.println("Errore");
-					loginForm.setError( true );
-				}
-			} catch (ClientProtocolException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
-				System.out.println("Errore");
-			}
+			else loginForm.setError( true );
   
 		});
-		getContent().add(loginForm);
+		getContent().add(content);
+	}
+	
+
+	@Override
+	public void beforeEnter(BeforeEnterEvent event) {
+		VaadinSession vs = getCurrent();
+		if(vs != null) {
+			vs.setAttribute("username", null);
+			vs.setAttribute("auth", false);
+			vs.setAttribute("role", null);
+		}
 	}
 }
