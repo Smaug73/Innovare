@@ -69,6 +69,7 @@ public class MainVerticle extends AbstractVerticle {
 	private HashMap<String,ArrayList<JsonObject>> sampleChannelQueue;
 	private MongoClient mongoClient;
 	
+	private boolean logged=false;
 	
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
@@ -121,7 +122,7 @@ public class MainVerticle extends AbstractVerticle {
 	  //Creazione client MQTT per cattura log dei gateway
 	  MqttClient clientLog= MqttClient.create(vertx);
 	  clientLog.connect(1883, "localhost", s -> {
-			 
+		  
 		  clientLog.publishHandler(c -> {
 	    		//Ogni qual volta viene pubblicata una misura la stampiamo e la salviamo.
 				  System.out.println("There are new message in topic: " + c.topicName());
