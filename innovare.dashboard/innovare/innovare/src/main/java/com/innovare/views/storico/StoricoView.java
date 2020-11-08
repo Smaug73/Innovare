@@ -333,8 +333,9 @@ public class StoricoView extends Div{
         
 
         DataSeries dataSeries = new DataSeries("Variazione Temperatura");
+        if(samples == null) samples = new ArrayList<Sample>();
         for (Sample sample : samples) {
-            dataSeries.add(new DataSeriesItem(sample.getTimestamp(), sample.getMisure()));
+            dataSeries.add(new DataSeriesItem(sample.getTimestamp(), sample.getMisure(), sample.getMisure()));
         }
         configuration.setSeries(dataSeries);
         

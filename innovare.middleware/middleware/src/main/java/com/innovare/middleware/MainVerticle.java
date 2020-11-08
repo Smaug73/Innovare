@@ -70,6 +70,7 @@ public class MainVerticle extends AbstractVerticle {
 	private MongoClient mongoClient;
 	
 	private boolean logged=false;
+	private boolean admin=false;
 	
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
@@ -204,11 +205,12 @@ public class MainVerticle extends AbstractVerticle {
     	    	 
     	    	 mongoClient.findOne("Utenti", q, null , res -> {
     	    		 if (res.succeeded()) {
-    	    			 System.out.println("Conferma login effettuato per utente: user: "+username);
+    	    			 System.out.println("Conferma login effettuato per utente: user: "+username);			 
     	    			 routingContext
     	    	    	 	.response()
     	    	    	 	.setStatusCode(200)
-    	    	    	 	.end("Conferma login effettuato per utente!");	 
+    	    	    	 	.end(res.result().getString("role"));	
+    	    			 System.out.println(res.result().getString("role"));
     	    		 } else {
 		    	   	      res.cause().printStackTrace();
 		    	   	      
@@ -277,9 +279,10 @@ public class MainVerticle extends AbstractVerticle {
     	    	    		 * Restituiamo gli ultimi Sample e li eliminiamo
     	    	    		 */
         	    	    	ArrayList<JsonObject> samples= this.sampleChannelQueue.get(channel);
-        	    	    	System.out.println(samples.toString());
+        	    	    	
         	    	    	
         	    	    	if(!samples.isEmpty()) {
+        	    	    		System.out.println("Samples inviati: "+samples.toString());
         	    	    		routingContext
     								.response()
     								.setStatusCode(200)
@@ -288,15 +291,47 @@ public class MainVerticle extends AbstractVerticle {
     	            	    	 
     							
         	    	    	}else {
+        	    	    		System.out.println("No new Value");
         	    	    		routingContext
 	    	    	    	 	.response()
 	    	    	    	 	.setStatusCode(200)
-	    	    	    	 	.end("NO-NEW-SAMPLE");
+	    	    	    	 	.end();
         	    	    	}
         	    	    	
     	    	    	}
     	    	    }); 
     	    	 
+    	    	    routerFactory.addHandlerByOperationId("daysamples", routingContext ->{
+    	    	    	String channel= routingContext.request().getParam("idcanale");
+    	    	    	if(channel==null || !this.sampleChannelQueue.containsKey(channel))
+    	    	    		routingContext
+			    	   	      .response()
+				              .setStatusCode(400)
+				              .end();
+    	    	    	else {
+    	    	    		/*
+    	    	    		 * Restituiamo i Samples presenti nella queue ma non li eliminiamo.
+    	    	    		 */
+        	    	    	ArrayList<JsonObject> samples= this.sampleChannelQueue.get(channel);
+        	    	    	
+        	    	    	
+        	    	    	if(!samples.isEmpty()) {
+        	    	    		System.out.println("Samples inviati: "+samples.toString());
+        	    	    		routingContext
+    								.response()
+    								.setStatusCode(200)
+    								.end(samples.toString());
+    							
+        	    	    	}else {
+        	    	    		System.out.println("No new Value");
+        	    	    		routingContext
+	    	    	    	 	.response()
+	    	    	    	 	.setStatusCode(200)
+	    	    	    	 	.end();
+        	    	    	}
+        	    	    	
+    	    	    	}
+    	    	    }); 
     	    	    
     	    	    routerFactory.addHandlerByOperationId("allsamples", routingContext ->{
     	    	    	String channel= routingContext.request().getParam("idcanale");
@@ -453,6 +488,7 @@ public class MainVerticle extends AbstractVerticle {
 	    		  System.out.println("Content(as string) of the message: " + c.payload().toString());
 	    		  System.out.println("QoS: " + c.qosLevel());	
 	    		  System.out.println("LOG-GATEWAY: "+c.payload().toString());
+	    		  
 	    		 /* 
 	    		  * Il contenuto deve essere salvato nel database e nella PriorityQueue
 	    		  */

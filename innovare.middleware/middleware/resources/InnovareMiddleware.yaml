@@ -101,6 +101,27 @@ paths:
           description: Ultimi Samples del canale che non sono ancora stati visualizzati.
       operationId: lastsamples
       description: Id Channel di riferimento.
+  /daysamples/{idcanale}:
+    summary: Ritorna i Samples della giornata corrente
+    get:
+      parameters:
+      - name: idcanale
+        in: path
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Sample'
+          description: Samples of the current day.
+      operationId: daysamples
+    parameters:
+    - name: idcanale
+      in: path
+      required: true
 components:
   schemas:
     ConfigurationItem:
@@ -165,8 +186,7 @@ components:
     Sample:
       description: Dato di misurazione di test.
       type: object
-      example: |-
-        {
-            "timestamp": "2020-10-16 16:13:11.781",
-            "misure": 30,
-        }
+      example:
+        timestamp: 2020-10-16 16:13:11.781
+        misure: 30
+        channel: "0"

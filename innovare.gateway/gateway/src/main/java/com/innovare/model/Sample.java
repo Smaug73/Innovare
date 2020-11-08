@@ -1,6 +1,7 @@
 package com.innovare.model;
 
 import java.sql.Timestamp;
+import java.util.Random;
 
 public class Sample implements Comparable<Sample>{
 	
@@ -20,7 +21,8 @@ public class Sample implements Comparable<Sample>{
 		 * Durante l'instanziamento del Sample, deve essere avviata la cattura delle informazioni 
 		 * dai sensori, in modo da riempirne i della misura. Questo può ritardare durante l'instanziamento.
 		 */
-		this.misure=30;//solo per il testing
+		Random random = new Random();
+		this.misure=random.nextFloat()*45;//solo per il testing
 	}
 	
 	public Sample(String channel) {
@@ -30,7 +32,8 @@ public class Sample implements Comparable<Sample>{
 		 * Durante l'instanziamento del Sample, deve essere avviata la cattura delle informazioni 
 		 * dai sensori, in modo da riempirne i della misura. Questo può ritardare durante l'instanziamento.
 		 */
-		this.misure=30;//solo per il testing
+		Random random = new Random();
+		this.misure=random.nextFloat()*45;//solo per il testing
 	}
 
 	public long getTimestamp() {

@@ -22,7 +22,13 @@ import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Random;
 import java.util.concurrent.Executors;
@@ -30,6 +36,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.http.client.utils.URIBuilder;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.ui.utils.BorderRadius;
 import com.innovare.ui.utils.Bottom;
 import com.innovare.ui.utils.BoxSizing;
@@ -44,6 +54,7 @@ import com.innovare.ui.utils.TextColor;
 import com.innovare.ui.utils.Top;
 import com.innovare.ui.utils.UIUtils;
 import com.innovare.ui.utils.Uniform;
+import com.innovare.utils.Sample;
 import com.innovare.views.main.ContentView;
 import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.server.Command;
@@ -59,9 +70,42 @@ public class HomeView extends Div {
 	public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yyyy");
 	public static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm");
 
+	private ArrayList<Sample> samples;
+	private HttpClient client;
+	private URIBuilder builder;
+	
     public HomeView() {
         setId("home-view");
+        
+        
+        /*
+         * Richiesta dati
+         */
+        builder = new URIBuilder();
+		builder.setScheme("http").setHost("localhost:8888").setPath("/daysamples/1");
+   	    client = HttpClient.newHttpClient();
+   	        HttpRequest request;
+   			try {
+   				request = HttpRequest.newBuilder()
+   				        .uri(builder.build())
+   				        .build();
+   				HttpResponse<String> response = client.send(request,
+   				         HttpResponse.BodyHandlers.ofString());
+   				
+   				samples = new ObjectMapper().readValue(response.body(), new TypeReference<ArrayList<Sample>>(){});
+   			} catch (IOException e) {
+   				e.printStackTrace();
+   			} catch (InterruptedException e) {
+   				e.printStackTrace();
+   			} catch (URISyntaxException e) {
+   				e.printStackTrace();
+   			}
+        
+        
+        
+        
         add(createContent());
+        
     }
     
     private Component createContent() {
@@ -111,7 +155,7 @@ public class HomeView extends Div {
 
         XAxis xAxis = configuration.getxAxis();
         xAxis.setType(AxisType.DATETIME);
-        xAxis.setTickPixelInterval(150);
+        xAxis.setTickPixelInterval(75);
 
         YAxis yAxis = configuration.getyAxis();
         yAxis.setTitle(new AxisTitle("Temperatura [°C]"));
@@ -124,9 +168,9 @@ public class HomeView extends Div {
         series.setPlotOptions(new PlotOptionsSpline());
         series.setName("Temperatura");
         
-        
-        for (int i = -24; i <= 0; i++) {
-            series.add(new DataSeriesItem(System.currentTimeMillis() + i * 3600000, 15 + random.nextInt(15)));
+        if(samples == null) samples = new ArrayList<Sample>();
+        for (Sample sample : samples) {
+            series.add(new DataSeriesItem(sample.getTimestamp(),  sample.getMisure()));
         }
 
         configuration.setSeries(series);
@@ -137,11 +181,37 @@ public class HomeView extends Div {
        
 
         runWhileAttached(chart, () -> {
-                final long x = System.currentTimeMillis();
-                final double y = 15 + random.nextInt(15);
-                series.add(new DataSeriesItem(x, y), true, true);
-        }, 3600000, 1000);
-
+        	builder.setScheme("http").setHost("localhost:8888").setPath("/lastsample/1");   
+        	HttpRequest request;
+   			try {
+   				request = HttpRequest.newBuilder()
+   				        .uri(builder.build())
+   				        .build();
+   				HttpResponse<String> response = client.send(request,
+   				         HttpResponse.BodyHandlers.ofString());
+   				//Controllo sul array vuoti
+   				System.out.println("BODY: "+response.body());
+   				//if(!response.body().isEmpty() && !response.body().equalsIgnoreCase("NO-NEW-SAMPLE")) {
+	   				/*ArrayList<Sample> newSamples = new ObjectMapper().readValue(response.body(), new TypeReference<ArrayList<Sample>>(){});
+	   				for(Sample s: newSamples) {
+	   					this.samples.add(s);
+	   					series.add(new DataSeriesItem(s.getTimestamp(), s.getMisure()), true, true);
+	   				//}*/
+   				//}
+   					Sample newSam= new ObjectMapper().readValue( response.body(),Sample.class);
+   					this.samples.add(newSam);
+   					series.add(new DataSeriesItem(newSam.getTimestamp(),  newSam.getMisure()));
+   				
+   			} catch (IOException e) {
+   				e.printStackTrace();
+   			} catch (InterruptedException e) {
+   				e.printStackTrace();
+   			} catch (URISyntaxException e) {
+   				e.printStackTrace();
+   			}
+        	     
+        }, 15*1000, 10000);
+		
 		FlexBoxLayout card = new FlexBoxLayout(chart);
 		card.setBackgroundColor(LumoStyles.Color.BASE_COLOR);
 		card.setBorderRadius(BorderRadius.S);
@@ -173,3 +243,49 @@ public class HomeView extends Div {
     }
 
 }
+
+
+
+
+
+
+/*
+ * 	public class SplineUpdatingEachSecond extends AbstractChartExample {
+
+    @Override public void initDemo() {
+        final Random random = new Random();
+
+        final Chart chart = new Chart();
+
+        final Configuration configuration = chart.getConfiguration();
+        configuration.getChart().setType(ChartType.SPLINE);
+        configuration.getTitle().setText("Live random data");
+
+        XAxis xAxis = configuration.getxAxis();
+        xAxis.setType(AxisType.DATETIME);
+        xAxis.setTickPixelInterval(150);
+
+        YAxis yAxis = configuration.getyAxis();
+        yAxis.setTitle(new AxisTitle("Value"));
+
+        configuration.getTooltip().setEnabled(false);
+        configuration.getLegend().setEnabled(false);
+
+        final DataSeries series = new DataSeries();
+        series.setPlotOptions(new PlotOptionsSpline());
+        series.setName("Random data");
+        for (int i = -19; i <= 0; i++) {
+            series.add(new DataSeriesItem(System.currentTimeMillis() + i * 1000, random.nextDouble()));
+        }
+
+        configuration.setSeries(series);
+
+        runWhileAttached(chart, () -> {
+                final long x = System.currentTimeMillis();
+                final double y = random.nextDouble();
+                series.add(new DataSeriesItem(x, y), true, true);
+        }, 1000, 1000);
+
+        add(chart);
+    }
+}*/

@@ -115,7 +115,7 @@ public class GatewayVerticle extends AbstractVerticle {
 	  Channel chan;
 	  for(int i=0; i<this.numberOfChannel; i++) {
 		  System.out.println("Creazione canale numero: "+(i+1));
-		  chan=new Channel(""+i,10000L);
+		  chan=new Channel(""+i,9000L);
 		  this.mapClient.put(chan,MqttClient.create(vertx));
 		  startingClient(chan);
 	  }
@@ -134,7 +134,7 @@ public class GatewayVerticle extends AbstractVerticle {
 	  /*
 	   * Creazione dell'evento di prelevamento di uno o più sample in un dato Channel
 	   */
-	  long timerId = vertx.setPeriodic(15000, id ->{	
+	  long timerId = vertx.setPeriodic(10000, id ->{	
     	//metodo per la cattura dei dati-- DA DEFINIRE
     	try {
     		ArrayList<Sample> misure= chan.getNewSample();
