@@ -333,6 +333,9 @@ public class MainVerticle extends AbstractVerticle {
     	    	    	}
     	    	    }); 
     	    	    
+    	    	    /*
+    	    	     * Restituiamo tutti i sample di un determinato canale
+    	    	     */
     	    	    routerFactory.addHandlerByOperationId("allsamples", routingContext ->{
     	    	    	String channel= routingContext.request().getParam("idcanale");
     	    	    	/*
