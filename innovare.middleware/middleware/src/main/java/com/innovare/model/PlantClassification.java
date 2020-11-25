@@ -1,45 +1,78 @@
 package com.innovare.model;
 
+
 import java.util.ArrayList;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 /*
  * Modello rappresentante la classificazione di una singola pianta
  */
+//@JsonIgnoreProperties(ignoreUnknown = true)
 public class PlantClassification {
 
-	private String uid; //uid della singola pianta alla quale appartiene la classificazione
-	private ArrayList<Classification> classifications;
+	private String hash; //uid della singola pianta alla quale appartiene la classificazione
+	private Classification classification;
+	private String date;
+	private String originalImage;
+	private String path;
 	
+	public PlantClassification() {}
+
 	
-	public PlantClassification(String uid, ArrayList<Classification> classifications) {
+	public PlantClassification(String hash, Classification classification, String date,
+			String originalImage, String path) {
 		super();
-		this.uid = uid;
-		this.classifications = classifications;
+		this.hash = hash;
+		this.classification = classification;
+		this.date = date;
+		this.originalImage = originalImage;
+		this.path = path;
 	}
 
-
-	public String getUid() {
-		return uid;
+	public String getHash() {
+		return hash;
 	}
 
-
-	public void setUid(String uid) {
-		this.uid = uid;
+	public void setHash(String hash) {
+		this.hash = hash;
 	}
 
-
-	public ArrayList<Classification> getClassifications() {
-		return classifications;
+	public Classification getClassification() {
+		return classification;
 	}
 
-
-	public void setClassifications(ArrayList<Classification> classifications) {
-		this.classifications = classifications;
+	public void setClassifications(Classification classification) {
+		this.classification = classification;
 	}
 
+	public String getDate() {
+		return date;
+	}
+
+	public void setDate(String date) {
+		this.date = date;
+	}
+
+	public String getOriginalImage() {
+		return originalImage;
+	}
+
+	public void setOriginalImage(String originalImage) {
+		this.originalImage = originalImage;
+	}
+
+	public String getPath() {
+		return path;
+	}
+
+	public void setPath(String path) {
+		this.path = path;
+	}
 
 	@Override
 	public String toString() {
-		return "PlantClassification [uid=" + uid + ", classifications=" + classifications + "]";
+		return "PlantClassification [hash=" + hash + ", classification=" + classification + ", date=" + date
+				+ ", originalImage=" + originalImage + ", path=" + path + "]";
 	}
 	
 	

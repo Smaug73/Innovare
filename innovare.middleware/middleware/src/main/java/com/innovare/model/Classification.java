@@ -1,33 +1,53 @@
 package com.innovare.model;
 
+import java.util.ArrayList;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties
 public class Classification {
 	
-	private String classe;
-	private float value;
+	private String hash;
+	private ArrayList<Result> classifications;
 	
-	public Classification(String classe, float value) {
+	
+	public Classification() {
 		super();
-		this.classe = classe;
-		this.value = value;
 	}
-	
-	public String getClasse() {
-		return classe;
+
+
+	public Classification(String hash, ArrayList<Result> classifications) {
+		super();
+		this.hash = hash;
+		this.classifications = classifications;
 	}
-	public void setClasse(String classe) {
-		this.classe = classe;
+
+
+	public String getHash() {
+		return hash;
 	}
-	public float getValue() {
-		return value;
+
+
+	public void setHash(String hash) {
+		this.hash = hash;
 	}
-	public void setValue(float value) {
-		this.value = value;
+
+
+	public ArrayList<Result> getClassifications() {
+		return classifications;
 	}
+
+
+	public void setClassifications(ArrayList<Result> classifications) {
+		this.classifications = classifications;
+	}
+
 
 	@Override
 	public String toString() {
-		return "Classification [classe=" + classe + ", value=" + value + "]";
+		return "Classification [hash=" + hash + ", classifications=" + classifications + "]";
 	}
+	
 	
 	
 

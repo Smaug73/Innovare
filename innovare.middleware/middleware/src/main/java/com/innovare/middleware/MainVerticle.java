@@ -1,5 +1,6 @@
 package com.innovare.middleware;
 
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -8,6 +9,8 @@ import java.util.PriorityQueue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.innovare.control.Classificator;
+import com.innovare.model.PlantClassification;
 import com.innovare.model.User;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
@@ -71,6 +74,7 @@ public class MainVerticle extends AbstractVerticle {
 	
 	private boolean logged=false;
 	private boolean admin=false;
+	private String pathImages="/home/stefano/Scrivania/Lavoro/IMMAGINI-TestPythonScript/test/"; //DA MODIFICARE
 	
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
@@ -262,8 +266,7 @@ public class MainVerticle extends AbstractVerticle {
     	    		
     	    	/*
     	    	 * Restituiamo le ultime misure non ancora mostrate da la DashBoard e le eliminiamo dall'array   
-    	    	 */
-    	    	    
+    	    	 */   	    	    
     	    	    routerFactory.addHandlerByOperationId("lastsamples", routingContext ->{
     	    	    	String channel= routingContext.request().getParam("idcanale");
     	    	    	/*
@@ -374,6 +377,112 @@ public class MainVerticle extends AbstractVerticle {
         	    	    	
     	    	    	}
     	    	    }); 
+    	    	    
+    	    	    /*
+    	    	     * Richiesta di una nuova classificazione utilizzando un modello selezionato
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("newclassification", routingContext ->{
+    	    	    	String modelName= routingContext.request().getParam("modelName");
+    	    	    	/*
+    	    	    	 * Fallimento se non il parametro non è stato inserito o non esiste il canale selezionato
+    	    	    	 */
+    	    	    	if(modelName==null)
+    	    	    		routingContext
+			    	   	      .response()
+				              .setStatusCode(400)
+				              .end("No model with this name.");
+    	    	    	else {
+    	    	    		/*
+    	    	    		 * Avviamo una nuova classificazione
+    	    	    		 */
+    	    	    		Classificator c= new Classificator(this.pathImages, modelName);
+    	    	    		//ArrayList<PlantClassification> listOfClassification= c.newClassification();
+    	    	    		//Inviamo il json al front-end
+    	    	    		try { 	
+    	    	    			//Genero il json della classificazione
+    	    	    			String jsonClassifications=c.getJsonStringLastClassification();
+								//Invio il json al front-end
+    	    	    			routingContext
+								.response()
+								.setStatusCode(200)
+								.end(jsonClassifications);
+    	    	    			
+								//Memorizzio nel database tutte le classificazioni
+    	    	    			JsonArray newClassificationsJson= new JsonArray(jsonClassifications);
+    	    	    			JsonObject singleClassification;
+								for(int i=0;i< newClassificationsJson.size() ; i++) {
+									singleClassification = newClassificationsJson.getJsonObject(i);
+									
+									//String dateCollection= singleClassification.getString("date");
+									//String saveModel= "{ \""+dateCollection+"\":"+singleClassification.toString()+"}";
+									//singleClassification= new JsonObject(saveModel);
+									//Salviamo la classificazione nel DB
+									//singleClassification.getString("date");
+					    			mongoClient.insert("classifications", singleClassification , res ->{
+						    			  if(res.succeeded())
+						    				  System.out.println("Classificazione salvata correttamente nel DB.");
+						    			  else
+						    				  System.err.println("ERRORE salvataggio misura");  
+						    		});
+								}
+								
+							} catch (FileNotFoundException e) {
+								System.err.println("File non aperto correttamente");
+								e.printStackTrace();
+
+								routingContext
+				    	   	      .response()
+					              .setStatusCode(400)
+					              .end("Errore lettura file.");
+							}     	    	    	
+    	    	    	}
+    	    	    });
+    	    	    
+    	    	    
+    	    	    /*
+    	    	     * Richiesta le classificazioni di una certa data
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("getClassificationByDate", routingContext ->{
+    	    	    	String date= routingContext.request().getParam("date");
+    	    	    	/*
+    	    	    	 * Fallimento se il parametro non è stato inserito correttamente
+    	    	    	 */
+    	    	    	if(date==null)
+    	    	    		routingContext
+			    	   	      .response()
+				              .setStatusCode(400)
+				              .end("No model with this name.");
+    	    	    	else {
+    	    	    		/*
+    	    	    		 * Avviamo una nuova classificazione
+    	    	    		 */
+    	    	    		//System.out.println(date);
+    	    	    		JsonObject q= new JsonObject().put("date",date );
+        	    	    	this.mongoClient.find("classifications",q, res-> {
+        	    	    		/*
+        	    	    		 * Successo nel trovare i sample nel db
+        	    	    		 */
+        	    	    		if(res.succeeded()) {
+        	    	    			routingContext
+    								.response()
+    								.setStatusCode(200)
+    								.end(res.result().toString());
+        	    	    		}
+        	    	    		/*
+        	    	    		 * Caso di fallimento
+        	    	    		 */
+        	    	    		else {
+        	    	    			routingContext
+      			    	   	      .response()
+      				              .setStatusCode(400)
+      				              .end("No-sample-find");
+        	    	    		}
+        	    	    	});
+    	    	    		    	    	
+    	    	    	}
+    	    	    }); 
+    	    	    
+    	    	    
     	    	 
     	    	/*
     	    	 * Dalla dashboard dobbiamo capire se si sta cercando di entrare come admin o user. 
