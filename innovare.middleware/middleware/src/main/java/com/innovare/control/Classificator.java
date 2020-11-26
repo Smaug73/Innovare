@@ -3,6 +3,7 @@ package com.innovare.control;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -35,9 +36,12 @@ public class Classificator {
 		//Avvio il processo di classificazione 
 		ArrayList<PlantClassification> classifications = new ArrayList<PlantClassification>();
 		try {
-			Process process= Runtime.getRuntime().exec("python "+this.scriptPath+"Esempio1.py "+this.modelName+" "+this.scriptPath);
-			int processOutput=process.waitFor();
+			System.out.println("python "+this.scriptPath+"Esempio1.py "+this.modelName+" "+this.imagesPath);
+			Process process= Runtime.getRuntime().exec("python "+this.scriptPath+"Esempio1.py "+this.modelName+" "+this.imagesPath);
 			
+			int processOutput=process.waitFor();
+			OutputStream outP= process.getOutputStream();
+			System.out.println(outP.toString());
 			
 			if(processOutput == 0) {
 				/* 

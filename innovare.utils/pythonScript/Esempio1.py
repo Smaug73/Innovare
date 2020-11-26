@@ -50,24 +50,25 @@ try:
     
 except ImportError:
     print('ImportError: caricamento modello non possibile')
-    sys.exit()
+    sys.exit(1)
 
 except IOError:
     print('IOError: modello non valido')
-    sys.exit()
+    sys.exit(1)
 
 except RuntimeError:
     print('RunTimeError')
-    sys.exit()
+    sys.exit(1)
 
 #Recupero file csv dalla dir nel quale e' stato effettuata la segmentazione
 try:
-    csv_file= open(referencePath+"/metadata.csv")
+    print(referencePath+"metadata.csv")
+    csv_file= open(referencePath+"metadata.csv")
     csv_reader= csv.reader(csv_file, delimiter=',')
 
 except IOError:
     print("IOError: csv non esistente")
-    sys.exit()
+    sys.exit(1)
 
 #Carichiamo le immagini da classificare
 
@@ -110,8 +111,8 @@ for row in csv_reader:
     if count == 0:
         print(row)
         count=+1
-    else:
-        if substringSearch in str(row[6]):  #Condiriamo solo le immagini della sola pianta
+    else:       
+        if substringSearch in str(row[6]):  #Consideriamo solo le immagini della sola pianta
             classification=classificaImmagini(row[6])
             #print('"classification"': ,classification)
             PhotoDict={"hash":"'"+row[7]+"'" , "classifications":classification}

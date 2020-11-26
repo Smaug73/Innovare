@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,6 +18,7 @@ import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServer;
@@ -396,7 +398,8 @@ public class MainVerticle extends AbstractVerticle {
     	    	    		 * Avviamo una nuova classificazione
     	    	    		 */
     	    	    		Classificator c= new Classificator(this.pathImages, modelName);
-    	    	    		//ArrayList<PlantClassification> listOfClassification= c.newClassification();
+    	    	    		//Genero una nuova classificatione
+    	    	    		c.newClassification();
     	    	    		//Inviamo il json al front-end
     	    	    		try { 	
     	    	    			//Genero il json della classificazione
@@ -563,8 +566,16 @@ public class MainVerticle extends AbstractVerticle {
   
   
   public static void main(String[] args) {
-	    Vertx vertx = Vertx.vertx();
-	    vertx.deployVerticle(new MainVerticle());
+	  /*
+	   * Per evitare problemi riguardanti la latenza del servizio di classificazione
+	   * aumentiamo il tempo di attesa per un event loop thread handler	
+	   */
+	  VertxOptions options = new VertxOptions();
+	  options.setMaxEventLoopExecuteTime(60);
+	  options.setMaxEventLoopExecuteTimeUnit(TimeUnit.SECONDS);
+	  
+	  Vertx vertx = Vertx.vertx(options);
+	  vertx.deployVerticle(new MainVerticle());
 	    
   }
   
