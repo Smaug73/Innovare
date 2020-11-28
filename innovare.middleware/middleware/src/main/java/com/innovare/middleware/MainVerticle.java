@@ -398,46 +398,52 @@ public class MainVerticle extends AbstractVerticle {
     	    	    		 * Avviamo una nuova classificazione
     	    	    		 */
     	    	    		Classificator c= new Classificator(this.pathImages, modelName);
-    	    	    		//Genero una nuova classificatione
-    	    	    		c.newClassification();
-    	    	    		//Inviamo il json al front-end
-    	    	    		try { 	
-    	    	    			//Genero il json della classificazione
-    	    	    			String jsonClassifications=c.getJsonStringLastClassification();
-								//Invio il json al front-end
-    	    	    			routingContext
-								.response()
-								.setStatusCode(200)
-								.end(jsonClassifications);
-    	    	    			
-								//Memorizzio nel database tutte le classificazioni
-    	    	    			JsonArray newClassificationsJson= new JsonArray(jsonClassifications);
-    	    	    			JsonObject singleClassification;
-								for(int i=0;i< newClassificationsJson.size() ; i++) {
-									singleClassification = newClassificationsJson.getJsonObject(i);
-									
-									//String dateCollection= singleClassification.getString("date");
-									//String saveModel= "{ \""+dateCollection+"\":"+singleClassification.toString()+"}";
-									//singleClassification= new JsonObject(saveModel);
-									//Salviamo la classificazione nel DB
-									//singleClassification.getString("date");
-					    			mongoClient.insert("classifications", singleClassification , res ->{
-						    			  if(res.succeeded())
-						    				  System.out.println("Classificazione salvata correttamente nel DB.");
-						    			  else
-						    				  System.err.println("ERRORE salvataggio misura");  
-						    		});
-								}
-								
-							} catch (FileNotFoundException e) {
-								System.err.println("File non aperto correttamente");
-								e.printStackTrace();
+    	    	    		try {
+    	    	    			//Genero una nuova classificatione
+        	    	    		c.newClassification(modelName);
+        	    	    		
+        	    	    		//Inviamo il json al front-end
+        	    	    		try { 	
+        	    	    			//Genero il json della classificazione
+        	    	    			String jsonClassifications=c.getJsonStringLastClassification();
+    								//Invio il json al front-end
+        	    	    			routingContext
+    								.response()
+    								.setStatusCode(200)
+    								.end(jsonClassifications);
+        	    	    			
+    								//Memorizzio nel database tutte le classificazioni
+        	    	    			JsonArray newClassificationsJson= new JsonArray(jsonClassifications);
+        	    	    			JsonObject singleClassification;
+    								for(int i=0;i< newClassificationsJson.size() ; i++) {
+    									singleClassification = newClassificationsJson.getJsonObject(i);
+    					    			mongoClient.insert("classifications", singleClassification , res ->{
+    						    			  if(res.succeeded())
+    						    				  System.out.println("Classificazione salvata correttamente nel DB.");
+    						    			  else
+    						    				  System.err.println("ERRORE salvataggio misura");  
+    						    		});
+    								}			
+    							} catch (FileNotFoundException e) {
+    								System.err.println("File non aperto correttamente");
+    								e.printStackTrace();
 
-								routingContext
-				    	   	      .response()
-					              .setStatusCode(400)
-					              .end("Errore lettura file.");
-							}     	    	    	
+    								routingContext
+    				    	   	      .response()
+    					              .setStatusCode(400)
+    					              .end("Errore lettura file.");
+    							}  
+    	    	    			
+    	    	    		}catch(FileNotFoundException e) {
+    								System.err.println("Modello selezionato non esistente");
+    								e.printStackTrace();
+
+    								routingContext
+    				    	   	      .response()
+    					              .setStatusCode(400)
+    					              .end("Modello selezionato non esistente");
+    						}     	    	    
+    	    	    		   	    	    	
     	    	    	}
     	    	    });
     	    	    
