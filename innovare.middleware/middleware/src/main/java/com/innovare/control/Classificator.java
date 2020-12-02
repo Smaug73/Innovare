@@ -26,10 +26,10 @@ import net.lingala.zip4j.exception.ZipException;
 public class Classificator {
 	
 	private String imagesDirName;
-	private String scriptPath=System.getProperty("user.home")+"/InnovareScript/";
-	private String destination=System.getProperty("user.home")+"/InnovareImages/";
-	private String zipSourcePath=System.getProperty("user.home")+"/InnovareZip/";
-	private String modelPath=System.getProperty("user.home")+"/InnovareModels/";
+	private String scriptPath=System.getProperty("user.home")+System.getProperty("file.separator")+"InnovareScript"+System.getProperty("file.separator");
+	private String destination=System.getProperty("user.home")+System.getProperty("file.separator")+"InnovareImages"+System.getProperty("file.separator");
+	private String zipSourcePath=System.getProperty("user.home")+System.getProperty("file.separator")+"InnovareZip"+System.getProperty("file.separator");
+	private String modelPath=System.getProperty("user.home")+System.getProperty("file.separator")+"InnovareModels"+System.getProperty("file.separator");
 	
 	public Classificator(String imagesDirName) {
 		super();

@@ -1,6 +1,7 @@
 package com.innovare.middleware;
 
 import java.io.FileNotFoundException;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -11,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.control.Classificator;
+import com.innovare.model.Model;
 import com.innovare.model.PlantClassification;
 import com.innovare.model.User;
 
@@ -73,6 +75,7 @@ public class MainVerticle extends AbstractVerticle {
 	private HashMap<Integer,MqttClient> mqttClients;
 	private HashMap<String,ArrayList<JsonObject>> sampleChannelQueue;
 	private MongoClient mongoClient;
+	private Model selectedModel=null;
 	
 	private boolean logged=false;
 	private boolean admin=false;
@@ -381,14 +384,15 @@ public class MainVerticle extends AbstractVerticle {
     	    	    }); 
     	    	    
     	    	    /*
-    	    	     * Richiesta di una nuova classificazione utilizzando un modello selezionato
+    	    	     * Richiesta di una nuova classificazione utilizzando un certo dataset
     	    	     */
     	    	    routerFactory.addHandlerByOperationId("newclassification", routingContext ->{
     	    	    	String modelName= routingContext.request().getParam("modelName");
+    	    	    	String dataSet= routingContext.request().getParam("dataset");
     	    	    	/*
     	    	    	 * Fallimento se non il parametro non è stato inserito o non esiste il canale selezionato
     	    	    	 */
-    	    	    	if(modelName==null)
+    	    	    	if(modelName==null || dataSet==null)
     	    	    		routingContext
 			    	   	      .response()
 				              .setStatusCode(400)
@@ -397,7 +401,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	    		/*
     	    	    		 * Avviamo una nuova classificazione
     	    	    		 */
-    	    	    		Classificator c= new Classificator(this.pathImages, modelName);
+    	    	    		Classificator c= new Classificator(dataSet);
     	    	    		try {
     	    	    			//Genero una nuova classificatione
         	    	    		c.newClassification(modelName);
@@ -492,7 +496,74 @@ public class MainVerticle extends AbstractVerticle {
     	    	    }); 
     	    	    
     	    	    
+    	    	    		    	    	
+    	    	    /*
+    	    	     * Richiede tutti i modelli presenti nel sistema
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("getModels", routingContext ->{	
+    	    	    	
+    	    	    		/*
+    	    	    		 * Cerchiamo i modelli all'interno della directory 
+    	    	    		 */
+    	    	    		File f = new File(System.getProperty("user.home")+System.getProperty("file.separator")+"InnovareModels"+System.getProperty("file.separator"));
+    	    	    		
+    	    	    		if(f.exists()) {
+    	    	    			//Controllo tutti i file contenuti nella cartella e passo i loro nomi tramite un json
+    	    	    			File[] childs= f.listFiles();
+    	    	    			ArrayList<Model> models= new ArrayList<Model>();
+    	    	    			JsonArray ja= new JsonArray();
+    	    	    			JsonObject jo;
+    	    	    			Model m;
+    	    	    			for(File c: childs) {
+    	    	    				m= new Model(c.getName());
+    	    	    				try {
+										jo= new JsonObject(new ObjectMapper().writeValueAsString(m));
+										ja.add(jo);
+									} catch (JsonProcessingException e) {
+										// TODO Auto-generated catch block
+										e.printStackTrace();
+									}
+    	    	    				
+    	    	    			}
+    	    	    			routingContext
+								.response()
+								.setStatusCode(200)
+								.end(ja.toString());
+    	    	    		}else
+    	    	    			routingContext
+    			    	   	      .response()
+    				              .setStatusCode(400)
+    				              .end("No-directory-find");	
+        	    	    	});
     	    	 
+    	    	    routerFactory.addHandlerByOperationId("selectedModel", routingContext ->{	
+    	    	    	
+	    	    		/*
+	    	    		 * Restituisco il modello selezionato
+	    	    		 */
+	    	    		if(selectedModel!=null) {
+							try {
+								routingContext
+								.response()
+								.setStatusCode(200)
+								.end(new ObjectMapper().writeValueAsString(selectedModel));
+							} catch (JsonProcessingException e) {
+								routingContext
+								.response()
+					              .setStatusCode(400)
+					              .end("ERROR research model");
+								e.printStackTrace();
+							}
+							
+	    	    		}else {
+	    	    			routingContext
+			    	   	      .response()
+				              .setStatusCode(400)
+				              .end("No model selected");
+	    	    		}
+    	    	    	
+    	    	    }); 
+    	    	    
     	    	/*
     	    	 * Dalla dashboard dobbiamo capire se si sta cercando di entrare come admin o user. 
     	    	 * Da definire i dati comunicati dalla dashboard, questo è solo un test.
@@ -520,7 +591,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	 */  	    	
     	   
     	  
-    	 
+  
     	    
     	    
     	    Router router = routerFactory.getRouter(); // <1>

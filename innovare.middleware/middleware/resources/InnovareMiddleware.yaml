@@ -136,24 +136,6 @@ paths:
           description: Json of last classification.
       operationId: lastclassificazion
       summary: Return the last classification
-  /newClassification/{modelName}:
-    summary: Generete a new classification data.
-    get:
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Classification'
-          description: Classification is done correctly
-      operationId: newclassification
-      summary: Generete a new classification data.
-    parameters:
-    - name: modelName
-      in: path
-      required: true
   /getClassifications/{date}:
     summary: Restituisce tutte le classificazioni di una certa data
     get:
@@ -171,6 +153,44 @@ paths:
     - name: date
       in: path
       required: true
+  /newClassification/{dataSetName}:
+    summary: Generete a new classification data. La classificazione utilizzera' il
+      modello preselezionato dall'amministratore.
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Classification'
+          description: Classification is done correctly
+      operationId: newclassification
+      summary: Generete a new classification data.
+    parameters:
+    - name: dataSetName
+      in: path
+      required: true
+  /setModel/{modelName}: {}
+  /models:
+    get:
+      responses:
+        "200":
+          description: Restituisce un json con tutti i modelli presenti nel sistema.
+      operationId: getModels
+      summary: Restituisce tutti i modelli utilizzabili
+  /models/selected:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Model'
+          description: Ritorna il json del modello attualmente selezionato.
+      operationId: selectedModel
+      summary: Ritorna il json del modello attualmente selezionato
 components:
   schemas:
     ConfigurationItem:
@@ -189,7 +209,7 @@ components:
           items:
             $ref: '#/components/schemas/Property'
       example:
-        id: sensor-gateway
+      - id: sensor-gateway
         properties:
         - id: indirizzo
           value: 192.168.55.5
@@ -260,3 +280,6 @@ components:
             score: 23.196931183338165
           hash: '''1ec6cc13769ab7310345101d32509080'''
         originalImage: /home/stefano/Scrivania/Lavoro/IMMAGINI-TestPythonScript/d3/2020_09_11_Dataset_FondatanaDeiFieri-Thermal_Optical-Fila_3_4-Session1-DJI_0831-erased_background_with_boxes.jpg
+    Model:
+      description: Modello di classificazione utilizzato dal sistema
+      type: object
