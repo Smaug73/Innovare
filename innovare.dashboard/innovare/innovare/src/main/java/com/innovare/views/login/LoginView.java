@@ -1,5 +1,7 @@
 package com.innovare.views.login;
 
+import com.vaadin.addon.charts.ChartOptions;
+import com.vaadin.addon.charts.model.Lang;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.UI;
@@ -50,6 +52,8 @@ public class LoginView extends Composite<Div> implements BeforeEnterObserver{
 
 
 	public LoginView() {
+		if(UI.getCurrent() != null) System.out.println("UI in login diverso da null");
+        else System.out.println("UI in login uguale a null");
 		FlexBoxLayout content = new FlexBoxLayout(loginForm);
 		content.setAlignItems(FlexComponent.Alignment.CENTER);
 		content.setFlexDirection(FlexLayout.FlexDirection.COLUMN);

@@ -43,3 +43,19 @@ vaadin-tab[selected] {
   background-color: var(--lumo-primary-color-10pct);
   color: var(--lumo-primary-text-color);
 }
+
+/* === IE 11 workarounds === */
+@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+  /* IE 11 can't handle different themes for sub-parts of the application, without the parts having own
+     shadow roots. Instead of polluting the code for all browsers, the relevant colors of dark theme
+     is hard coded here. */
+  .app-bar {
+    color: hsl(214, 100%, 98%);
+    background-color: hsl(214, 35%, 21%);
+    box-shadow: 0 2px 4px -1px hsla(214, 8%, 4%, 0.23), 0 3px 12px -1px hsla(214, 12%, 6%, 0.32);
+  }
+
+  .app-bar__title {
+    color: hsl(214, 100%, 98%);
+  }
+}

@@ -3,6 +3,8 @@ package com.innovare.backend.stub;
 import java.time.LocalDate;
 import java.util.*;
 
+import com.innovare.utils.Classification;
+
 public class DummyData {
 	
 	private static final Map<Long, Classification> CLASSIFICATIONS = new HashMap<>();

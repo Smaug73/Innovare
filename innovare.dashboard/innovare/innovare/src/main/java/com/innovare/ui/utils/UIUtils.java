@@ -212,7 +212,7 @@ public class UIUtils {
 
 	/* ==== LABELS ==== */
 
-	public static Label createLabel(FontSize size, TextColor color,
+	public static Label createLabel(FontSize size, String color,
 	                                String text) {
 		Label label = new Label(text);
 		setFontSize(size, label);
@@ -221,10 +221,10 @@ public class UIUtils {
 	}
 
 	public static Label createLabel(FontSize size, String text) {
-		return createLabel(size, TextColor.BODY, text);
+		return createLabel(size, TextColor.BODY.getValue(), text);
 	}
 
-	public static Label createLabel(TextColor color, String text) {
+	public static Label createLabel(String color, String text) {
 		return createLabel(FontSize.M, color, text);
 	}
 
@@ -280,37 +280,37 @@ public class UIUtils {
 
 	public static Icon createPrimaryIcon(VaadinIcon icon) {
 		Icon i = new Icon(icon);
-		setTextColor(TextColor.PRIMARY, i);
+		setTextColor(TextColor.PRIMARY.getValue(), i);
 		return i;
 	}
 
 	public static Icon createSecondaryIcon(VaadinIcon icon) {
 		Icon i = new Icon(icon);
-		setTextColor(TextColor.SECONDARY, i);
+		setTextColor(TextColor.SECONDARY.getValue(), i);
 		return i;
 	}
 
 	public static Icon createTertiaryIcon(VaadinIcon icon) {
 		Icon i = new Icon(icon);
-		setTextColor(TextColor.TERTIARY, i);
+		setTextColor(TextColor.TERTIARY.getValue(), i);
 		return i;
 	}
 
 	public static Icon createDisabledIcon(VaadinIcon icon) {
 		Icon i = new Icon(icon);
-		setTextColor(TextColor.DISABLED, i);
+		setTextColor(TextColor.DISABLED.getValue(), i);
 		return i;
 	}
 
 	public static Icon createSuccessIcon(VaadinIcon icon) {
 		Icon i = new Icon(icon);
-		setTextColor(TextColor.SUCCESS, i);
+		setTextColor(TextColor.SUCCESS.getValue(), i);
 		return i;
 	}
 
 	public static Icon createErrorIcon(VaadinIcon icon) {
 		Icon i = new Icon(icon);
-		setTextColor(TextColor.ERROR, i);
+		setTextColor(TextColor.ERROR.getValue(), i);
 		return i;
 	}
 
@@ -328,7 +328,7 @@ public class UIUtils {
 
 	// Combinations
 
-	public static Icon createIcon(IconSize size, TextColor color,
+	public static Icon createIcon(IconSize size, String color,
 	                              VaadinIcon icon) {
 		Icon i = new Icon(icon);
 		i.addClassNames(size.getClassName());
@@ -494,9 +494,9 @@ public class UIUtils {
 		}
 	}
 
-	public static void setTextColor(TextColor textColor, Component... components) {
+	public static void setTextColor(String textColor, Component... components) {
 		for (Component component : components) {
-			component.getElement().getStyle().set("color", textColor.getValue());
+			component.getElement().getStyle().set("color", textColor);
 		}
 	}
 	

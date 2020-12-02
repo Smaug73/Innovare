@@ -1,6 +1,8 @@
 package com.innovare.views.main;
 
 
+import com.vaadin.addon.charts.ChartOptions;
+import com.vaadin.addon.charts.model.Lang;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasComponents;
 import com.vaadin.flow.component.applayout.DrawerToggle;
@@ -11,28 +13,22 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.tabs.Tab;
-import com.vaadin.flow.component.tabs.Tabs;
-import com.vaadin.flow.component.tabs.TabsVariant;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.server.VaadinServlet;
 import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.ui.UI;
 import com.innovare.views.home.HomeView;
-import com.innovare.views.storico.StoricoView;
+import com.innovare.views.storico.ClassificazioniView;
+import com.innovare.views.storico.TempAmbView;
+import com.innovare.views.storico.HumAmbView;
+import com.innovare.views.storico.TempSuoloView;
+import com.innovare.views.storico.HumSuoloView;
+import com.innovare.views.storico.RainView;
+import com.innovare.views.storico.WindView;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Optional;
 
-import com.innovare.ui.utils.Bottom;
-import com.innovare.ui.utils.FlexBoxLayout;
-import com.innovare.ui.utils.FontSize;
-import com.innovare.ui.utils.Horizontal;
-import com.innovare.ui.utils.IconSize;
-import com.innovare.ui.utils.Right;
-import com.innovare.ui.utils.TextColor;
-import com.innovare.ui.utils.UIUtils;
 import com.innovare.utils.Role;
 import com.innovare.views.configurazione.ConfigurazioneView;
 import com.innovare.views.innovare.InnovareView;
@@ -41,14 +37,22 @@ import com.innovare.views.innovare.InnovareView;
 public class ContentView extends MainView{
 	
 	private H1 viewTitle;
-	private final Tabs menu;
+	private NaviMenu naviMenu;
 	
 	public ContentView ( ){
 
 		setPrimarySection(Section.DRAWER);
         addToNavbar(true, createHeaderContent());
-        menu = createMenu();
-        addToDrawer(createDrawerContent(menu));
+        naviMenu = new NaviMenu();
+        initNaviItems();
+        addToDrawer(createDrawerContent());
+        
+        /*Lang lang = new Lang();
+    	lang.setDrillUpText("< PROVA");
+        Optional<com.vaadin.flow.component.UI> ui = this.getUI();
+        if(ui != null) ChartOptions.get().setLang(lang);
+        else System.out.println("UI in content uguale a null");
+        */
 			 
 	 }
 	
@@ -65,7 +69,7 @@ public class ContentView extends MainView{
         return layout;
     }
 
-    private Component createDrawerContent(Tabs menu) {
+    private Component createDrawerContent() {
         VerticalLayout layout = new VerticalLayout();
         layout.setSizeFull();
         layout.setPadding(false);
@@ -77,79 +81,60 @@ public class ContentView extends MainView{
         logoLayout.setAlignItems(FlexComponent.Alignment.CENTER);
         logoLayout.add(new Image("images/icona_innovare.png", "InnovareProject logo"));
         logoLayout.add(new H1("INNOVARE"));
-        layout.add(logoLayout, menu);
+        layout.add(logoLayout, naviMenu);
         return layout;
     }
     
-    private Tabs createMenu() {
-        final Tabs tabs = new Tabs();
-        tabs.setOrientation(Tabs.Orientation.VERTICAL);
-        tabs.addThemeVariants(TabsVariant.LUMO_SMALL);
-        tabs.setId("tabs");
-        tabs.add(createMenuItems());
-        return tabs;
-    }
+    
+    private void initNaviItems() {
+		naviMenu.addNaviItem(VaadinIcon.HOME_O, "Home", HomeView.class);
 
-	private Tab[] createMenuItems() {
-		final List<Tab> tabs = new ArrayList<>(4);
-		 tabs.add(createTab(VaadinIcon.HOME_O, "Home", HomeView.class));
-		 tabs.add(createTab(VaadinIcon.ARCHIVES, "Storico", StoricoView.class));
-		 tabs.add(createTab(VaadinIcon.QUESTION_CIRCLE_O, "About", InnovareView.class));
-		 VaadinSession vs = VaadinSession.getCurrent();
-		 String role = null;
-		 if(vs != null) {
-			 role = (String) vs.getAttribute("role");
-		 }
-		 if (role != null && role.equals(Role.ADMIN)) {
-			 tabs.add(createTab(VaadinIcon.COG_O, "Configurazione",ConfigurazioneView.class));
-		 }
-		 final String contextPath = VaadinServlet.getCurrent().getServletContext().getContextPath();
-		 final Tab logoutTab = createTab(createLogoutLink(contextPath));
-		 tabs.add(logoutTab);
+		NaviItem storico = naviMenu.addNaviItem(VaadinIcon.ARCHIVES, "Storico", null);
+		naviMenu.addNaviItem(storico, "Classificazioni", ClassificazioniView.class);
+		naviMenu.addNaviItem(storico, "Temperatura Ambientale", TempAmbView.class);
+		naviMenu.addNaviItem(storico, "Umidità Ambientale", HumAmbView.class);
+		naviMenu.addNaviItem(storico, "Piogge", RainView.class);
+		naviMenu.addNaviItem(storico, "Venti", WindView.class);
+		naviMenu.addNaviItem(storico, "Temperatura Del Suolo", TempSuoloView.class);
+		naviMenu.addNaviItem(storico, "Umidità Del Suolo", HumSuoloView.class);
+		
+		naviMenu.addNaviItem(VaadinIcon.QUESTION_CIRCLE_O, "About", InnovareView.class);
+		
+		VaadinSession vs = VaadinSession.getCurrent();
+		String role = null;
+		if(vs != null) {
+			role = (String) vs.getAttribute("role");
+		}
+		if (role != null && role.equals(Role.ADMIN)) {
+			naviMenu.addNaviItem(VaadinIcon.COG_O, "Configurazione",ConfigurazioneView.class);
+		}
 		 
-		 return tabs.toArray(new Tab[tabs.size()]);
+		final String contextPath = VaadinServlet.getCurrent().getServletContext().getContextPath();
+		NaviItem logout = new NaviItem(VaadinIcon.ARROW_CIRCLE_RIGHT_O, "Logout", null);
+		naviMenu.add(createLogoutLink(contextPath, logout));
+		 
 	}
 
-	private static Anchor createLogoutLink(String contextPath) {
-			final Anchor a = populateLink(new Anchor(), VaadinIcon.ARROW_CIRCLE_RIGHT_O, "Logout");
-			a.setHref(contextPath + "/login");
-			return a;
-	 }
-	 
-	 private static Tab createTab(VaadinIcon icon, String title, Class<? extends Component> viewClass) {
-			return createTab(populateLink(new RouterLink(null, viewClass), icon, title));
-	 }
-	 
-	 private static Tab createTab(Component content) {
-			final Tab tab = new Tab();
-			tab.add(content);
-			return tab;
-	 }
-	 
-	 private static <T extends HasComponents> T populateLink(T a, VaadinIcon icon, String title) {
-			a.add(createContent(icon, title));
-			//a.add(title);
-			return a;
-	 }
-	 
-	 private static FlexBoxLayout createContent(VaadinIcon icon, String title) {
-			FlexBoxLayout header = new FlexBoxLayout(
-					UIUtils.createIcon(IconSize.M, TextColor.BODY, icon),
-					UIUtils.createLabel(FontSize.M, title));
-			header.setAlignItems(FlexComponent.Alignment.CENTER);
-			header.setSpacing(Right.L);
-			return header;
-		}
-	 
-	 @Override
-	    protected void afterNavigation() {
-	        super.afterNavigation();
-			viewTitle.setText(getCurrentPageTitle());
-			 
-	        
-	    }
 
-	    private String getCurrentPageTitle() {
-	        return getContent().getClass().getAnnotation(PageTitle.class).value();
-	    }
+	private static Anchor createLogoutLink(String contextPath, NaviItem item) {
+		final Anchor a = populateLink(new Anchor(), item);
+		a.setHref(contextPath + "/login");
+		return a;
+	 }
+	 
+	 
+	private static <T extends HasComponents> T populateLink(T a, NaviItem item) {
+		a.add(item);
+		return a;
+	}
+	 
+	@Override
+	protected void afterNavigation() {
+	    super.afterNavigation();
+	    viewTitle.setText(getCurrentPageTitle());
+	}
+
+	private String getCurrentPageTitle() {
+	    return getContent().getClass().getAnnotation(PageTitle.class).value();
+	}
 }
