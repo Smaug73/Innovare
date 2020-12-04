@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.control.Classificator;
+import com.innovare.control.ModelController;
 import com.innovare.model.Model;
 import com.innovare.model.PlantClassification;
 import com.innovare.model.User;
@@ -50,7 +51,7 @@ public class MainVerticle extends AbstractVerticle {
 	 * 	
 	 */
 	
-	
+	private final String LOG="MAIN-VERTICCLE-LOG";
 	final List<JsonObject> configuration = new ArrayList<>(
 			//Arrays.asList(
 		 //   new JsonObject().put("Gateway", "prova").put("Model", "prova")	    
@@ -75,7 +76,8 @@ public class MainVerticle extends AbstractVerticle {
 	private HashMap<Integer,MqttClient> mqttClients;
 	private HashMap<String,ArrayList<JsonObject>> sampleChannelQueue;
 	private MongoClient mongoClient;
-	private Model selectedModel=null;
+	//private Model selectedModel=null;
+	private ModelController modelController;
 	
 	private boolean logged=false;
 	private boolean admin=false;
@@ -123,6 +125,11 @@ public class MainVerticle extends AbstractVerticle {
 	    }
 	  });
 	  
+	  /*
+	   * Creazione del modelController
+	   */
+	  this.modelController= new ModelController();
+	  System.out.println(this.LOG+": modelController creato.");
 	  
 	  /*
 	   * MQTT CLIENT 
@@ -190,14 +197,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	
     	    	
     	    });
-    	    /*
-    	    	routingContext
-    	    	 .response()
-    	    	 .setStatusCode(200)
-    	    	 .putHeader(HttpHeaders.CONTENT_TYPE, "applivation/json")
-    	    	 .end(new JsonArray(getAllConfiguration()).encode())
-    	    		);
-    	    */
+    	   
     	    //Login     
     	    routerFactory.addHandlerByOperationId("login", routingContext ->{
     	    	String username= routingContext.request().getParam("username").toString();
@@ -347,7 +347,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	    routerFactory.addHandlerByOperationId("allsamples", routingContext ->{
     	    	    	String channel= routingContext.request().getParam("idcanale");
     	    	    	/*
-    	    	    	 * Fallimento se non il parametro non è stato inserito o non esiste il canale selezionato
+    	    	    	 * Fallimento se il parametro non è stato inserito o non esiste il canale selezionato
     	    	    	 */
     	    	    	if(channel==null || !this.sampleChannelQueue.containsKey(channel))
     	    	    		routingContext
@@ -498,70 +498,88 @@ public class MainVerticle extends AbstractVerticle {
     	    	    
     	    	    		    	    	
     	    	    /*
-    	    	     * Richiede tutti i modelli presenti nel sistema
+    	    	     * Richiede tutti i modelli presenti nel sistema GET-MODELS
     	    	     */
     	    	    routerFactory.addHandlerByOperationId("getModels", routingContext ->{	
     	    	    	
     	    	    		/*
     	    	    		 * Cerchiamo i modelli all'interno della directory 
     	    	    		 */
-    	    	    		File f = new File(System.getProperty("user.home")+System.getProperty("file.separator")+"InnovareModels"+System.getProperty("file.separator"));
-    	    	    		
-    	    	    		if(f.exists()) {
-    	    	    			//Controllo tutti i file contenuti nella cartella e passo i loro nomi tramite un json
-    	    	    			File[] childs= f.listFiles();
-    	    	    			ArrayList<Model> models= new ArrayList<Model>();
-    	    	    			JsonArray ja= new JsonArray();
-    	    	    			JsonObject jo;
-    	    	    			Model m;
-    	    	    			for(File c: childs) {
-    	    	    				m= new Model(c.getName());
-    	    	    				try {
-										jo= new JsonObject(new ObjectMapper().writeValueAsString(m));
-										ja.add(jo);
-									} catch (JsonProcessingException e) {
-										// TODO Auto-generated catch block
-										e.printStackTrace();
-									}
-    	    	    				
-    	    	    			}
-    	    	    			routingContext
-								.response()
-								.setStatusCode(200)
-								.end(ja.toString());
-    	    	    		}else
-    	    	    			routingContext
-    			    	   	      .response()
-    				              .setStatusCode(400)
-    				              .end("No-directory-find");	
-        	    	    	});
+    	    	    	ArrayList<Model> models;
+    	    	    	models= this.modelController.getAllModel();
+    	    	    	JsonArray ja= new JsonArray();
+    	    			JsonObject jo;
+    	    	    	for(Model m: models) {
+    	    	    		try {
+								jo= new JsonObject(new ObjectMapper().writeValueAsString(m));
+								ja.add(jo);
+							} catch (JsonProcessingException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+    	    	    		routingContext
+							.response()
+							.setStatusCode(200)
+							.end(ja.toString());
+    	    	    	}
+    	    	    			
+        	    	});
     	    	 
+    	    	    
+    	    	    /*
+    	    	     * Ritorna il modello delezionato:  SELECTED-MODEL
+    	    	     */
     	    	    routerFactory.addHandlerByOperationId("selectedModel", routingContext ->{	
     	    	    	
 	    	    		/*
 	    	    		 * Restituisco il modello selezionato
 	    	    		 */
-	    	    		if(selectedModel!=null) {
-							try {
+    	    	    	Model selectedModel=this.modelController.getSelectedModel();
+    	    	    	if(selectedModel==null)
+    	    	    		routingContext
+							.response()
+							.setStatusCode(400)
+							.end("NO MODEL SELECTED");
+    	    	    	else {
+    	    	    		try {
 								routingContext
 								.response()
 								.setStatusCode(200)
 								.end(new ObjectMapper().writeValueAsString(selectedModel));
 							} catch (JsonProcessingException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
 								routingContext
 								.response()
-					              .setStatusCode(400)
-					              .end("ERROR research model");
-								e.printStackTrace();
+								.setStatusCode(400)
+								.end("ERROR:JSON SELECTED MODEL");
 							}
-							
-	    	    		}else {
-	    	    			routingContext
-			    	   	      .response()
-				              .setStatusCode(400)
-				              .end("No model selected");
-	    	    		}
+    	    	    	}
     	    	    	
+    	    	    }); 
+    	    	    
+    	    	    
+    	    	    /*
+    	    	     * Scelta modello da utilizzare: SETMODEL
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("setModel", routingContext ->{		    	    	
+	    	    		/*
+	    	    		 * Seleziono il modello da utilizzare come classificatore
+	    	    		 */
+    	    	    	String modelName= routingContext.request().getParam("modelName");
+    	    	    	try {
+							this.modelController.setModelSelected(modelName);
+							routingContext
+							.response()
+							.setStatusCode(200)
+							.end();
+						} catch (FileNotFoundException e) {					
+							e.printStackTrace();
+							routingContext
+							.response()
+							.setStatusCode(400)
+							.end("ERROR: MODEL SELECTED NOT FOUND");
+						}   	    	
     	    	    }); 
     	    	    
     	    	/*
