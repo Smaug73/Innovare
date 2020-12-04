@@ -43,20 +43,6 @@ public class MainView extends AppLayout implements RouterLayout, BeforeEnterObse
     
 
     public MainView() {
-    	VaadinSession vs = getCurrent();
-    	Collection<UI> uis = vs.getUIs();
-    	int i = 0;
-    	for(UI ui : uis) {
-    		System.out.println("UI " + ui.getUIId() + " in main diverso da null");
-    		i++;
-    	}
-    	Lang lang = new Lang();
-    	lang.setDrillUpText("< PROVA");
-    	//ChartOptions.get().setLang(lang);
-    	if(UI.getCurrent() != null) System.out.println("UI in main diverso da null");
-        else System.out.println("UI in main uguale a null");
-    	
-    	
     }
 
 	@Override

@@ -44,27 +44,27 @@ public class ClassificazioniView extends StoricoView{
 	@Override
 	protected void getData() {
 		CLASSIFICATIONS = new ArrayList<>();
-		CLASSIFICATIONS.add(new Classification(Classification.Status.CARENZA, DummyData.getDate(), 73, 10, 8, 9));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.ECCESSO, DummyData.getDate(), 6, 20, 73, 1));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 3, 75, 20, 2));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.CARENZA, DummyData.getDate(), 58, 29, 13, 7));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 2, 88, 10, 7));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 8, 90, 2, 7));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 1, 93, 6, 7));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 4, 84, 12, 7));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 0, 100, 0, 7));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 0, 100, 0, 7));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 0, 100, 0, 7));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 0, 100, 0, 7));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 0, 100, 0, 7));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 0, 100, 0, 7));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 0, 100, 0, 7));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 0, 100, 0, 7));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 0, 100, 0, 7));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.SCARTATE, DummyData.getDate(), 0, 0, 0, 100));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 0, 100, 0, 6));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 0, 100, 0, 3));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 0, 100, 0, 9));
+		CLASSIFICATIONS.add(new Classification(Classification.Status.CARENZA, DummyData.getDate(), 73, 10, 8, 9, 4, "modello1"));
+		CLASSIFICATIONS.add(new Classification(Classification.Status.INFESTANTI, DummyData.getDate(), 6, 20, 73, 1, 79, "modello2"));
+		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 3, 75, 20, 2, 4, "modello1"));
+		CLASSIFICATIONS.add(new Classification(Classification.Status.CARENZA, DummyData.getDate(), 58, 29, 13, 7, 4, "modello1"));
+		CLASSIFICATIONS.add(new Classification(Classification.Status.ECCESSO, DummyData.getDate(), 2, 88, 10, 7, 4, "modello1"));
+		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 8, 90, 2, 7, 4, "modello1"));
+		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 1, 93, 6, 7, 4, "modello1"));
+		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 4, 84, 12, 7, 4, "modello1"));
+		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 0, 100, 0, 7, 4, "modello1"));
+		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 0, 100, 0, 7, 4, "modello1"));
+		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 0, 100, 0, 7, 4, "modello2"));
+		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 0, 100, 0, 7, 4, "modello2"));
+		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 0, 100, 0, 7, 4, "modello2"));
+		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 0, 100, 0, 7, 4, "modello2"));
+		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 0, 100, 0, 7, 4, "modello2"));
+		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 0, 100, 0, 7, 4, "modello2"));
+		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 0, 100, 0, 7, 4, "modello2"));
+		CLASSIFICATIONS.add(new Classification(Classification.Status.SCARTATE, DummyData.getDate(), 0, 0, 0, 100, 4, "modello2"));
+		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 0, 100, 0, 6, 4, "modello2"));
+		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 0, 100, 0, 3, 4, "modello2"));
+		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, DummyData.getDate(), 0, 100, 0, 9, 4, "modello2"));
 		
 	}
 
@@ -87,6 +87,18 @@ public class ClassificazioniView extends StoricoView{
 				.setFrozen(true)
 				.setHeader("Data Volo")
 				.setSortable(true);
+		grid.addColumn(new ComponentRenderer<>(this::createStatusLabel))
+				.setAutoWidth(true)
+				.setFlexGrow(1)
+				.setFrozen(true)
+				.setHeader("Stato")
+				.setTextAlign(ColumnTextAlign.CENTER);
+		grid.addColumn(Classification::getModel)
+				.setAutoWidth(true)
+				.setFlexGrow(1)
+				.setHeader("Classificatore")
+				.setFrozen(true)
+				.setTextAlign(ColumnTextAlign.CENTER);
 		grid.addColumn(Classification::getPercCarenza)
 				.setAutoWidth(true)
 				.setFlexGrow(1)
@@ -111,11 +123,13 @@ public class ClassificazioniView extends StoricoView{
 				.setHeader("Immagini scartate [%]")
 				.setTextAlign(ColumnTextAlign.CENTER)
 				.setSortable(true);
-		grid.addColumn(new ComponentRenderer<>(this::createStatusLabel))
+		grid.addColumn(Classification::getPercInfestanti)
 				.setAutoWidth(true)
 				.setFlexGrow(1)
-				.setHeader("Stato")
-				.setTextAlign(ColumnTextAlign.CENTER);
+				.setHeader("Infestanti [%]")
+				.setTextAlign(ColumnTextAlign.CENTER)
+				.setSortable(true);
+		
 		
 		
 		grid.setVerticalScrollingEnabled(true);
@@ -130,7 +144,8 @@ public class ClassificazioniView extends StoricoView{
 		if(classif.getStatus().equals(Status.CARENZA.getName())) textColor = TextColor.ERROR.getValue();
 		else if(classif.getStatus().equals(Status.ECCESSO.getName())) textColor = TextColor.PRIMARY.getValue();
 		else if(classif.getStatus().equals(Status.NORMALE.getName())) textColor = TextColor.SUCCESS.getValue();
-		else textColor = "#737268";
+		else if(classif.getStatus().equals(Status.INFESTANTI.getName())) textColor = TextColor.ORANGE.getValue();
+		else textColor = TextColor.GREY.getValue();
 			
 		FlexBoxLayout status = new FlexBoxLayout(
 				UIUtils.createIcon(IconSize.S, textColor, VaadinIcon.CIRCLE),

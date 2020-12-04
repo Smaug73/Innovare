@@ -23,6 +23,7 @@ import com.vaadin.flow.component.charts.model.XAxis;
 import com.vaadin.flow.component.charts.model.YAxis;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -173,9 +174,11 @@ public class HomeView extends Div {
  	// Crea la chart delle ultime 4 classificazioni
  	private Component createClassificationsChart() {
  		Chart chart = new Chart();
+ 		chart.setSizeFull();
 
          Configuration configuration = chart.getConfiguration();
          chart.getConfiguration().getChart().setType(ChartType.BAR);
+         
 
          ListSeries carenza = new ListSeries("Carenza di acqua", 17, 9, 5, 10);
          PlotOptionsSeries posCarenza = new PlotOptionsSeries();
@@ -201,12 +204,17 @@ public class HomeView extends Div {
          scartate.setPlotOptions(posScartate);
          configuration.addSeries(scartate);
          
-         
+         ListSeries infestanti = new ListSeries("Infestanti", 3, 2, 0, 5);
+         PlotOptionsSeries posInfestanti = new PlotOptionsSeries();
+         posInfestanti.setColorIndex(3);
+         infestanti.setPlotOptions(posInfestanti);
+         configuration.addSeries(infestanti);
          
          XAxis x = new XAxis();
          x.setCrosshair(new Crosshair());
          x.setCategories("08/09/2020", "28/08/2020", "18/08/2020", "08/08/2020", "28/07/2020");
          configuration.addxAxis(x);
+     
 
          YAxis y = new YAxis();
          y.setMin(0);
@@ -222,7 +230,9 @@ public class HomeView extends Div {
          tooltip.setValueSuffix("%");
          configuration.setTooltip(tooltip);
          
+         chart.setSizeFull();
          FlexBoxLayout card = new FlexBoxLayout(chart);
+         
  		card.setBackgroundColor(LumoStyles.Color.BASE_COLOR);
  		card.setBorderRadius(BorderRadius.S);
  		card.setBoxSizing(BoxSizing.BORDER_BOX);
@@ -236,10 +246,11 @@ public class HomeView extends Div {
  	
  	private Component createData() {
 		Component ambientData = createAmbientData();
-		Component sensorData = createSensorData();
+		Component sensorData = createClassifications();
 
 		Row docs = new Row(ambientData, sensorData);
 		docs.addClassName(LumoStyles.Margin.Top.XL);
+		docs.setComponentSpan(sensorData, 3);
 		UIUtils.setMaxWidth(MAX_WIDTH, docs);
 		docs.setWidthFull();
 
@@ -342,12 +353,12 @@ public class HomeView extends Div {
 						UIUtils.createIcon(IconSize.M, TextColor.TERTIARY.getValue(),
 								VaadinIcon.SUN_O),
 						"Temperatura: " + lastMeasureTemp + "°C", "Data: " + DATE_FORMAT.format(lastMeasureDate) 
-						+ TIME_FORMAT.format(lastMeasureDate)),
+						+ " " + TIME_FORMAT.format(lastMeasureDate)),
 				new ListItem(
 						UIUtils.createIcon(IconSize.M, TextColor.TERTIARY.getValue(),
 								VaadinIcon.DROP),
 						"Umidità: " + lastMeasureHum + "%", "Data: " + DATE_FORMAT.format(lastMeasureDate) 
-						+ TIME_FORMAT.format(lastMeasureDate)));
+						+ " " + TIME_FORMAT.format(lastMeasureDate)));
 		items.addClassNames(LumoStyles.Padding.Vertical.XS);
 
 		Div card = new Div(tabs, items);

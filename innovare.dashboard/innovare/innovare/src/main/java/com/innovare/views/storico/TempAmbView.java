@@ -59,7 +59,7 @@ public class TempAmbView extends StoricoView{
 	@Override
 	protected Component createChart() {
 		final Chart chart = new Chart(ChartType.AREASPLINERANGE);
-
+		
         Configuration configuration = chart.getConfiguration();
         
         Tooltip tooltip = configuration.getTooltip();

@@ -12,7 +12,9 @@ public enum TextColor {
 	ERROR("var(--lumo-error-text-color)"),
 	ERROR_CONTRAST("var(--lumo-error-contrast-color)"),
 	SUCCESS("var(--lumo-success-text-color)"),
-	SUCCESS_CONTRAST("var(--lumo-success-contrast-color)");
+	SUCCESS_CONTRAST("var(--lumo-success-contrast-color)"),
+	GREY("#737268"),
+	ORANGE("#F89C06");
 
 	private String value;
 

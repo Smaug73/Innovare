@@ -15,13 +15,18 @@ public class Classification {
 	private int percSane;
 	private int percEccesso;
 	private int percScartate;
+	private int percInfestanti;
+	private String model;
+
+	
 
 	public enum Status {
 		CARENZA("Carenza",
 				"Piante con carenza di acqua"), 
 		NORMALE("Sane", "Piante sane"), 
 		ECCESSO("Eccesso", "Piante con eccesso di acqua"),
-		SCARTATE("Scartate", "Immagini scartate");
+		SCARTATE("Scartate", "Immagini scartate"),
+		INFESTANTI("Infestanti", "Piante infestanti");
 
 		private String name;
 		private String desc;
@@ -42,7 +47,8 @@ public class Classification {
 
 	
 
-	public Classification(Status status, LocalDate date, int percCarenza, int percSane, int percEccesso, int percScartate) {
+	public Classification(Status status, LocalDate date, int percCarenza, int percSane, 
+			int percEccesso, int percScartate, int percInfestanti, String model) {
 		super();
 		this.status = status;
 		this.date = date;
@@ -50,6 +56,8 @@ public class Classification {
 		this.percSane = percSane;
 		this.percEccesso = percEccesso;
 		this.percScartate = percScartate;
+		this.percInfestanti = percInfestanti;
+		this.model = model;
 	}
 
 
@@ -76,6 +84,24 @@ public class Classification {
 	
 	public int getPercScartate() {
 		return percScartate;
+	}
+	
+	public int getPercInfestanti() {
+		return percInfestanti;
+	}
+
+	public void setPercInfestanti(int percInfestanti) {
+		this.percInfestanti = percInfestanti;
+	}
+
+
+	public String getModel() {
+		return model;
+	}
+
+
+	public void setModel(String model) {
+		this.model = model;
 	}
 
 	

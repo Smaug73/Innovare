@@ -20,8 +20,6 @@ public class Application extends SpringBootServletInitializer {
     	builder.headless(false);
 
     	builder.run(args);
-    	if(UI.getCurrent() != null) System.out.println("UI in application diverso da null");
-        else System.out.println("UI in application uguale a null");
     }
 
 }

@@ -12,6 +12,7 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -40,12 +41,16 @@ import com.innovare.utils.Property;
 import com.innovare.views.main.ContentView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasComponents;
+import com.vaadin.flow.component.HasValue.ValueChangeEvent;
+import com.vaadin.flow.component.HasValue.ValueChangeListener;
 import com.vaadin.flow.component.HtmlComponent;
 import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.board.Row;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
@@ -54,6 +59,9 @@ import com.vaadin.flow.component.upload.UploadI18N;
 import com.vaadin.flow.internal.MessageDigestUtil;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.server.Sizeable.Unit;
+import com.vaadin.ui.Notification.Type;
+
 import org.json.simple.parser.ParseException;
 
 @Route(value = "config", layout = ContentView.class)
@@ -173,7 +181,7 @@ public class ConfigurazioneView extends Div {
 	}
 
 	private Component createUploadModel() {
-		FlexBoxLayout header = createHeader(VaadinIcon.FILE_TREE_SUB, "Carica Modello del Classificatore");
+		FlexBoxLayout header = createHeader(VaadinIcon.FILE_TREE_SUB, "Carica Nuovo Classificatore");
 		Upload uploadModel = new Upload(buffer);
         uploadModel.setId("i18n-uploadModel");
         uploadModel.setSizeFull();
@@ -213,7 +221,19 @@ public class ConfigurazioneView extends Div {
 	}
 
 	private Component createUploadZip() {
-		FlexBoxLayout header = createHeader(VaadinIcon.FILE_ZIP, "Carica Cartella Zip delle Immagini");
+		Collection<String> models = new ArrayList();
+		models.add("modello1");
+		models.add("modello2");
+		models.add("modello3");
+		
+		ComboBox<String> modelSelection = new ComboBox<>("Seleziona il modello che vuoi usare", models);
+		 
+        modelSelection.setPlaceholder("Nessun modello selezionato");
+        modelSelection.setWidthFull();;
+ 
+        
+		
+		FlexBoxLayout header = createHeader(VaadinIcon.FILE_ZIP, "Carica Nuova Classificazione del Campo");
 		
 		Upload uploadZipImages = new Upload(buffer);
         uploadZipImages.setId("i18n-uploadZipImages");
@@ -222,6 +242,7 @@ public class ConfigurazioneView extends Div {
         uploadZipImages.setAutoUpload(true);
         uploadZipImages.setSizeFull();
         Div output = new Div();
+        uploadZipImages.setVisible(false);
 
         uploadZipImages.addSucceededListener(event -> {
             Component component = createComponent(event.getMIMEType(),
@@ -240,10 +261,19 @@ public class ConfigurazioneView extends Div {
         });
         
         uploadZipImages.setI18n(i18n);
+        modelSelection.addValueChangeListener(event -> {
+				uploadZipImages.setVisible(true);
+        	
+        });
         
-        FlexBoxLayout card = new FlexBoxLayout(uploadZipImages);
-        card.setPadding(Right.L, Left.L, Top.S, Bottom.S);
-		card.setAlignItems(FlexComponent.Alignment.CENTER);
+        
+        FlexBoxLayout modelAndZip = new FlexBoxLayout(modelSelection, uploadZipImages);
+        modelAndZip.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
+        modelAndZip.setSizeFull();
+        
+        FlexBoxLayout card = new FlexBoxLayout(modelAndZip);
+        card.setPadding(Right.XL, Left.L, Bottom.S, Top.S);
+		card.setAlignItems(FlexComponent.Alignment.START);
 		card.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
 		card.setMinHeight("200px");
 		UIUtils.setBackgroundColor(LumoStyles.Color.BASE_COLOR, card);
