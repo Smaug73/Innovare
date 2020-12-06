@@ -20,26 +20,6 @@ paths:
           description: Configuration response
       operationId: actualConfiguration
       description: Return the actual configuration.
-  /login:
-    get:
-      parameters:
-      - name: username
-        description: ""
-        schema:
-          type: string
-        in: query
-        required: true
-      - name: password
-        description: "L'utilizzo del tipo password ha generato errori, \nutilizzo\
-          \ per test del tipo string normale"
-        schema:
-          type: string
-        in: query
-        required: true
-      responses:
-        "200":
-          description: Login is done correctly.
-      operationId: login
   /allsample/{idcanale}:
     get:
       parameters:
@@ -172,7 +152,27 @@ paths:
     - name: dataSetName
       in: path
       required: true
-  /setModel/{modelName}: {}
+  /setModel/{modelName}:
+    post:
+      requestBody:
+        content:
+          application/json: {}
+        required: false
+      parameters:
+      - name: modelName
+        schema:
+          type: string
+        in: path
+        required: true
+      responses:
+        "200":
+          description: Notifica l'avvenuta selezione del modello.
+      operationId: setModel
+      summary: Seleziona il modello da utilizzare per la classificazione.
+    parameters:
+    - name: modelName
+      in: path
+      required: true
   /models:
     get:
       responses:
@@ -191,6 +191,46 @@ paths:
           description: Ritorna il json del modello attualmente selezionato.
       operationId: selectedModel
       summary: Ritorna il json del modello attualmente selezionato
+  /logout:
+    get:
+      responses:
+        "200":
+          description: Conferma dell'avvenuto logout.
+      operationId: logout
+      summary: Logout dal sistema.
+  /login:
+    summary: Login nel sistema.
+    get:
+      parameters:
+      - name: username
+        description: ""
+        schema:
+          type: string
+        in: query
+        required: true
+      - name: password
+        description: ""
+        schema:
+          type: string
+        in: query
+        required: true
+      responses:
+        "200":
+          description: Login is done correctly.
+      operationId: login
+    parameters:
+    - name: username
+      description: ""
+      schema:
+        type: string
+      in: query
+      required: true
+    - name: password
+      description: ""
+      schema:
+        type: string
+      in: query
+      required: true
 components:
   schemas:
     ConfigurationItem:

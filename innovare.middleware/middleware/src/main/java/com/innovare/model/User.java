@@ -9,8 +9,11 @@ public class User {
 	private Role role;
 	private String username;
 	private String password;
+	private String _id;
 	
 	
+	
+
 	public User() {
 		super();
 	}
@@ -53,6 +56,14 @@ public class User {
 		this.password = password;
 	}
 	
-	
+	public String get_id() {
+		return _id;
+	}
+
+
+	public void set_id(String _id) {
+		this._id = _id;
+	}
+
 	
 }
