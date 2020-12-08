@@ -30,11 +30,15 @@ import json
 imgSizeX=256
 imgSizeY=256
 
+modelSubName="none"
 substringSearch='-plant_'
+labels=["Pianta Normale","Carenza di acqua","Eccesso di acqua","Infestanti","Ambigua"]
 #Gli argomenti passati allo script sono il nome del modello e il path nel quale sono presenti le immagini
 #che sono state segmentate.
 #Esempio:
 #python Esempio1.py stub.h5 path
+#test
+#python Innovare/innovare.utils/pythonScript/Esempio1.py InnovareModels/stub.h5 InnovareImages/test/
 
 #Leggiamo il path delle foto e il nome del modello da dover utilizzare
 #Questo serve all'amministratore per la scelta del modello da utilizzare
@@ -47,7 +51,19 @@ try:
     pathModel =modelName
     #   print(pathModel )
     model= tf.keras.models.load_model(pathModel)
-    
+    #Cerco il nome del modello dal path 
+    for i in range(len(modelName)):
+        #Fare attenzione al sistema operativo utilizzato
+        if (modelName[(len(modelName)-i-1)] == '/') or (modelName[(len(modelName)-i-1)] == '\\'):
+            print("trovato!")
+            break
+        else:
+            print("cerco")
+
+    modelSubName= modelName[(len(modelName)-i):(len(modelName))]
+    print("Model name: i:{} len of modelpath:{} ".format(i,len(modelName)-1) )
+    print(modelSubName)
+
 except ImportError:
     print('ImportError: caricamento modello non possibile')
     sys.exit(1)
@@ -88,9 +104,13 @@ def classificaImmagini(imageName):
     #print(score.shape.as_list())
     #print(score.numpy()[4])
     allClass=[]
-    for i in range(score.shape.as_list()[0]):
-        singleClass={ "classe":"{}".format(i) , "score":score.numpy()[4]*100}
+    #for i in range(score.shape.as_list()[0]):
+    #    singleClass={ "classe":"{}".format(i) , "score":score.numpy()[4]*100}
+    #    allClass.append(singleClass)  
+    for i in range(5):
+        singleClass={ "classe":"{}".format(labels[i]) , "score":score.numpy()[4]*100}
         allClass.append(singleClass)
+
     return allClass
     #return PhotoDict={"uid":"'"+row[7]+"'" , "classification":allClass} 
 
@@ -120,7 +140,7 @@ for row in csv_reader:
             #Ricostruisco il nome della immagine di origine dalla quale proviene la pianta
             listStringName=row[6].split('plant')
             originalImgName=referencePath+listStringName[0]+'erased_background_with_boxes.jpg'
-            dictRow={ 'path':referencePath+row[6],'hash':row[7],'date':row[0].replace("_","-"),'originalImage':originalImgName ,'classification':PhotoDict }
+            dictRow={ 'path':referencePath+row[6],'hash':row[7],'date':row[0].replace("_","-"),'originalImage':originalImgName ,'classification':PhotoDict,'model':modelSubName }
             allImageClassification.append(dictRow)
         
         #test#test#test#test
