@@ -37,6 +37,7 @@ import com.innovare.ui.utils.Top;
 import com.innovare.ui.utils.UIUtils;
 import com.innovare.ui.utils.Uniform;
 import com.innovare.utils.ConfigurationItem;
+import com.innovare.utils.IrrigationState;
 import com.innovare.utils.Property;
 import com.innovare.views.main.ContentView;
 import com.vaadin.flow.component.Component;
@@ -159,13 +160,67 @@ public class ConfigurazioneView extends Div {
 	}
 
 	private Component createContent() {
+		Component irrigation = createIrrigationState();
     	Component confItemView = createConfItemView();
 		Component uploads = createUploadsView();
 
-		FlexBoxLayout content = new FlexBoxLayout(confItemView, uploads);
+		FlexBoxLayout content = new FlexBoxLayout(irrigation, confItemView, uploads);
 		content.setAlignItems(FlexComponent.Alignment.CENTER);
 		content.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
 		return content;
+	}
+	
+	private Component createIrrigationState() {
+    	FlexBoxLayout irrState = new FlexBoxLayout(
+  				createHeader(VaadinIcon.SLIDER, "Stato Irrigazione"),
+  				createIrrigationStateCard());
+    	irrState.setBoxSizing(BoxSizing.BORDER_BOX);
+  		irrState.setDisplay(Display.BLOCK);
+  		irrState.setMargin(Top.L);
+  		irrState.setMaxWidth(MAX_WIDTH);
+  		irrState.setPadding(Horizontal.RESPONSIVE_L);
+  		irrState.setWidthFull();
+  		return irrState;
+	}
+
+	private Component createIrrigationStateCard() {
+		
+		/* 
+		 * Recupero stato irrigazione da middleware per iniziallizare
+		 * la variabile booleana "acceso"
+		 */
+		boolean acceso = false;
+		String state;
+		String colorState;
+		if(acceso) {
+			state = IrrigationState.ACCESO.getName();
+			colorState = IrrigationState.ACCESO.getColor();
+		}
+		else {
+			state = IrrigationState.SPENTO.getName();
+			colorState = IrrigationState.SPENTO.getColor();
+		}
+		
+		FlexBoxLayout descLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Stato dell'impianto irriguo:"));
+		FlexBoxLayout status = new FlexBoxLayout(
+				UIUtils.createIcon(IconSize.S, colorState, VaadinIcon.CIRCLE),
+				UIUtils.createLabel(FontSize.L, state));
+		status.setSpacing(Right.S);
+		status.setAlignItems(Alignment.CENTER);
+		
+		
+		FlexBoxLayout card = new FlexBoxLayout(descLabel, status);
+		card.setFlexDirection(FlexLayout.FlexDirection.ROW);
+		card.setFlexGrow(2, descLabel, status);
+		card.setBackgroundColor(LumoStyles.Color.BASE_COLOR);
+		card.setBorderRadius(BorderRadius.S);
+		card.setBoxSizing(BoxSizing.BORDER_BOX);
+		card.setPadding(Uniform.M);
+		card.setShadow(Shadow.XS);
+		card.setHeightFull();
+		card.setMargin(Bottom.L);
+		System.out.println("Larghezza Card: " + card.getWidth());
+		return card;
 	}
 
 	private Component createUploadsView() {

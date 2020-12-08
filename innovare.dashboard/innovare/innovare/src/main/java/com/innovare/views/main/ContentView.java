@@ -24,6 +24,7 @@ import com.innovare.views.storico.TempAmbView;
 import com.innovare.views.storico.HumAmbView;
 import com.innovare.views.storico.TempSuoloView;
 import com.innovare.views.storico.HumSuoloView;
+import com.innovare.views.storico.IrrigazioneView;
 import com.innovare.views.storico.RainView;
 import com.innovare.views.storico.WindView;
 
@@ -91,6 +92,7 @@ public class ContentView extends MainView{
 
 		NaviItem storico = naviMenu.addNaviItem(VaadinIcon.ARCHIVES, "Storico", null);
 		naviMenu.addNaviItem(storico, "Classificazioni", ClassificazioniView.class);
+		naviMenu.addNaviItem(storico, "Irrigazioni", IrrigazioneView.class);
 		naviMenu.addNaviItem(storico, "Temperatura Ambientale", TempAmbView.class);
 		naviMenu.addNaviItem(storico, "Umidità Ambientale", HumAmbView.class);
 		naviMenu.addNaviItem(storico, "Piogge", RainView.class);

@@ -132,7 +132,7 @@ public class ClassificazioniView extends StoricoView{
 		
 		
 		
-		grid.setVerticalScrollingEnabled(true);
+		grid.setVerticalScrollingEnabled(false);
 		
 		return super.createCard(grid);
 	}
