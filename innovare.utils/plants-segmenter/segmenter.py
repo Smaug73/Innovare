@@ -122,6 +122,7 @@ if args.verbose:
 
 if not os.path.exists(dstdir):
     print("Error: destination dir does not exists.")
+    exit(1)
 
 processed_images_count = 0
 global_generated_images_counter = 0
