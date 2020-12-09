@@ -231,6 +231,26 @@ paths:
         type: string
       in: query
       required: true
+  /startIrrigation:
+    get:
+      responses:
+        "200":
+          description: RIchiesta avvio irrigazione inviata
+      operationId: startIrrigation
+      summary: Avvio irrigazione
+  /stopIrrigation:
+    get:
+      responses:
+        "200":
+          description: Richiesta di stop all'irrigazione inviata.
+      operationId: stopIrrigation
+  /statoIrrigazione:
+    get:
+      responses:
+        "200":
+          description: RIchiesta stato irrigazione
+      operationId: getStatoIrrigazione
+      summary: RIchiesta stato irrigazione.
 components:
   schemas:
     ConfigurationItem:
@@ -320,6 +340,7 @@ components:
             score: 23.196931183338165
           hash: '''1ec6cc13769ab7310345101d32509080'''
         originalImage: /home/stefano/Scrivania/Lavoro/IMMAGINI-TestPythonScript/d3/2020_09_11_Dataset_FondatanaDeiFieri-Thermal_Optical-Fila_3_4-Session1-DJI_0831-erased_background_with_boxes.jpg
+        model: modelName
     Model:
       description: Modello di classificazione utilizzato dal sistema
       type: object

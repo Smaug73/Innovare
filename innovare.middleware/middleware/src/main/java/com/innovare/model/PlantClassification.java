@@ -15,18 +15,21 @@ public class PlantClassification {
 	private String date;
 	private String originalImage;
 	private String path;
+	private String modelName;
+	
 	
 	public PlantClassification() {}
 
 	
 	public PlantClassification(String hash, Classification classification, String date,
-			String originalImage, String path) {
+			String originalImage, String path,String modelname) {
 		super();
 		this.hash = hash;
 		this.classification = classification;
 		this.date = date;
 		this.originalImage = originalImage;
 		this.path = path;
+		this.modelName=modelname;
 	}
 
 	public String getHash() {
@@ -69,13 +72,23 @@ public class PlantClassification {
 		this.path = path;
 	}
 
+	public String getModelName() {
+		return modelName;
+	}
+
+
+	public void setModelName(String modelName) {
+		this.modelName = modelName;
+	}
+
+
 	@Override
 	public String toString() {
 		return "PlantClassification [hash=" + hash + ", classification=" + classification + ", date=" + date
-				+ ", originalImage=" + originalImage + ", path=" + path + "]";
+				+ ", originalImage=" + originalImage + ", path=" + path + ", modelName=" + modelName + "]";
 	}
-	
-	
+
+
 	
 	
 }

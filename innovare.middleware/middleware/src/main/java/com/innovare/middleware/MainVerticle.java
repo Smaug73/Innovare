@@ -18,6 +18,7 @@ import com.innovare.model.Model;
 import com.innovare.model.PlantClassification;
 import com.innovare.model.User;
 import com.innovare.utils.NoUserLogException;
+import com.innovare.utils.Utilities;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.AbstractVerticle;
@@ -81,6 +82,8 @@ public class MainVerticle extends AbstractVerticle {
 	//private Model selectedModel=null;
 	private ModelController modelController;
 	private LoggingController loggingController;
+	private MqttClient irrigationCommandClient;
+	private MqttClient irrigationLog;
 	
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
@@ -109,8 +112,6 @@ public class MainVerticle extends AbstractVerticle {
 
 	  
 	  //TEST MONGODB
-		 //Con questo test cercheremmo tutti gli utenti, matchara tutti perchè abbiamo specificato dettagli in particolare
-		 //this.findUser("admin");
 	  JsonObject query = new JsonObject();
 	  mongoClient.find("Utenti", query, res -> {
 	    if (res.succeeded()) {
@@ -129,13 +130,16 @@ public class MainVerticle extends AbstractVerticle {
 	   */
 	  this.modelController= new ModelController();
 	  System.out.println(this.LOG+": modelController creato: "+this.modelController.toString());
+	  /*
+	   * LOGGIN CONTROLLER
+	   */
 	  this.loggingController= new LoggingController();
 	  System.out.println(this.LOG+": loggingController creato: "+this.loggingController.toString());
+	  
 	  /*
 	   * MQTT CLIENT 
 	   * 
-	   */
-	  
+	   */	  
 	  //Creazione client MQTT per cattura log dei gateway
 	  MqttClient clientLog= MqttClient.create(vertx);
 	  clientLog.connect(1883, "localhost", s -> {
@@ -160,8 +164,33 @@ public class MainVerticle extends AbstractVerticle {
 	    		  .subscribe("gatewayLog", 2);	    
 	    });
 	  
+	  /*
+	   * MQTT CLIENT IRRIGAZIONE
+	   * 
+	   * Client per l'invio di comandi 
+	   */
+	  System.out.println("Creazione client mqtt per i comandi di irrigazione.");
+	  this.irrigationCommandClient= MqttClient.create(vertx);
 	  
-	    
+	  /*
+	   * Client per la ricezione del log dell'irrigazione.
+	   */
+	  System.out.println("Creazione client mqtt per il log dell'irrigazione.");
+	  this.irrigationLog= MqttClient.create(vertx);
+	  this.irrigationLog.connect(1883, Utilities.ipMqtt, s ->{
+		  clientLog.publishHandler(c -> {
+	    		//Ogni qual volta viene pubblicata una misura la stampiamo e la salviamo.
+				  //System.out.println("There are new message in topic: " + c.topicName());
+	    		  //System.out.println("Content(as string) of the message: " + c.payload().toString());
+	    		  //System.out.println("QoS: " + c.qosLevel());	
+	    		  System.out.println(Utilities.irrigationLogMqttChannel+":"+c.payload().toString());	  
+	    		  //JsonObject confJson= new JsonObject( c.payload().toString());
+	    		})
+	    		  .subscribe(Utilities.irrigationLogMqttChannel, 2);	  
+	  });
+	  
+	  
+	  
 	    //////////////////////////////////////////////
 	    
 	    /*
@@ -729,6 +758,100 @@ public class MainVerticle extends AbstractVerticle {
     	    	    	}
 	    	    	 	    	
     	    	    }); 
+    	    	    
+    	    	    
+    	    	    
+    	    	    /*
+    	    	     * START IRRIGATION
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("startIrrigation", routingContext ->{	
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		/*
+    	    	    		 * Invio il comando tramite il client mqtt per il comando
+    	    	    		 */
+    	    	    		System.out.println("Invio comando di start dell'irrigazione...");
+    	    	    		/*
+    	    	    		 * Utiliziamo un handler per capire quando la pubblicazione è stata completata(?)
+    	    	    		 * Quando è andata a buon fine restituiamo un 200
+    	    	    		 */
+    	    	    		/*this.irrigationCommandClient.publishCompletionHandler(c ->{
+    	    	    			System.out.println("Invio effettuato con successo");
+    	    	    			routingContext
+    							.response()
+    							.setStatusCode(200)
+    							.end();
+    	    	    			//Disconnesione per evitare problemi
+            	    	    	this.irrigationCommandClient.disconnect();
+    	    	    		});*/
+    	    	    		this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, t ->{
+    	    	    			this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
+    	        	    	    		  Buffer.buffer(Utilities.stateOn),
+    	  								  MqttQoS.AT_LEAST_ONCE,
+    	  								  false,
+    	  								  false);
+    	    	    			this.irrigationCommandClient.disconnect();
+            	    	    	
+            	    	    	routingContext
+    							.response()
+    							.setStatusCode(200)
+    							.end("Invio comando effettuato");
+            	    	    	System.out.println("Invio comando start effettuato.");
+    	    	    		  });
+        	    	    	
+        	    	    	 	
+    	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}	    	    	 	    	
+    	    	    }); 
+    	    	    
+    	    	    /*
+    	    	     * STOP IRRIGATION
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("stopIrrigation", routingContext ->{	
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		/*
+    	    	    		 * Invio il comando tramite il client mqtt per il comando
+    	    	    		 */
+    	    	    		System.out.println("Invio comando di stop dell'irrigazione...");
+    	    	    		/*
+    	    	    		 * Utiliziamo un handler per capire quando la pubblicazione è stata completata(?)
+    	    	    		 * Quando è andata a buon fine restituiamo un 200
+    	    	    		 */
+    	    	    		this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, v ->{
+    	    	    			
+    	    	    			this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
+    	        	    	    		  Buffer.buffer(Utilities.stateOff),
+    	  								  MqttQoS.AT_LEAST_ONCE,
+    	  								  false,
+    	  								  false);
+    	    	    			this.irrigationCommandClient.disconnect();
+            	    	    	
+            	    	    	routingContext
+    							.response()
+    							.setStatusCode(200)
+    							.end("Invio comando effettuato");
+            	    	    	
+            	    	    	System.out.println("Invio comando stop effettuato.");
+    	    	    		  });
+        	    	    	
+        	    	    	
+    	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}	    	    	 	    	
+    	    	    }); 
+    	    	    
+    	    	    
+    	    	    
     	    	    
     	    	/*
     	    	 * Dalla dashboard dobbiamo capire se si sta cercando di entrare come admin o user. 
