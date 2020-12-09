@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.control.Classificator;
 import com.innovare.control.LoggingController;
 import com.innovare.control.ModelController;
+import com.innovare.model.IrrigationState;
 import com.innovare.model.Model;
 import com.innovare.model.PlantClassification;
 import com.innovare.model.User;
@@ -84,6 +85,9 @@ public class MainVerticle extends AbstractVerticle {
 	private LoggingController loggingController;
 	private MqttClient irrigationCommandClient;
 	private MqttClient irrigationLog;
+	
+	private IrrigationState irrigationState=null;
+	
 	
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
@@ -223,8 +227,6 @@ public class MainVerticle extends AbstractVerticle {
     	    		    res.cause().printStackTrace();
     	    		  }
     	    		});
-    	    	
-    	    	
     	    });
     	   
     	    //Login     
@@ -851,7 +853,35 @@ public class MainVerticle extends AbstractVerticle {
     	    	    }); 
     	    	    
     	    	    
-    	    	    
+    	    	    /*
+    	    	     * STATO IRRIGAZIONE
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("getStatoIrrigazione", routingContext ->{	
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		//Caso nel quale non è stata creata nessuna irrigazione
+    	    	    		if(this.irrigationState == null) {
+    	    	    			routingContext
+	      		    	   	      .response()
+	      			              .setStatusCode(200)
+	      			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+	      			              .end(Utilities.stateOff);
+    	    	    		}else {
+    	    	    			
+    	    	    			
+    	    	    			
+    	    	    		}
+        	    	    
+    	    	    		
+    	    	    		
+    	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}	    	    	 	    	
+    	    	    }); 
     	    	    
     	    	/*
     	    	 * Dalla dashboard dobbiamo capire se si sta cercando di entrare come admin o user. 
