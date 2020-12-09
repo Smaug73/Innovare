@@ -1,19 +1,31 @@
 package com.innovare.middleware;
 
+import java.io.FileNotFoundException;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.innovare.control.Classificator;
+import com.innovare.control.LoggingController;
+import com.innovare.control.ModelController;
+import com.innovare.model.IrrigationState;
+import com.innovare.model.Model;
+import com.innovare.model.PlantClassification;
 import com.innovare.model.User;
+import com.innovare.utils.NoUserLogException;
+import com.innovare.utils.Utilities;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServer;
@@ -43,7 +55,7 @@ public class MainVerticle extends AbstractVerticle {
 	 * 	
 	 */
 	
-	
+	private final String LOG="MAIN-VERTICLE-LOG";
 	final List<JsonObject> configuration = new ArrayList<>(
 			//Arrays.asList(
 		 //   new JsonObject().put("Gateway", "prova").put("Model", "prova")	    
@@ -52,7 +64,7 @@ public class MainVerticle extends AbstractVerticle {
 	
 	//private MongoClient mongo=null;
 	
-	private User userLog;
+	//private User userLog;
 	/*
 	 * Usare jackson per fare mapping java / json
 	 * 
@@ -68,9 +80,14 @@ public class MainVerticle extends AbstractVerticle {
 	private HashMap<Integer,MqttClient> mqttClients;
 	private HashMap<String,ArrayList<JsonObject>> sampleChannelQueue;
 	private MongoClient mongoClient;
+	//private Model selectedModel=null;
+	private ModelController modelController;
+	private LoggingController loggingController;
+	private MqttClient irrigationCommandClient;
+	private MqttClient irrigationLog;
 	
-	private boolean logged=false;
-	private boolean admin=false;
+	private IrrigationState irrigationState=null;
+	
 	
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
@@ -99,8 +116,6 @@ public class MainVerticle extends AbstractVerticle {
 
 	  
 	  //TEST MONGODB
-		 //Con questo test cercheremmo tutti gli utenti, matchara tutti perchè abbiamo specificato dettagli in particolare
-		 //this.findUser("admin");
 	  JsonObject query = new JsonObject();
 	  mongoClient.find("Utenti", query, res -> {
 	    if (res.succeeded()) {
@@ -114,12 +129,21 @@ public class MainVerticle extends AbstractVerticle {
 	    }
 	  });
 	  
+	  /*
+	   * Creazione del modelController
+	   */
+	  this.modelController= new ModelController();
+	  System.out.println(this.LOG+": modelController creato: "+this.modelController.toString());
+	  /*
+	   * LOGGIN CONTROLLER
+	   */
+	  this.loggingController= new LoggingController();
+	  System.out.println(this.LOG+": loggingController creato: "+this.loggingController.toString());
 	  
 	  /*
 	   * MQTT CLIENT 
 	   * 
-	   */
-	  
+	   */	  
 	  //Creazione client MQTT per cattura log dei gateway
 	  MqttClient clientLog= MqttClient.create(vertx);
 	  clientLog.connect(1883, "localhost", s -> {
@@ -144,8 +168,33 @@ public class MainVerticle extends AbstractVerticle {
 	    		  .subscribe("gatewayLog", 2);	    
 	    });
 	  
+	  /*
+	   * MQTT CLIENT IRRIGAZIONE
+	   * 
+	   * Client per l'invio di comandi 
+	   */
+	  System.out.println("Creazione client mqtt per i comandi di irrigazione.");
+	  this.irrigationCommandClient= MqttClient.create(vertx);
 	  
-	    
+	  /*
+	   * Client per la ricezione del log dell'irrigazione.
+	   */
+	  System.out.println("Creazione client mqtt per il log dell'irrigazione.");
+	  this.irrigationLog= MqttClient.create(vertx);
+	  this.irrigationLog.connect(1883, Utilities.ipMqtt, s ->{
+		  clientLog.publishHandler(c -> {
+	    		//Ogni qual volta viene pubblicata una misura la stampiamo e la salviamo.
+				  //System.out.println("There are new message in topic: " + c.topicName());
+	    		  //System.out.println("Content(as string) of the message: " + c.payload().toString());
+	    		  //System.out.println("QoS: " + c.qosLevel());	
+	    		  System.out.println(Utilities.irrigationLogMqttChannel+":"+c.payload().toString());	  
+	    		  //JsonObject confJson= new JsonObject( c.payload().toString());
+	    		})
+	    		  .subscribe(Utilities.irrigationLogMqttChannel, 2);	  
+	  });
+	  
+	  
+	  
 	    //////////////////////////////////////////////
 	    
 	    /*
@@ -178,83 +227,142 @@ public class MainVerticle extends AbstractVerticle {
     	    		    res.cause().printStackTrace();
     	    		  }
     	    		});
-    	    	
-    	    	
     	    });
-    	    /*
-    	    	routingContext
-    	    	 .response()
-    	    	 .setStatusCode(200)
-    	    	 .putHeader(HttpHeaders.CONTENT_TYPE, "applivation/json")
-    	    	 .end(new JsonArray(getAllConfiguration()).encode())
-    	    		);
-    	    */
+    	   
     	    //Login     
     	    routerFactory.addHandlerByOperationId("login", routingContext ->{
-    	    	String username= routingContext.request().getParam("username").toString();
-    	    	String password= routingContext.request().getParam("password").toString();
-    	    	System.out.print(username+" "+password);	//Stampa di TEST
-    	    	/*RequestParameters params = routingContext.get("parsedParameters"); // (1)
-    	    	String username = params.pathParameter("username").toString();
-    	    	String password = params.pathParameter("password").toString();*/
+    	    	//Controlliamo che non si già loggato
+    	    	if(!this.loggingController.isUserLogged()) {
+    	    		//String username= routingContext.request().getParam("username").toString();
+    	    		String username=routingContext.request().params().get("username");
+        	    	//String password= routingContext.request().getParam("password").toString();
+    	    		String password=routingContext.request().params().get("password");
+        	    	System.out.println("Utente che cerca di loggarsi nel sistema: "+username+" "+password);	//Stampa di TEST
+        	    	/*RequestParameters params = routingContext.get("parsedParameters"); // (1)
+        	    	String username = params.pathParameter("username").toString();
+        	    	String password = params.pathParameter("password").toString();*/
+        	    	
+        	    	//Verifichiamo che l'utente loggato sia corretto andando ad effettuare una chiamata al database MongoDb.
+        	    	 JsonObject q = new JsonObject()
+        	    			 .put("username", username)
+        	    			 .put("password", password);
+        	    	 
+        	    	 mongoClient.findOne("Utenti", q, null , res -> {
+        	    		 if (res.succeeded()) {
+        	    			 if(this.loggingController.logIn(res.result().toString())) {
+        	    				 try {
+    								System.out.println("Conferma login effettuato per utente: user: "+this.loggingController.getUserLogged().toString());
+    								routingContext
+								 	.response()
+								 	.setStatusCode(200)
+								 	.end( this.loggingController.getUserLogged().getRole().toString()  );
+    							 }catch(NoUserLogException e) {
+    								// TODO Auto-generated catch block
+    								System.out.println("Errore toString user loggato");
+    								 routingContext
+	       	   		    	   	      .response()
+	       	   			              .setStatusCode(404)
+	       	   			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+	       	   			              .end("ERRORE: caricamento utente");
+    								e.printStackTrace();
+    							}			 
+            	    			
+        	    			}else {
+        	    				 routingContext
+    	   		    	   	      .response()
+    	   			              .setStatusCode(404)
+    	   			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    	   			              .end("ERRORE: caricamento utente");
+        	    			 }
+        	    			
+        	    		}else{
+    		    	   	      res.cause().printStackTrace();
+    		    	   	      /*
+    		    	   	       * Caso nel quale non esiste lo User
+    		    	   	       */
+    		    	   	      routingContext
+    		    	   	      .response()
+    			              .setStatusCode(404)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Errore username o password");
+    		    	   	    }
+    		    	   	  });
+    	    	}
+    	    	else {
+    	    		routingContext
+	    	   	      .response()
+		              .setStatusCode(401)
+		              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+		              .end("Non autorizzato: già loggato.");
+    	    	}
     	    	
-    	    	//Verifichiamo che l'utente loggato sia corretto andando ad effettuare una chiamata al database MongoDb.
-    	    	 JsonObject q = new JsonObject()
-    	    			 .put("username", username)
-    	    			 .put("password", password);
-    	    	 
-    	    	 mongoClient.findOne("Utenti", q, null , res -> {
-    	    		 if (res.succeeded()) {
-    	    			 System.out.println("Conferma login effettuato per utente: user: "+username);			 
-    	    			 routingContext
-    	    	    	 	.response()
-    	    	    	 	.setStatusCode(200)
-    	    	    	 	.end(res.result().getString("role"));	
-    	    			 System.out.println(res.result().getString("role"));
-    	    		 } else {
-		    	   	      res.cause().printStackTrace();
-		    	   	      
-		    	   	      routingContext
-		    	   	      .response()
-			              .setStatusCode(404)
-			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-			              .end();
-		    	   	    }
-		    	   	  });
+    	    	
     	    });
     	    	
+    	    
+    	    /*
+    	     * LOGOUT
+    	     */
+    	    routerFactory.addHandlerByOperationId("logout", routingContext ->{
+    	    	
+    	    	if(this.loggingController.isUserLogged()) {
+    	    		this.loggingController.logout();
+    	    		routingContext
+    	    		.response()
+    	    		.setStatusCode(200)
+    	    		.end("Logout effettuato con successo.");
+    	    	}
+    	    	else {
+    	    		routingContext
+	    	   	      .response()
+		              .setStatusCode(401)
+		              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+		              .end("Non autorizzato: non sei loggato.");
+    	    	}
+    	    });  	
+    	    
     	      
     	    /*
     	     * Ultima misura registrata in un determinato canale
     	     */
     	    	    routerFactory.addHandlerByOperationId("lastsample", routingContext ->{
-    	    	    	String channel= routingContext.request().getParam("idcanale");
-    	    	    	/*
-    	    	    	 * Fallimento se non il parametro non è stato inserito o non esiste il canale selezionato
-    	    	    	 */
-    	    	    	if(channel==null || !this.sampleChannelQueue.containsKey(channel))
-    	    	    		routingContext
-			    	   	      .response()
-				              .setStatusCode(400)
-				              .end();
+    	    	    	
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		String channel= routingContext.request().getParam("idcanale");
+        	    	    	/*
+        	    	    	 * Fallimento se non il parametro non è stato inserito o non esiste il canale selezionato
+        	    	    	 */
+        	    	    	if(channel==null || !this.sampleChannelQueue.containsKey(channel))
+        	    	    		routingContext
+    			    	   	      .response()
+    				              .setStatusCode(400)
+    				              .end();
+        	    	    	else {
+        	    	    		/*
+        	    	    		 * Restituiamo l'ultimo Sample registrato ma non lo eliminiamo
+        	    	    		 */
+        	    	    		ArrayList<JsonObject> samples= this.sampleChannelQueue.get(channel);
+        	    	    		if(!samples.isEmpty()) {
+                	    	    	routingContext
+            	    	    	 	.response()
+            	    	    	 	.setStatusCode(200)
+            	    	    	 	.end(samples.get(samples.size()-1).toString());
+        	    	    		}else
+        	    	    			/*
+        	    	    			 * Caso nel quale non ci sono nuovi Sample
+        	    	    			 */
+    	        	    	    	routingContext
+    	    	    	    	 	.response()
+    	    	    	    	 	.setStatusCode(200)
+    	    	    	    	 	.end("NO-NEW-SAMPLE");
+        	    	    	}
+    	    	    	}
     	    	    	else {
-    	    	    		/*
-    	    	    		 * Restituiamo l'ultimo Sample registrato ma non lo eliminiamo
-    	    	    		 */
-    	    	    		ArrayList<JsonObject> samples= this.sampleChannelQueue.get(channel);
-    	    	    		if(!samples.isEmpty()) {
-            	    	    	routingContext
-        	    	    	 	.response()
-        	    	    	 	.setStatusCode(200)
-        	    	    	 	.end(samples.get(samples.size()-1).toString());
-    	    	    		}else
-    	    	    			/*
-    	    	    			 * Caso nel quale non ci sono nuovi Sample
-    	    	    			 */
-	        	    	    	routingContext
-	    	    	    	 	.response()
-	    	    	    	 	.setStatusCode(200)
-	    	    	    	 	.end("NO-NEW-SAMPLE");
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
     	    	    	}
     	    	    	
     
@@ -262,116 +370,519 @@ public class MainVerticle extends AbstractVerticle {
     	    		
     	    	/*
     	    	 * Restituiamo le ultime misure non ancora mostrate da la DashBoard e le eliminiamo dall'array   
-    	    	 */
-    	    	    
+    	    	 */   	    	    
     	    	    routerFactory.addHandlerByOperationId("lastsamples", routingContext ->{
-    	    	    	String channel= routingContext.request().getParam("idcanale");
-    	    	    	/*
-    	    	    	 * Fallimento se non il parametro non è stato inserito o non esiste il canale selezionato
-    	    	    	 */
-    	    	    	if(channel==null || !this.sampleChannelQueue.containsKey(channel))
-    	    	    		routingContext
-			    	   	      .response()
-				              .setStatusCode(400)
-				              .end();
-    	    	    	else {
-    	    	    		/*
-    	    	    		 * Restituiamo gli ultimi Sample e li eliminiamo
-    	    	    		 */
-        	    	    	ArrayList<JsonObject> samples= this.sampleChannelQueue.get(channel);
-        	    	    	
-        	    	    	
-        	    	    	if(!samples.isEmpty()) {
-        	    	    		System.out.println("Samples inviati: "+samples.toString());
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		String channel= routingContext.request().getParam("idcanale");
+        	    	    	/*
+        	    	    	 * Fallimento se non il parametro non è stato inserito o non esiste il canale selezionato
+        	    	    	 */
+        	    	    	if(channel==null || !this.sampleChannelQueue.containsKey(channel))
         	    	    		routingContext
-    								.response()
-    								.setStatusCode(200)
-    								.end(samples.toString());
-    								this.sampleChannelQueue.get(channel).clear();
-    	            	    	 
-    							
-        	    	    	}else {
-        	    	    		System.out.println("No new Value");
-        	    	    		routingContext
-	    	    	    	 	.response()
-	    	    	    	 	.setStatusCode(200)
-	    	    	    	 	.end();
+    			    	   	      .response()
+    				              .setStatusCode(400)
+    				              .end();
+        	    	    	else {
+        	    	    		/*
+        	    	    		 * Restituiamo gli ultimi Sample e li eliminiamo
+        	    	    		 */
+            	    	    	ArrayList<JsonObject> samples= this.sampleChannelQueue.get(channel);
+            	    	    	
+            	    	    	
+            	    	    	if(!samples.isEmpty()) {
+            	    	    		System.out.println("Samples inviati: "+samples.toString());
+            	    	    		routingContext
+        								.response()
+        								.setStatusCode(200)
+        								.end(samples.toString());
+        								this.sampleChannelQueue.get(channel).clear();
+        	            	    	 
+        							
+            	    	    	}else {
+            	    	    		System.out.println("No new Value");
+            	    	    		routingContext
+    	    	    	    	 	.response()
+    	    	    	    	 	.setStatusCode(200)
+    	    	    	    	 	.end();
+            	    	    	}
+            	    	    	
         	    	    	}
-        	    	    	
     	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}
+    	    	    	
+    	    	    	
     	    	    }); 
     	    	 
     	    	    routerFactory.addHandlerByOperationId("daysamples", routingContext ->{
-    	    	    	String channel= routingContext.request().getParam("idcanale");
-    	    	    	if(channel==null || !this.sampleChannelQueue.containsKey(channel))
-    	    	    		routingContext
-			    	   	      .response()
-				              .setStatusCode(400)
-				              .end();
-    	    	    	else {
-    	    	    		/*
-    	    	    		 * Restituiamo i Samples presenti nella queue ma non li eliminiamo.
-    	    	    		 */
-        	    	    	ArrayList<JsonObject> samples= this.sampleChannelQueue.get(channel);
-        	    	    	
-        	    	    	
-        	    	    	if(!samples.isEmpty()) {
-        	    	    		System.out.println("Samples inviati: "+samples.toString());
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		String channel= routingContext.request().getParam("idcanale");
+        	    	    	if(channel==null || !this.sampleChannelQueue.containsKey(channel))
         	    	    		routingContext
-    								.response()
-    								.setStatusCode(200)
-    								.end(samples.toString());
-    							
-        	    	    	}else {
-        	    	    		System.out.println("No new Value");
-        	    	    		routingContext
-	    	    	    	 	.response()
-	    	    	    	 	.setStatusCode(200)
-	    	    	    	 	.end();
+    			    	   	      .response()
+    				              .setStatusCode(400)
+    				              .end();
+        	    	    	else {
+        	    	    		/*
+        	    	    		 * Restituiamo i Samples presenti nella queue ma non li eliminiamo.
+        	    	    		 */
+            	    	    	ArrayList<JsonObject> samples= this.sampleChannelQueue.get(channel);
+            	    	    	
+            	    	    	
+            	    	    	if(!samples.isEmpty()) {
+            	    	    		System.out.println("Samples inviati: "+samples.toString());
+            	    	    		routingContext
+        								.response()
+        								.setStatusCode(200)
+        								.end(samples.toString());
+        							
+            	    	    	}else {
+            	    	    		System.out.println("No new Value");
+            	    	    		routingContext
+    	    	    	    	 	.response()
+    	    	    	    	 	.setStatusCode(200)
+    	    	    	    	 	.end();
+            	    	    	}
+            	    	    	
         	    	    	}
-        	    	    	
     	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}	    	    	
     	    	    }); 
     	    	    
+    	    	    /*
+    	    	     * Restituiamo tutti i sample di un determinato canale
+    	    	     */
     	    	    routerFactory.addHandlerByOperationId("allsamples", routingContext ->{
-    	    	    	String channel= routingContext.request().getParam("idcanale");
-    	    	    	/*
-    	    	    	 * Fallimento se non il parametro non è stato inserito o non esiste il canale selezionato
-    	    	    	 */
-    	    	    	if(channel==null || !this.sampleChannelQueue.containsKey(channel))
-    	    	    		routingContext
-			    	   	      .response()
-				              .setStatusCode(400)
-				              .end();
-    	    	    	else {
-    	    	    		/*
-    	    	    		 * Restituiamo tutti i Sample di un determinato canale
-    	    	    		 */
-    	    	    		JsonObject q= new JsonObject().put("channel", channel);
-        	    	    	this.mongoClient.find("channel-"+channel,q, res-> {
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		String channel= routingContext.request().getParam("idcanale");
+        	    	    	/*
+        	    	    	 * Fallimento se il parametro non è stato inserito o non esiste il canale selezionato
+        	    	    	 */
+        	    	    	if(channel==null || !this.sampleChannelQueue.containsKey(channel))
+        	    	    		routingContext
+    			    	   	      .response()
+    				              .setStatusCode(400)
+    				              .end();
+        	    	    	else {
         	    	    		/*
-        	    	    		 * Successo nel trovare i sample nel db
+        	    	    		 * Restituiamo tutti i Sample di un determinato canale
         	    	    		 */
-        	    	    		if(res.succeeded()) {
-        	    	    			routingContext
+        	    	    		JsonObject q= new JsonObject().put("channel", channel);
+            	    	    	this.mongoClient.find("channel-"+channel,q, res-> {
+            	    	    		/*
+            	    	    		 * Successo nel trovare i sample nel db
+            	    	    		 */
+            	    	    		if(res.succeeded()) {
+            	    	    			routingContext
+        								.response()
+        								.setStatusCode(200)
+        								.end(res.result().toString());
+            	    	    		}
+            	    	    		/*
+            	    	    		 * Caso di fallimento
+            	    	    		 */
+            	    	    		else {
+            	    	    			routingContext
+          			    	   	      .response()
+          				              .setStatusCode(400)
+          				              .end("No-sample-find");
+            	    	    		}
+            	    	    	});
+            	    	    	
+        	    	    	}
+    	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}
+    	    	    	
+    	    	    	
+    	    	    }); 
+    	    	    
+    	    	    /*
+    	    	     * Richiesta di una nuova classificazione utilizzando un certo dataset
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("newclassification", routingContext ->{
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		String modelName= routingContext.request().getParam("modelName");
+        	    	    	String dataSet= routingContext.request().getParam("dataset");
+        	    	    	/*
+        	    	    	 * Fallimento se non il parametro non è stato inserito o non esiste il canale selezionato
+        	    	    	 */
+        	    	    	if(modelName==null || dataSet==null)
+        	    	    		routingContext
+    			    	   	      .response()
+    				              .setStatusCode(400)
+    				              .end("No model with this name.");
+        	    	    	else {
+        	    	    		/*
+        	    	    		 * Avviamo una nuova classificazione
+        	    	    		 */
+        	    	    		Classificator c= new Classificator(dataSet);
+        	    	    		try {
+        	    	    			//Genero una nuova classificatione
+            	    	    		c.newClassification(modelName);
+            	    	    		
+            	    	    		//Inviamo il json al front-end
+            	    	    		try { 	
+            	    	    			//Genero il json della classificazione
+            	    	    			String jsonClassifications=c.getJsonStringLastClassification();
+        								//Invio il json al front-end
+            	    	    			routingContext
+        								.response()
+        								.setStatusCode(200)
+        								.end(jsonClassifications);
+            	    	    			
+        								//Memorizzio nel database tutte le classificazioni
+            	    	    			JsonArray newClassificationsJson= new JsonArray(jsonClassifications);
+            	    	    			JsonObject singleClassification;
+        								for(int i=0;i< newClassificationsJson.size() ; i++) {
+        									singleClassification = newClassificationsJson.getJsonObject(i);
+        					    			mongoClient.insert("classifications", singleClassification , res ->{
+        						    			  if(res.succeeded())
+        						    				  System.out.println("Classificazione salvata correttamente nel DB.");
+        						    			  else
+        						    				  System.err.println("ERRORE salvataggio misura");  
+        						    		});
+        								}			
+        							} catch (FileNotFoundException e) {
+        								System.err.println("File non aperto correttamente");
+        								e.printStackTrace();
+
+        								routingContext
+        				    	   	      .response()
+        					              .setStatusCode(400)
+        					              .end("Errore lettura file.");
+        							}  
+        	    	    			
+        	    	    		}catch(FileNotFoundException e) {
+        								System.err.println("Modello selezionato non esistente");
+        								e.printStackTrace();
+
+        								routingContext
+        				    	   	      .response()
+        					              .setStatusCode(400)
+        					              .end("Modello selezionato non esistente");
+        						}     	    	    
+        	    	    		   	    	    	
+        	    	    	}
+    	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}
+    	    	    	
+    	    	    	
+    	    	    });
+    	    	    
+    	    	    
+    	    	    /*
+    	    	     * Richiesta le classificazioni di una certa data
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("getClassificationByDate", routingContext ->{
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		String date= routingContext.request().getParam("date");
+        	    	    	/*
+        	    	    	 * Fallimento se il parametro non è stato inserito correttamente
+        	    	    	 */
+        	    	    	if(date==null)
+        	    	    		routingContext
+    			    	   	      .response()
+    				              .setStatusCode(400)
+    				              .end("No model with this name.");
+        	    	    	else {
+        	    	    		/*
+        	    	    		 * Avviamo una nuova classificazione
+        	    	    		 */
+        	    	    		//System.out.println(date);
+        	    	    		JsonObject q= new JsonObject().put("date",date );
+            	    	    	this.mongoClient.find("classifications",q, res-> {
+            	    	    		/*
+            	    	    		 * Successo nel trovare i sample nel db
+            	    	    		 */
+            	    	    		if(res.succeeded()) {
+            	    	    			routingContext
+        								.response()
+        								.setStatusCode(200)
+        								.end(res.result().toString());
+            	    	    		}
+            	    	    		/*
+            	    	    		 * Caso di fallimento
+            	    	    		 */
+            	    	    		else {
+            	    	    			routingContext
+          			    	   	      .response()
+          				              .setStatusCode(400)
+          				              .end("No-sample-find");
+            	    	    		}
+            	    	    	});
+        	    	    		    	    	
+        	    	    	}
+    	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}
+    	    	    	
+    	    	    	
+    	    	    }); 
+    	    	    
+    	    	    
+    	    	    		    	    	
+    	    	    /*
+    	    	     * Richiede tutti i modelli presenti nel sistema GET-MODELS
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("getModels", routingContext ->{	
+    	    	    	if(this.loggingController.isUserLogged()) {
+	    	    	    		/*
+	    	    	    		 * Cerchiamo i modelli all'interno della directory 
+	    	    	    		 */
+	    	    	    	ArrayList<Model> models;
+	    	    	    	models= this.modelController.getAllModel();
+	    	    	    	JsonArray ja= new JsonArray();
+	    	    			JsonObject jo;
+	    	    	    	for(Model m: models) {
+	    	    	    		try {
+									jo= new JsonObject(new ObjectMapper().writeValueAsString(m));
+									ja.add(jo);
+								} catch (JsonProcessingException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+	    	    	    	}
+	    	    	    	routingContext
+							.response()
+							.setStatusCode(200)
+							.end(ja.toString());
+    	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}
+    	    	    	
+    	    	    	
+    	    	    			
+        	    	});
+    	    	 
+    	    	    
+    	    	    /*
+    	    	     * Ritorna il modello delezionato:  SELECTED-MODEL
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("selectedModel", routingContext ->{	
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		/*
+    	    	    		 * Restituisco il modello selezionato
+    	    	    		 */
+        	    	    	Model selectedModel=this.modelController.getSelectedModel();
+        	    	    	if(selectedModel==null)
+        	    	    		routingContext
+    							.response()
+    							.setStatusCode(400)
+    							.end("NO MODEL SELECTED");
+        	    	    	else {
+        	    	    		try {
+    								routingContext
     								.response()
     								.setStatusCode(200)
-    								.end(res.result().toString());
-        	    	    		}
-        	    	    		/*
-        	    	    		 * Caso di fallimento
-        	    	    		 */
-        	    	    		else {
-        	    	    			routingContext
-      			    	   	      .response()
-      				              .setStatusCode(400)
-      				              .end("No-sample-find");
-        	    	    		}
-        	    	    	});
+    								.end(new ObjectMapper().writeValueAsString(selectedModel));
+    							} catch (JsonProcessingException e) {
+    								// TODO Auto-generated catch block
+    								e.printStackTrace();
+    								routingContext
+    								.response()
+    								.setStatusCode(400)
+    								.end("ERROR:JSON SELECTED MODEL");
+    							}
+        	    	    	}
+    	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}   	    	
+    	    	    }); 
+    	    	    
+    	    	    
+    	    	    /*
+    	    	     * Scelta modello da utilizzare: SETMODEL
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("setModel", routingContext ->{	
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		/*
+    	    	    		 * Seleziono il modello da utilizzare come classificatore
+    	    	    		 */
+        	    	    	String modelName= routingContext.request().getParam("modelName");
+        	    	    	try {
+    							this.modelController.setModelSelected(modelName);
+    							routingContext
+    							.response()
+    							.setStatusCode(200)
+    							.end();
+    						} catch (FileNotFoundException e) {					
+    							e.printStackTrace();
+    							routingContext
+    							.response()
+    							.setStatusCode(400)
+    							.end("ERROR: MODEL SELECTED NOT FOUND");
+    						}  
+    	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}
+	    	    	 	    	
+    	    	    }); 
+    	    	    
+    	    	    
+    	    	    
+    	    	    /*
+    	    	     * START IRRIGATION
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("startIrrigation", routingContext ->{	
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		/*
+    	    	    		 * Invio il comando tramite il client mqtt per il comando
+    	    	    		 */
+    	    	    		System.out.println("Invio comando di start dell'irrigazione...");
+    	    	    		/*
+    	    	    		 * Utiliziamo un handler per capire quando la pubblicazione è stata completata(?)
+    	    	    		 * Quando è andata a buon fine restituiamo un 200
+    	    	    		 */
+    	    	    		/*this.irrigationCommandClient.publishCompletionHandler(c ->{
+    	    	    			System.out.println("Invio effettuato con successo");
+    	    	    			routingContext
+    							.response()
+    							.setStatusCode(200)
+    							.end();
+    	    	    			//Disconnesione per evitare problemi
+            	    	    	this.irrigationCommandClient.disconnect();
+    	    	    		});*/
+    	    	    		this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, t ->{
+    	    	    			this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
+    	        	    	    		  Buffer.buffer(Utilities.stateOn),
+    	  								  MqttQoS.AT_LEAST_ONCE,
+    	  								  false,
+    	  								  false);
+    	    	    			this.irrigationCommandClient.disconnect();
+            	    	    	
+            	    	    	routingContext
+    							.response()
+    							.setStatusCode(200)
+    							.end("Invio comando effettuato");
+            	    	    	System.out.println("Invio comando start effettuato.");
+    	    	    		  });
+        	    	    	
+        	    	    	 	
+    	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}	    	    	 	    	
+    	    	    }); 
+    	    	    
+    	    	    /*
+    	    	     * STOP IRRIGATION
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("stopIrrigation", routingContext ->{	
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		/*
+    	    	    		 * Invio il comando tramite il client mqtt per il comando
+    	    	    		 */
+    	    	    		System.out.println("Invio comando di stop dell'irrigazione...");
+    	    	    		/*
+    	    	    		 * Utiliziamo un handler per capire quando la pubblicazione è stata completata(?)
+    	    	    		 * Quando è andata a buon fine restituiamo un 200
+    	    	    		 */
+    	    	    		this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, v ->{
+    	    	    			
+    	    	    			this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
+    	        	    	    		  Buffer.buffer(Utilities.stateOff),
+    	  								  MqttQoS.AT_LEAST_ONCE,
+    	  								  false,
+    	  								  false);
+    	    	    			this.irrigationCommandClient.disconnect();
+            	    	    	
+            	    	    	routingContext
+    							.response()
+    							.setStatusCode(200)
+    							.end("Invio comando effettuato");
+            	    	    	
+            	    	    	System.out.println("Invio comando stop effettuato.");
+    	    	    		  });
+        	    	    	
         	    	    	
     	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}	    	    	 	    	
     	    	    }); 
-    	    	 
+    	    	    
+    	    	    
+    	    	    /*
+    	    	     * STATO IRRIGAZIONE
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("getStatoIrrigazione", routingContext ->{	
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		//Caso nel quale non è stata creata nessuna irrigazione
+    	    	    		if(this.irrigationState == null) {
+    	    	    			routingContext
+	      		    	   	      .response()
+	      			              .setStatusCode(200)
+	      			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+	      			              .end(Utilities.stateOff);
+    	    	    		}else {
+    	    	    			
+    	    	    			
+    	    	    			
+    	    	    		}
+        	    	    
+    	    	    		
+    	    	    		
+    	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}	    	    	 	    	
+    	    	    }); 
+    	    	    
     	    	/*
     	    	 * Dalla dashboard dobbiamo capire se si sta cercando di entrare come admin o user. 
     	    	 * Da definire i dati comunicati dalla dashboard, questo è solo un test.
@@ -399,7 +910,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	 */  	    	
     	   
     	  
-    	 
+  
     	    
     	    
     	    Router router = routerFactory.getRouter(); // <1>
@@ -451,8 +962,16 @@ public class MainVerticle extends AbstractVerticle {
   
   
   public static void main(String[] args) {
-	    Vertx vertx = Vertx.vertx();
-	    vertx.deployVerticle(new MainVerticle());
+	  /*
+	   * Per evitare problemi riguardanti la latenza del servizio di classificazione
+	   * aumentiamo il tempo di attesa per un event loop thread handler	
+	   */
+	  VertxOptions options = new VertxOptions();
+	  options.setMaxEventLoopExecuteTime(60);
+	  options.setMaxEventLoopExecuteTimeUnit(TimeUnit.SECONDS);
+	  
+	  Vertx vertx = Vertx.vertx(options);
+	  vertx.deployVerticle(new MainVerticle());
 	    
   }
   

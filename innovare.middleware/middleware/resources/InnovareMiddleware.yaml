@@ -3,7 +3,9 @@ openapi: 3.0.2
 info:
   title: InnovareMiddleware
   version: 1.0.0
-  description: ""
+  description: |-
+    Effettuiamo una nuova classificazione passando il nome del modello
+    da voler utilizzare.
 paths:
   /configuration:
     get:
@@ -18,26 +20,6 @@ paths:
           description: Configuration response
       operationId: actualConfiguration
       description: Return the actual configuration.
-  /login:
-    get:
-      parameters:
-      - name: username
-        description: ""
-        schema:
-          type: string
-        in: query
-        required: true
-      - name: password
-        description: "L'utilizzo del tipo password ha generato errori, \nutilizzo\
-          \ per test del tipo string normale"
-        schema:
-          type: string
-        in: query
-        required: true
-      responses:
-        "200":
-          description: Login is done correctly.
-      operationId: login
   /allsample/{idcanale}:
     get:
       parameters:
@@ -122,10 +104,157 @@ paths:
     - name: idcanale
       in: path
       required: true
+  /lastClassification:
+    summary: Return the last classification
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Classification'
+          description: Json of last classification.
+      operationId: lastclassificazion
+      summary: Return the last classification
+  /getClassifications/{date}:
+    summary: Restituisce tutte le classificazioni di una certa data
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Classification'
+          description: Restituisce tutte le classificationi in base alla data
+      operationId: getClassificationByDate
+    parameters:
+    - name: date
+      in: path
+      required: true
+  /newClassification/{dataSetName}:
+    summary: Generete a new classification data. La classificazione utilizzera' il
+      modello preselezionato dall'amministratore.
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Classification'
+          description: Classification is done correctly
+      operationId: newclassification
+      summary: Generete a new classification data.
+    parameters:
+    - name: dataSetName
+      in: path
+      required: true
+  /setModel/{modelName}:
+    post:
+      requestBody:
+        content:
+          application/json: {}
+        required: false
+      parameters:
+      - name: modelName
+        schema:
+          type: string
+        in: path
+        required: true
+      responses:
+        "200":
+          description: Notifica l'avvenuta selezione del modello.
+      operationId: setModel
+      summary: Seleziona il modello da utilizzare per la classificazione.
+    parameters:
+    - name: modelName
+      in: path
+      required: true
+  /models:
+    get:
+      responses:
+        "200":
+          description: Restituisce un json con tutti i modelli presenti nel sistema.
+      operationId: getModels
+      summary: Restituisce tutti i modelli utilizzabili
+  /models/selected:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Model'
+          description: Ritorna il json del modello attualmente selezionato.
+      operationId: selectedModel
+      summary: Ritorna il json del modello attualmente selezionato
+  /logout:
+    get:
+      responses:
+        "200":
+          description: Conferma dell'avvenuto logout.
+      operationId: logout
+      summary: Logout dal sistema.
+  /login:
+    summary: Login nel sistema.
+    get:
+      parameters:
+      - name: username
+        description: ""
+        schema:
+          type: string
+        in: query
+        required: true
+      - name: password
+        description: ""
+        schema:
+          type: string
+        in: query
+        required: true
+      responses:
+        "200":
+          description: Login is done correctly.
+      operationId: login
+    parameters:
+    - name: username
+      description: ""
+      schema:
+        type: string
+      in: query
+      required: true
+    - name: password
+      description: ""
+      schema:
+        type: string
+      in: query
+      required: true
+  /startIrrigation:
+    get:
+      responses:
+        "200":
+          description: RIchiesta avvio irrigazione inviata
+      operationId: startIrrigation
+      summary: Avvio irrigazione
+  /stopIrrigation:
+    get:
+      responses:
+        "200":
+          description: Richiesta di stop all'irrigazione inviata.
+      operationId: stopIrrigation
+  /statoIrrigazione:
+    get:
+      responses:
+        "200":
+          description: RIchiesta stato irrigazione
+      operationId: getStatoIrrigazione
+      summary: RIchiesta stato irrigazione.
 components:
   schemas:
     ConfigurationItem:
-      description: Configurazione piattaforma, comprende il gateway e il modello
+      description: "Configurazione piattaforma, comprende il gateway e il modello"
       required:
       - id
       - properties
@@ -140,7 +269,7 @@ components:
           items:
             $ref: '#/components/schemas/Property'
       example:
-        id: sensor-gateway
+      - id: sensor-gateway
         properties:
         - id: indirizzo
           value: 192.168.55.5
@@ -190,3 +319,28 @@ components:
         timestamp: 2020-10-16 16:13:11.781
         misure: 30
         channel: "0"
+    Classification:
+      description: Result of a classification process.
+      type: object
+      example:
+        date: 2020/09/11
+        path: /home/stefano/Scrivania/Lavoro/IMMAGINI-TestPythonScript/d3/2020_09_11_Dataset_FondatanaDeiFieri-Thermal_Optical-Fila_3_4-Session1-DJI_0831-plant_1.jpg
+        hash: 1ec6cc13769ab7310345101d32509080
+        classification:
+          classifications:
+          - classe: "0"
+            score: 23.196931183338165
+          - classe: "1"
+            score: 23.196931183338165
+          - classe: "2"
+            score: 23.196931183338165
+          - classe: "3"
+            score: 23.196931183338165
+          - classe: "4"
+            score: 23.196931183338165
+          hash: '''1ec6cc13769ab7310345101d32509080'''
+        originalImage: /home/stefano/Scrivania/Lavoro/IMMAGINI-TestPythonScript/d3/2020_09_11_Dataset_FondatanaDeiFieri-Thermal_Optical-Fila_3_4-Session1-DJI_0831-erased_background_with_boxes.jpg
+        model: modelName
+    Model:
+      description: Modello di classificazione utilizzato dal sistema
+      type: object

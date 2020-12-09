@@ -1,0 +1,43 @@
+[
+    {'date': '2020/09/11', 
+    'path': '/home/stefano/Scrivania/Lavoro/directoryTestPythonScript/d3/2020_09_11_Dataset_FondatanaDeiFieri-Thermal_Optical-Fila_3_4-Session1-DJI_0831-plant_1.jpg', 
+    'hash': '1ec6cc13769ab7310345101d32509080', 
+    'classification': {
+        'uid': "'1ec6cc13769ab7310345101d32509080'", 
+        'classification': [
+            {'score': <tf.Tensor: shape=(), dtype=float32, numpy=8.533674>, 'class': '0'}, 
+            {'score': <tf.Tensor: shape=(), dtype=float32, numpy=8.533674>, 'class': '1'}, 
+            {'score': <tf.Tensor: shape=(), dtype=float32, numpy=8.533674>, 'class': '2'}, 
+            {'score': <tf.Tensor: shape=(), dtype=float32, numpy=8.533674>, 'class': '3'}, 
+            {'score': <tf.Tensor: shape=(), dtype=float32, numpy=23.196932>, 'class': '4'}, 
+            {'score': <tf.Tensor: shape=(), dtype=float32, numpy=8.533674>, 'class': '5'}, 
+            {'score': <tf.Tensor: shape=(), dtype=float32, numpy=8.533674>, 'class': '6'}, 
+            {'score': <tf.Tensor: shape=(), dtype=float32, numpy=8.533674>, 'class': '7'}, 
+            {'score': <tf.Tensor: shape=(), dtype=float32, numpy=8.533674>, 'class': '8'}, 
+            {'score': <tf.Tensor: shape=(), dtype=float32, numpy=8.533674>, 'class': '9'}
+            ]
+        }, 
+        'originalImage': '/home/stefano/Scrivania/Lavoro/directoryTestPythonScript/d3/2020_09_11_Dataset_FondatanaDeiFieri-Thermal_Optical-Fila_3_4-Session1-DJI_0831-erased_backgroud_with_boxes.jpg'
+    }
+]
+
+{
+    "date": "2020-09-11", 
+    "path": "/home/stefano/Scrivania/Lavoro/IMMAGINI-TestPythonScript/d3/2020_09_11_Dataset_FondatanaDeiFieri-Thermal_Optical-Fila_1_2-Session2-DJI_0705-plant_0.jpg", 
+    "hash": "73c8b4c74a7b6ca8b273e14ba490eb59", 
+    "classification": {
+        "uid": "'73c8b4c74a7b6ca8b273e14ba490eb59'", 
+        "classifications": [
+            {"score": 8.533674478530884, "classe": "0"}, 
+            {"score": 8.533674478530884, "classe": "1"}, 
+            {"score": 8.533674478530884, "classe": "2"}, 
+            {"score": 8.533674478530884, "classe": "3"}, 
+            {"score": 8.533674478530884, "classe": "4"},
+            {"score": 8.533674478530884, "classe": "5"}, 
+            {"score": 8.533674478530884, "classe": "6"}, 
+            {"score": 8.533674478530884, "classe": "7"}, 
+            {"score": 8.533674478530884, "classe": "8"}, 
+            {"score": 8.533674478530884, "classe": "9"}
+            ]}, 
+    "originalImage": "/home/stefano/Scrivania/Lavoro/IMMAGINI-TestPythonScript/d3/2020_09_11_Dataset_FondatanaDeiFieri-Thermal_Optical-Fila_1_2-Session2-DJI_0705-erased_background_with_boxes.jpg"
+}

@@ -6,4 +6,8 @@
   :host([theme~="mobile"]:not([theme~="no-border"])) {
     border: none;
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> refs/remotes/origin/interazioneClassificatore

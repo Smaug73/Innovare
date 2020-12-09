@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.model.Channel;
 import com.innovare.model.ConfigurationItem;
+import com.innovare.model.IrrigationController;
 import com.innovare.model.MisuraTest;
 import com.innovare.model.Property;
 import com.innovare.model.Role;
@@ -52,16 +53,19 @@ public class GatewayVerticle extends AbstractVerticle {
 	 * 	E' da tenere presente che i Samples una volta inviati vengono eliminati dalla coda e memorizzati dal MiddleWare nel suo DataBase. 
 	 * 	Quindi tutti i Samples presenti nelle code, sono Samples ancora non memorizzati
 	 * 	
+	 * IRRIGAZIONE:
+	 * 	Per quanto riguarda l'irrigatione è presente un client per l'invio di dati di Log e per la ricezione dei comandi per il pilotaggio.
+	 * 	Inoltre è presente lo stato dell'irrigazione e la quantità di acqua in litri, all'interno dell'oggetto IrrigationController.
+	 * 
 	 */
 	
-
+  public static final String serverIP="localhost";	
 	
- 
-  
-  
   private int numberOfChannel= 2; //per ora test
   private HashMap<Channel,MqttClient> mapClient;
-
+  private IrrigationController irrigation;
+  
+  
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
 	  
@@ -71,7 +75,7 @@ public class GatewayVerticle extends AbstractVerticle {
 	  
 	//Creazione client MQTT
 	    MqttClient client = MqttClient.create(vertx);
-	    client.connect(1883, "localhost", s -> {
+	    client.connect(1883, "localhost", t -> {
 	    	
 	    	//Appena il gateway si collega per avvisare del suo corretto collegamento.
 	    	 client.publish("gatewayLog",
@@ -91,9 +95,48 @@ public class GatewayVerticle extends AbstractVerticle {
 	    	/*
 	    	 * Richiamo operazione per l'instanziazione dei canali dopo aver comunicato il loro numero
 	    	 */
-	    	 this.channelCreation();
+	    	 //this.channelCreation();
 	    	 
+	    	 
+	    	 //Si può anche disconnettere questo client dopo l'instanziazione dei client dei singoli sensori...
 	    });
+	    
+	    
+	    /*
+	     * IRRIGAZIONE
+	     */
+    	System.out.println("Creazione Irrigazione Controller..");
+	    this.irrigation= new IrrigationController();
+	    /*
+	     * Il controller per il comando deve ricevere, quindi si iscriverà al relativo topic
+	     */
+	    this.irrigation.setCommandClient( MqttClient.create(vertx));
+	    this.irrigation.getCommandClient().connect(1883, "localhost", p -> {
+	    	System.out.println("Client mqtt per i comandi dell'irrigazione connesso..");
+	    	/*
+		     *Il client mqtt per la ricezione di comandi si iscriverà al relativo topic 
+		     */
+		    this.irrigation.getCommandClient().publishHandler(c ->{
+		    	System.out.println("Comando ricevuto: "+c.payload().toString());
+		    	String comando=c.payload().toString();
+		    	//long time=Long.parseLong(comando.substring(18));
+		    	
+		    	//System.out.println("Comando ricevuto: "+c.payload().toString());
+		    	//System.out.println("Tempo di irrigazione: "+time);
+		    	
+		    	//Impostiamo in base al comando
+		    	if(comando.equalsIgnoreCase(IrrigationController.stateOn))
+		    		irrigation.startIrrigation();
+		    	else
+		    		if(comando.equalsIgnoreCase(IrrigationController.stateOff))
+		    			irrigation.stopIrrigation();
+		    })
+		    .subscribe("Irrigation-COMMAND", 2);	    
+		});
+	    
+	    this.irrigation.setLogClient(MqttClient.create(vertx));
+	    System.out.println("Client mqtt per il log dell'irrigazione creato..");
+	    
   
   }
   
