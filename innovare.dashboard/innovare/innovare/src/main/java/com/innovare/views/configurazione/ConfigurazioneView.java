@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -39,6 +40,7 @@ import com.innovare.ui.utils.Uniform;
 import com.innovare.utils.ConfigurationItem;
 import com.innovare.utils.IrrigationState;
 import com.innovare.utils.Property;
+import com.innovare.views.home.HomeView;
 import com.innovare.views.main.ContentView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasComponents;
@@ -55,6 +57,8 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
+import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.UploadI18N;
 import com.vaadin.flow.internal.MessageDigestUtil;
@@ -62,6 +66,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.server.Sizeable.Unit;
 import com.vaadin.ui.Notification.Type;
+import com.vaadin.ui.Slider;
 
 import org.json.simple.parser.ParseException;
 
@@ -161,15 +166,72 @@ public class ConfigurazioneView extends Div {
 
 	private Component createContent() {
 		Component irrigation = createIrrigationState();
+		Component lastIrrigation = createLastIrrigation();
     	Component confItemView = createConfItemView();
 		Component uploads = createUploadsView();
 
-		FlexBoxLayout content = new FlexBoxLayout(irrigation, confItemView, uploads);
+		FlexBoxLayout content = new FlexBoxLayout(irrigation, lastIrrigation, confItemView, uploads);
 		content.setAlignItems(FlexComponent.Alignment.CENTER);
 		content.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
 		return content;
 	}
 	
+	private Component createLastIrrigation() {
+    	FlexBoxLayout lastIrr = new FlexBoxLayout(
+  				createHeader(VaadinIcon.DROP, "Ultima Irrigazione"),
+  				createLastIrrigationCard());
+    	lastIrr.setBoxSizing(BoxSizing.BORDER_BOX);
+    	lastIrr.setDisplay(Display.BLOCK);
+    	lastIrr.setMargin(Top.L);
+    	lastIrr.setMaxWidth(MAX_WIDTH);
+    	lastIrr.setPadding(Horizontal.RESPONSIVE_L);
+    	lastIrr.setWidthFull();
+  		return lastIrr;
+	}
+
+	private Component createLastIrrigationCard() {
+		
+		FlexBoxLayout fromLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Dalle:"));
+		fromLabel.setWidth("200px");
+		FlexBoxLayout fromDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, HomeView.DATE_FORMAT.format(new Date()) 
+				+ " " + HomeView.TIME_FORMAT.format(new Date())));
+		
+		
+		FlexBoxLayout from = new FlexBoxLayout(fromLabel, fromDate);
+		from.setFlexDirection(FlexLayout.FlexDirection.ROW);
+		from.setFlexGrow(2, fromLabel, fromDate);
+		
+		FlexBoxLayout toLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Alle:"));
+		toLabel.setWidth("200px");
+		/*FlexBoxLayout toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, DATE_FORMAT.format(new Date()) 
+				+ " " + TIME_FORMAT.format(new Date())));*/
+		FlexBoxLayout toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "In corso"));
+		
+		FlexBoxLayout to = new FlexBoxLayout(toLabel, toDate);
+		to.setFlexDirection(FlexLayout.FlexDirection.ROW);
+		to.setFlexGrow(2, toLabel, toDate);
+		
+		FlexBoxLayout quantitaLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Quantità:"));
+		quantitaLabel.setWidth("200px");
+		FlexBoxLayout quantitaL = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "230.92 L"));
+		
+		
+		FlexBoxLayout quantita = new FlexBoxLayout(quantitaLabel, quantitaL);
+		to.setFlexDirection(FlexLayout.FlexDirection.ROW);
+		to.setFlexGrow(2, quantitaLabel, quantitaL);
+		
+		FlexBoxLayout card = new FlexBoxLayout(from, to, quantita);
+		card.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
+		card.setBackgroundColor(LumoStyles.Color.BASE_COLOR);
+		card.setBorderRadius(BorderRadius.S);
+		card.setBoxSizing(BoxSizing.BORDER_BOX);
+		card.setPadding(Uniform.M);
+		card.setShadow(Shadow.XS);
+		card.setHeightFull();
+		card.setMargin(Bottom.L);
+		return card;
+	}
+
 	private Component createIrrigationState() {
     	FlexBoxLayout irrState = new FlexBoxLayout(
   				createHeader(VaadinIcon.SLIDER, "Stato Irrigazione"),
@@ -189,19 +251,30 @@ public class ConfigurazioneView extends Div {
 		 * Recupero stato irrigazione da middleware per iniziallizare
 		 * la variabile booleana "acceso"
 		 */
-		boolean acceso = false;
+		boolean acceso = true;
+		String accendi = "ON";
+		String spegni = "OFF";
 		String state;
 		String colorState;
+		RadioButtonGroup<String> on_off = new RadioButtonGroup<>();
+		on_off.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
+		on_off.setItems(accendi, spegni);
+		
 		if(acceso) {
 			state = IrrigationState.ACCESO.getName();
 			colorState = IrrigationState.ACCESO.getColor();
+			on_off.setValue(accendi);
 		}
 		else {
 			state = IrrigationState.SPENTO.getName();
 			colorState = IrrigationState.SPENTO.getColor();
+			on_off.setValue(spegni);
 		}
 		
 		FlexBoxLayout descLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Stato dell'impianto irriguo:"));
+		descLabel.setWidth("200px");
+		descLabel.setAlignItems(Alignment.CENTER);
+		
 		FlexBoxLayout status = new FlexBoxLayout(
 				UIUtils.createIcon(IconSize.S, colorState, VaadinIcon.CIRCLE),
 				UIUtils.createLabel(FontSize.L, state));
@@ -209,9 +282,12 @@ public class ConfigurazioneView extends Div {
 		status.setAlignItems(Alignment.CENTER);
 		
 		
-		FlexBoxLayout card = new FlexBoxLayout(descLabel, status);
+		
+		
+		
+		FlexBoxLayout card = new FlexBoxLayout(descLabel, status, on_off);
 		card.setFlexDirection(FlexLayout.FlexDirection.ROW);
-		card.setFlexGrow(2, descLabel, status);
+		card.setFlexGrow(1, descLabel, status);
 		card.setBackgroundColor(LumoStyles.Color.BASE_COLOR);
 		card.setBorderRadius(BorderRadius.S);
 		card.setBoxSizing(BoxSizing.BORDER_BOX);
@@ -219,7 +295,6 @@ public class ConfigurazioneView extends Div {
 		card.setShadow(Shadow.XS);
 		card.setHeightFull();
 		card.setMargin(Bottom.L);
-		System.out.println("Larghezza Card: " + card.getWidth());
 		return card;
 	}
 
