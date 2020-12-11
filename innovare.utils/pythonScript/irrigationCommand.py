@@ -1,10 +1,10 @@
 import PyRelay
 import time
 
-r1 = Relay("RELAY1")
-r2 = Relay("RELAY2")
-r3 = Relay("RELAY3")
-r4 = Relay("RELAY4")
+r1 = PyRelay.Relay("RELAY1")
+r2 = PyRelay.Relay("RELAY2")
+r3 = PyRelay.Relay("RELAY3")
+r4 = PyRelay.Relay("RELAY4")
 
 r1.on()
 time.sleep(0.5)
