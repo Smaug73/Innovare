@@ -1,4 +1,4 @@
-import PiRelay
+import PyRelay
 import time
 
 r1 = Relay("RELAY1")
