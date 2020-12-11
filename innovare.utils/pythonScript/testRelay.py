@@ -14,6 +14,7 @@ GPIO.output(relaypins["RELAY1"], GPIO.LOW)
 
 print("RELAY1 - ON")
 GPIO.output(relaypins["RELAY1"],GPIO.HIGH)
+time.sleep(0.5)
 print("RELAY1 - OFF")
 GPIO.output(relaypins["RELAY1"],GPIO.LOW)
 
@@ -22,6 +23,7 @@ GPIO.output(relaypins["RELAY2"], GPIO.LOW)
 
 print("RELAY2 - ON")
 GPIO.output(relaypins["RELAY2"],GPIO.HIGH)
+time.sleep(0.5)
 print("RELAY2 - OFF")
 GPIO.output(relaypins["RELAY2"],GPIO.LOW)
 
@@ -30,6 +32,7 @@ GPIO.output(relaypins["RELAY3"], GPIO.LOW)
 
 print("RELAY3 - ON")
 GPIO.output(relaypins["RELAY3"],GPIO.HIGH)
+time.sleep(0.5)
 print("RELAY3 - OFF")
 GPIO.output(relaypins["RELAY3"],GPIO.LOW)
 
@@ -38,5 +41,6 @@ GPIO.output(relaypins["RELAY4"], GPIO.LOW)
 
 print("RELAY4 - ON")
 GPIO.output(relaypins["RELAY4"],GPIO.HIGH)
+time.sleep(0.5)
 print("RELAY4 - OFF")
 GPIO.output(relaypins["RELAY4"],GPIO.LOW)
