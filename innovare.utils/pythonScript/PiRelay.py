@@ -6,6 +6,7 @@ GPIO.setwarnings(False)
 
 class Relay:
     ''' Class to handle Relay
+
     Arguments:
     relay = string Relay label (i.e. "RELAY1","RELAY2","RELAY3","RELAY4")
     '''
