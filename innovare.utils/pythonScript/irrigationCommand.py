@@ -1,10 +1,10 @@
-import PyRelay
+import PiRelay
 import time
 
-r1 = PyRelay.Relay("RELAY1")
-r2 = PyRelay.Relay("RELAY2")
-r3 = PyRelay.Relay("RELAY3")
-r4 = PyRelay.Relay("RELAY4")
+r1 = PiRelay.Relay("RELAY1")
+r2 = PiRelay.Relay("RELAY2")
+r3 = PiRelay.Relay("RELAY3")
+r4 = PiRelay.Relay("RELAY4")
 
 r1.on()
 time.sleep(0.5)
