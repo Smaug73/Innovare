@@ -1,3 +1,11 @@
+#!/usr/bin/python
+
+# Library for PiRelay
+# Developed by: SB Components
+# Author: Ankur
+# Project: PiRelay
+# Python: 3.4.2
+
 import RPi.GPIO as GPIO
 import time
 
@@ -10,7 +18,7 @@ class Relay:
     Arguments:
     relay = string Relay label (i.e. "RELAY1","RELAY2","RELAY3","RELAY4")
     '''
-    relaypins = {"RELAY1":35, "RELAY2":33, "RELAY3":31, "RELAY4":29}
+    relaypins = {"RELAY1":15, "RELAY2":13, "RELAY3":11, "RELAY4":7}
 
 
     def __init__(self, relay):
