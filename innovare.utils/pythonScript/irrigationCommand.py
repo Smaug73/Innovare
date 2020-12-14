@@ -1,6 +1,12 @@
 import PiRelay
 import time
 
+
+if len(sys.argv) != 3: 
+    sys.exit('Errore: inserire on oppure off come parametro')
+try:
+    nomeScript,modelName,referencePath = sys.argv
+
 r1 = PiRelay.Relay("RELAY1")
 r2 = PiRelay.Relay("RELAY2")
 r3 = PiRelay.Relay("RELAY3")

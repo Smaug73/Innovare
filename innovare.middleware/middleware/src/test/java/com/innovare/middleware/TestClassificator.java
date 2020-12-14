@@ -18,6 +18,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.control.Classificator;
 import com.innovare.model.PlantClassification;
+import com.innovare.utils.Utilities;
 
 
 public class TestClassificator {
@@ -65,13 +66,12 @@ public class TestClassificator {
 	
 	@Test
 	public void testDecompressioneAndClassificazione() {
-		Classificator c= new Classificator(this.dirName);
+		Classificator c= new Classificator("testDataset.zip");
 		ArrayList<PlantClassification> listOfClassification;
 		try {
-			c.unZipFile();
-			listOfClassification = c.newClassification(this.modelName);
+			listOfClassification=c.unZipAndClassification(this.modelName);
 			System.out.println("Test: "+listOfClassification);
-			assertTrue(listOfClassification.size() == 2);
+			//assertTrue(listOfClassification.size() == 2);
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -79,7 +79,7 @@ public class TestClassificator {
 	}
 	
 	
-
+	/*
 	@AfterAll
 	public static void eliminateFiles() {
 		File f= new File(System.getProperty("user.home")+"/InnovareImages/"+TestClassificator.dirName);
@@ -100,7 +100,7 @@ public class TestClassificator {
 			return;
 		}
 		
-	}
+	}*/
 	
 		
 }

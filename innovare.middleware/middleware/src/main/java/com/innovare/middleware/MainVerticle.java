@@ -88,6 +88,9 @@ public class MainVerticle extends AbstractVerticle {
 	
 	private IrrigationState irrigationState=null;
 	
+	/*
+	 * AGGIUNGERE PRIORITY QUEUE DELLE CLASSIFICAZIONI, DEVE CONTENERE LE ULTIME 4 CLASSIFICAZIONI EFFETTUATE
+	 */
 	
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
@@ -183,7 +186,7 @@ public class MainVerticle extends AbstractVerticle {
 	  this.irrigationLog= MqttClient.create(vertx);
 	  this.irrigationLog.connect(1883, Utilities.ipMqtt, s ->{
 		  clientLog.publishHandler(c -> {
-	    		//Ogni qual volta viene pubblicata una misura la stampiamo e la salviamo.
+	    		  //Ogni qual volta viene pubblicata una misura la stampiamo e la salviamo.
 				  //System.out.println("There are new message in topic: " + c.topicName());
 	    		  //System.out.println("Content(as string) of the message: " + c.payload().toString());
 	    		  //System.out.println("QoS: " + c.qosLevel());	
