@@ -26,7 +26,7 @@ public class TestPathUse {
 	}
 	
 	public void testClassSintJson() throws JsonProcessingException {
-		ClassificationSint cs= new ClassificationSint(Status.NORMALE, LocalDate.now(), 8, 40, 52);
+		//ClassificationSint cs= new ClassificationSint(Status.NORMALE, LocalDate.now(), 8, 40, 52);
 		System.out.println(cs.toString());
 		String jsonConv = new ObjectMapper().writeValueAsString(cs);
 		System.out.println(jsonConv);

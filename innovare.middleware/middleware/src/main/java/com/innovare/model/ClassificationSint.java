@@ -1,6 +1,10 @@
 package com.innovare.model;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+
+import com.innovare.utils.Utilities;
 
 public class ClassificationSint {
 
@@ -10,14 +14,17 @@ public class ClassificationSint {
 	private int percCarenza;
 	private int percSane;
 	private int percEccesso;
+	private int percScartate;
+	private int percInfestanti;
+	private String model;
 
 	public enum Status {
 		CARENZA("Carenza",
 				"Piante con carenza di acqua"), 
 		NORMALE("Sane", "Piante sane"), 
 		ECCESSO("Eccesso", "Piante con eccesso di acqua"),
-		SCARTATE("Scartate","Immagini scartate");
-
+		SCARTATE("Scartate","Immagini scartate"),
+		INFESTANTI("Infestanti","Piante infestanti");
 		private String name;
 		private String desc;
 
@@ -37,15 +44,119 @@ public class ClassificationSint {
 
 	public ClassificationSint() {}
 
-	public ClassificationSint(Status status, LocalDate date, int percCarenza, int percSane, int percEccesso) {
+	
+	
+	
+	public ClassificationSint(Status status, LocalDate date, int percCarenza, int percSane, int percEccesso,
+			int percScartate, int percInfestanti, String model) {
 		super();
 		this.status = status;
 		this.date = date;
 		this.percCarenza = percCarenza;
 		this.percSane = percSane;
 		this.percEccesso = percEccesso;
+		this.percScartate = percScartate;
+		this.percInfestanti = percInfestanti;
+		this.model = model;
 	}
 
+
+
+
+	public ClassificationSint(ArrayList<PlantClassification> classifications) {
+		int carenza=0;
+		int eccesso=0;
+		int sane=0;
+		int infestanti=0;
+		int ambigue=0;
+		for(PlantClassification p: classifications){
+			ArrayList<Result> risultati=p.getClassification().getClassifications();
+			//Prendiamo il risultato della classificazione
+			double resultSana=0;
+			double resultEccesso=0;
+			double resultCarenza=0;
+			double resultInfestanti=0;
+			double resultAmbigue=0;
+			for(Result r: risultati) {
+				switch(r.getClasse()) {
+					case Utilities.classeAmbigue: 
+						resultAmbigue=r.getScore();
+						break;
+					case Utilities.classeCarenza:
+						resultCarenza=r.getScore();
+						break;
+					case Utilities.classeEccesso:
+						resultEccesso= r.getScore();
+						break;
+					case Utilities.classeInfestanti:
+						resultInfestanti=r.getScore();
+						break;
+					case Utilities.classeSane:
+						resultSana=r.getScore();
+						break;			
+				}		
+			}
+			//Presi i risultati dobbiamo decidere lo stato della pianta basandoci sulle soglie
+			//Per ogni immagine aggiungiamo al relativo contatore a quale classe appartiene
+			if(resultSana >= Utilities.sogliaClassificazione ) {
+				sane+=1;
+			}
+			else if(resultEccesso >= Utilities.sogliaClassificazione ) {
+				eccesso+=1;
+			}
+			else if(resultCarenza >= Utilities.sogliaClassificazione )	{
+				carenza+=1;
+			}
+			else if(resultInfestanti >= Utilities.sogliaClassificazione ) {	
+				infestanti+=1;
+			}
+			else { 
+				ambigue+=1;
+			}
+		}
+		//System.out.println(sane+" "+eccesso+" "+carenza+" "+infestanti+" "+ambigue);
+		//Calcoliamo le percentuali dal numero di piante analizzate
+		ArrayList<Integer> percentuali= new ArrayList<Integer>();
+		this.percCarenza= (carenza/classifications.size())*100;
+		percentuali.add(this.percCarenza);
+		this.percEccesso= (eccesso/classifications.size())*100;
+		percentuali.add(this.percEccesso);
+		this.percInfestanti= (infestanti/classifications.size())*100;
+		percentuali.add(this.percInfestanti);
+		this.percSane= (sane/classifications.size())*100;
+		percentuali.add(this.percSane);
+		this.percScartate= (ambigue/classifications.size())*100;
+		percentuali.add(this.percScartate);
+		
+		//Confrontiamo le percentuali per scegliere quel stato ritorna la classificazione.
+		//In base alla posizione restituita scegliamo lo stato
+		int position= this.findMax(percentuali);
+		switch(position) {
+			case 0:
+				this.status=Status.CARENZA;
+				break;
+			case 1:
+				this.status=Status.ECCESSO;
+				break;
+			case 2:
+				this.status=Status.INFESTANTI;
+				break;
+			case 3:
+				this.status=Status.NORMALE;
+				break;
+			case 4:
+				this.status=Status.SCARTATE;
+				break;
+		}
+		
+		//Dopo aver scelto lo stato e le percentuali impostiamo il resto 
+		//Per il modello basta prendere il primo elemento che sicuramente è presente nella lista
+		this.model= classifications.get(0).getModel();
+		//Data
+		DateTimeFormatter formatter= DateTimeFormatter.ofPattern("yy-MM-dd");
+		this.date= LocalDate.parse(classifications.get(0).getDate(),formatter);
+		
+	}
 
 	public String getStatus() {
 		return status.name;
@@ -88,12 +199,51 @@ public class ClassificationSint {
 		this.percEccesso = percEccesso;
 	}
 
+	public int getPercScartate() {
+		return percScartate;
+	}
+
+	public void setPercScartate(int percScartate) {
+		this.percScartate = percScartate;
+	}
+
+	public int getPercInfestanti() {
+		return percInfestanti;
+	}
+
+	public void setPercInfestanti(int percInfestanti) {
+		this.percInfestanti = percInfestanti;
+	}
+	
+	
+
+	public String getModel() {
+		return model;
+	}
+
+	public void setModel(String model) {
+		this.model = model;
+	}
+
 	@Override
 	public String toString() {
 		return "ClassificationSint [status=" + status + ", date=" + date + ", percCarenza=" + percCarenza
-				+ ", percSane=" + percSane + ", percEccesso=" + percEccesso + "]";
+				+ ", percSane=" + percSane + ", percEccesso=" + percEccesso + ", percAmbigue=" + percScartate
+				+ ", percInfestanti=" + percInfestanti + "]";
 	}
+
 	
+	public int findMax(ArrayList<Integer> valori) {
+		//Cerchiamo percentuali delle quali una deve avere per forza un valore maggiore di zero
+		//Non cercheremo mai valori negativi
+		//Restituiamo la posizione del massimo
+		int max=0;
+		for(int i=1; i<valori.size(); i++) {
+			if(valori.get(i)>valori.get(max))
+				max=valori.get(i);
+		}
+		return max;
+	}
 	
 
 	
