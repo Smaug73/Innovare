@@ -38,7 +38,7 @@ public class ModelController {
 	}
 	
 	public ArrayList<Model> getAllModel(){
-		File f = new File(System.getProperty("user.home")+System.getProperty("file.separator")+"InnovareModels"+System.getProperty("file.separator"));
+		File f = new File(Utilities.modelPath);
 		ArrayList<Model> models= new ArrayList<Model>();
 		if(f.exists()) {
 			//Controllo tutti i file contenuti nella cartella e passo i loro nomi tramite un json
@@ -54,8 +54,10 @@ public class ModelController {
 	}
 	
 	public void setModelSelected(String modelName) throws FileNotFoundException {
-		if(foundModel(modelName))
+		if(foundModel(modelName)) {
 			this.modelSelected=new Model(modelName);
+			System.out.println("Modello selezionato: "+modelName);
+		}
 		else 
 			throw new FileNotFoundException("Il modello: "+modelName+" non esiste.");
 	}

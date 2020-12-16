@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Files;
+import com.innovare.model.ClassificationSint;
 import com.innovare.model.PlantClassification;
 import com.innovare.utils.Utilities;
 
@@ -74,7 +75,7 @@ public class Classificator {
 	
 	
 	
-	public ArrayList<PlantClassification> unZipAndClassification(String modelName) throws FileNotFoundException{
+	public ClassificationSint unZipAndClassification(String modelName) throws FileNotFoundException{
 		//Verifichiamo che il modello selezionato esista
 		if(!this.existDirOrFile(Utilities.modelPath+modelName))
 			throw new FileNotFoundException("Il modello selezionato non esiste.");
@@ -90,7 +91,7 @@ public class Classificator {
 			this.createDirOrFile(Utilities.segmentDataSetPath+System.getProperty("file.separator")+this.imagesDirName);
 			//Avvio il segmenter
 			System.out.println("python3 "+Utilities.scriptPath+"segmenter.py --create_hash_symlinks --image_processing_limit 5 -v --srcdir "+Utilities.datasetPath+this.imagesDirName+System.getProperty("file.separator")+" --dstdir "+Utilities.segmentDataSetPath+this.imagesDirName+System.getProperty("file.separator"));
-			Process processSeg= Runtime.getRuntime().exec("python3 "+Utilities.scriptPath+"segmenter.py --create_hash_symlinks --image_processing_limit 5 -v --srcdir "+Utilities.datasetPath+this.imagesDirName+System.getProperty("file.separator")+" --dstdir "+Utilities.segmentDataSetPath+this.imagesDirName+System.getProperty("file.separator"));
+			Process processSeg= Runtime.getRuntime().exec("python3 "+Utilities.scriptPath+"segmenter.py --create_hash_symlinks --image_processing_limit 5 -v --srcdir "+Utilities.datasetPath+this.imagesDirName+" --dstdir "+Utilities.segmentDataSetPath+this.imagesDirName);
 			//Attendiamo la fine della segmentazione
 			int processSegOutput=processSeg.waitFor();
 			OutputStream outPSeg= processSeg.getOutputStream();
@@ -121,8 +122,8 @@ public class Classificator {
 				}
 				reader.close();
 				//Dopo aver letto il json lo convertiamo in una classe
-				return classifications= new ObjectMapper().readValue(jsonStrings, new TypeReference<ArrayList<PlantClassification>>(){});
-				
+				classifications= new ObjectMapper().readValue(jsonStrings, new TypeReference<ArrayList<PlantClassification>>(){});
+				return new ClassificationSint(classifications);
 			}
 			else throw new InterruptedException();
 			
@@ -132,11 +133,11 @@ public class Classificator {
 		catch (IOException e) {
 			System.err.println("Errore processo python con path:"+Utilities.scriptPath+"ClassificationScript.py e nome modello:"+modelName);
 			e.printStackTrace();
-			return classifications;
+			return new ClassificationSint();
 		} catch (InterruptedException e) {
 			System.err.println("Errore processo python con path:"+Utilities.scriptPath+"ClassificationScript.py e nome modello:"+modelName);
 			e.printStackTrace();
-			return classifications;
+			return new ClassificationSint();
 		}
 				
 	}

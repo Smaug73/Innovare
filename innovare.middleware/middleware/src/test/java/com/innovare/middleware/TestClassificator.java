@@ -7,10 +7,14 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import org.junit.jupiter.api.AfterAll;
@@ -22,6 +26,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.control.Classificator;
+import com.innovare.control.ModelController;
 import com.innovare.model.ClassificationSint;
 import com.innovare.model.PlantClassification;
 import com.innovare.utils.Utilities;
@@ -90,16 +95,45 @@ public class TestClassificator {
 		System.out.println(date.toString());
 	}*/
 	
-	@Test
+	/*@Test
 	public void testClassificationSint() throws JsonMappingException, JsonProcessingException {
-		String plantClassificationArray="[{\"originalImage\": \"/home/stefano/InnovareData/InnovareSegmentDS/testDataset/020_08_31_Thermal_Optical-Fila_3_4-Session1-DJI_1234-erased_background_with_boxes.jpg\", \"hash\": \"e1a80286757bde4e942d4003cd4a2904\", \"classification\": {\"classifications\": [{\"classe\": \"Pianta Normale\", \"score\": 8.533674478530884}, {\"classe\": \"Carenza di acqua\", \"score\": 8.533674478530884}, {\"classe\": \"Eccesso di acqua\", \"score\": 8.533674478530884}, {\"classe\": \"Infestanti\", \"score\": 8.533674478530884}, {\"classe\": \"Ambigua\", \"score\": 8.533674478530884}], \"hash\": \"'e1a80286757bde4e942d4003cd4a2904'\"}, \"date\": \"20-08-31\", \"path\": \"/home/stefano/InnovareData/InnovareSegmentDS/testDataset/020_08_31_Thermal_Optical-Fila_3_4-Session1-DJI_1234-plant_0.jpg\", \"model\": \"stub.h5\"}, {\"originalImage\": \"/home/stefano/InnovareData/InnovareSegmentDS/testDataset/020_08_31_Thermal_Optical-Fila_3_4-Session1-DJI_1234-erased_background_with_boxes.jpg\", \"hash\": \"e047efb93b7b4508c364c56477f44990\", \"classification\": {\"classifications\": [{\"classe\": \"Pianta Normale\", \"score\": 8.533674478530884}, {\"classe\": \"Carenza di acqua\", \"score\": 8.533674478530884}, {\"classe\": \"Eccesso di acqua\", \"score\": 8.533674478530884}, {\"classe\": \"Infestanti\", \"score\": 8.533674478530884}, {\"classe\": \"Ambigua\", \"score\": 8.533674478530884}], \"hash\": \"'e047efb93b7b4508c364c56477f44990'\"}, \"date\": \"20-08-31\", \"path\": \"/home/stefano/InnovareData/InnovareSegmentDS/testDataset/020_08_31_Thermal_Optical-Fila_3_4-Session1-DJI_1234-plant_1.jpg\", \"model\": \"stub.h5\"}]";
+		String plantClassificationArray="[{\"originalImage\": \"/home/stefano/InnovareData/InnovareSegmentDS/testDataset/2020_08_31_Thermal_Optical-Fila_3_4-Session1-DJI_1234-erased_background_with_boxes.jpg\", \"hash\": \"e1a80286757bde4e942d4003cd4a2904\", \"classification\": {\"classifications\": [{\"classe\": \"Pianta Normale\", \"score\": 8.533674478530884}, {\"classe\": \"Carenza di acqua\", \"score\": 8.533674478530884}, {\"classe\": \"Eccesso di acqua\", \"score\": 8.533674478530884}, {\"classe\": \"Infestanti\", \"score\": 8.533674478530884}, {\"classe\": \"Ambigua\", \"score\": 8.533674478530884}], \"hash\": \"'e1a80286757bde4e942d4003cd4a2904'\"}, \"date\": \"20-08-31\", \"path\": \"/home/stefano/InnovareData/InnovareSegmentDS/testDataset/2020_08_31_Thermal_Optical-Fila_3_4-Session1-DJI_1234-plant_0.jpg\", \"model\": \"stub.h5\"}, {\"originalImage\": \"/home/stefano/InnovareData/InnovareSegmentDS/testDataset/2020_08_31_Thermal_Optical-Fila_3_4-Session1-DJI_1234-erased_background_with_boxes.jpg\", \"hash\": \"e047efb93b7b4508c364c56477f44990\", \"classification\": {\"classifications\": [{\"classe\": \"Pianta Normale\", \"score\": 8.533674478530884}, {\"classe\": \"Carenza di acqua\", \"score\": 8.533674478530884}, {\"classe\": \"Eccesso di acqua\", \"score\": 8.533674478530884}, {\"classe\": \"Infestanti\", \"score\": 8.533674478530884}, {\"classe\": \"Ambigua\", \"score\": 8.533674478530884}], \"hash\": \"'e047efb93b7b4508c364c56477f44990'\"}, \"date\": \"20-08-31\", \"path\": \"/home/stefano/InnovareData/InnovareSegmentDS/testDataset/020_08_31_Thermal_Optical-Fila_3_4-Session1-DJI_1234-plant_1.jpg\", \"model\": \"stub.h5\"}]";
 		
 		ArrayList<PlantClassification> pc=  new ObjectMapper().readValue(plantClassificationArray, new TypeReference<ArrayList<PlantClassification>>(){});
 		System.out.println("Piante da classificare: "+pc.toString());
 		ClassificationSint cs= new ClassificationSint(pc);
 		System.out.println("Classificazione sintetica: "+cs.toString());
+		String jsonCs= new ObjectMapper().writeValueAsString(cs);
+		System.out.println(jsonCs);
+
+	}*/
+	
+	@Test
+	public void foundModel() throws FileNotFoundException {
+		ModelController mc= new ModelController();
+		if(mc.foundModel("stub.h5"))
+			System.out.println("Trovato!");
+		else
+			System.out.println("no :(");
+		mc.setModelSelected("stub.h5");
+		System.out.println("Modello selezionato: "+mc.getSelectedModel().getName());
 	}
 	
+	/*
+	@Test
+	public void testData() throws ParseException, JsonMappingException, JsonProcessingException {
+		String data= "2020-08-31";
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+	    Date parsedDate = dateFormat.parse(data);
+	    Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
+		System.out.println(timestamp.toString());
+		System.out.println(parsedDate.toString());
+		String jsonTimestamp= "1606334624959";
+		timestamp= new ObjectMapper().readValue(jsonTimestamp, Timestamp.class);
+		//String jsonTimeStamp= new ObjectMapper().writeValueAsString(timestamp);
+		System.out.println("Prova con long:"+timestamp);
+	}
+	*/
 	/*
 	@AfterAll
 	public static void eliminateFiles() {

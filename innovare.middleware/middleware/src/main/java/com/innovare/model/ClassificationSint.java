@@ -1,8 +1,12 @@
 package com.innovare.model;
 
+import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
 
 import com.innovare.utils.Utilities;
 
@@ -10,7 +14,7 @@ public class ClassificationSint {
 
 
 	private Status status;
-	private LocalDate date;
+	private Timestamp date;
 	private int percCarenza;
 	private int percSane;
 	private int percEccesso;
@@ -19,12 +23,12 @@ public class ClassificationSint {
 	private String model;
 
 	public enum Status {
-		CARENZA("Carenza",
+		CARENZA("CARENZA",
 				"Piante con carenza di acqua"), 
-		NORMALE("Sane", "Piante sane"), 
-		ECCESSO("Eccesso", "Piante con eccesso di acqua"),
-		SCARTATE("Scartate","Immagini scartate"),
-		INFESTANTI("Infestanti","Piante infestanti");
+		NORMALE("NORMALE", "Piante sane"), 
+		ECCESSO("ECCESSO", "Piante con eccesso di acqua"),
+		SCARTATE("SCARTATE","Immagini scartate"),
+		INFESTANTI("INFESTANTI","Piante infestanti");
 		private String name;
 		private String desc;
 
@@ -47,7 +51,7 @@ public class ClassificationSint {
 	
 	
 	
-	public ClassificationSint(Status status, LocalDate date, int percCarenza, int percSane, int percEccesso,
+	public ClassificationSint(Status status, Timestamp date, int percCarenza, int percSane, int percEccesso,
 			int percScartate, int percInfestanti, String model) {
 		super();
 		this.status = status;
@@ -131,6 +135,7 @@ public class ClassificationSint {
 		//Confrontiamo le percentuali per scegliere quel stato ritorna la classificazione.
 		//In base alla posizione restituita scegliamo lo stato
 		int position= this.findMax(percentuali);
+		System.out.println("Position: "+position);
 		switch(position) {
 			case 0:
 				this.status=Status.CARENZA;
@@ -153,8 +158,17 @@ public class ClassificationSint {
 		//Per il modello basta prendere il primo elemento che sicuramente è presente nella lista
 		this.model= classifications.get(0).getModel();
 		//Data
-		DateTimeFormatter formatter= DateTimeFormatter.ofPattern("yy-MM-dd");
-		this.date= LocalDate.parse(classifications.get(0).getDate(),formatter);
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yy-MM-dd");
+	    Date parsedDate;
+		try {
+			parsedDate = dateFormat.parse(classifications.get(0).getDate());
+			this.date = new java.sql.Timestamp(parsedDate.getTime());
+		} catch (ParseException e) {
+			System.err.println("ERRORE CREAZIONE DATE");
+			e.printStackTrace();
+			this.date= new Timestamp(0l);
+		}
+	    
 		
 	}
 
@@ -163,7 +177,7 @@ public class ClassificationSint {
 	}
 
 
-	public LocalDate getDate() {
+	public Timestamp getDate() {
 		return date;
 	}
 
@@ -183,7 +197,7 @@ public class ClassificationSint {
 		this.status = status;
 	}
 
-	public void setDate(LocalDate date) {
+	public void setDate(Timestamp date) {
 		this.date = date;
 	}
 
@@ -240,7 +254,7 @@ public class ClassificationSint {
 		int max=0;
 		for(int i=1; i<valori.size(); i++) {
 			if(valori.get(i)>valori.get(max))
-				max=valori.get(i);
+				max=i;
 		}
 		return max;
 	}

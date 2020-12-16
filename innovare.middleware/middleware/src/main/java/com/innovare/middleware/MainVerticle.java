@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.control.Classificator;
 import com.innovare.control.LoggingController;
 import com.innovare.control.ModelController;
+import com.innovare.model.ClassificationSint;
 import com.innovare.model.IrrigationState;
 import com.innovare.model.Model;
 import com.innovare.model.PlantClassification;
@@ -372,7 +373,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	    });  	
     	    		
     	    	/*
-    	    	 * Restituiamo le ultime misure non ancora mostrate da la DashBoard e le eliminiamo dall'array   
+    	    	 * Restituiamo le ultime misure non ancora mostrate dalla DashBoard e le eliminiamo dall'array   
     	    	 */   	    	    
     	    	    routerFactory.addHandlerByOperationId("lastsamples", routingContext ->{
     	    	    	if(this.loggingController.isUserLogged()) {
@@ -597,6 +598,92 @@ public class MainVerticle extends AbstractVerticle {
     	    	    
     	    	    
     	    	    /*
+    	    	     * Richiesta di una nuova CLASSIFICATION SINT
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("newclassificationSint", routingContext ->{
+    	    	    	if(this.loggingController.isUserLogged()) {
+        	    	    	String dataSet= routingContext.request().getParam("datasetName");
+        	    	    	System.out.println("Dataset: "+dataSet);
+        	    	    	/*
+        	    	    	 * Fallimento se il parametro non è stato inserito o non esiste il canale selezionato
+        	    	    	 */
+        	    	    	
+        	    	    	if(this.modelController.getSelectedModel()==null || dataSet==null) {
+        	    	    		if(dataSet==null)
+        	    	    			routingContext
+	      			    	   	      .response()
+	      				              .setStatusCode(400)
+	      				              .end("No dataset selected.");
+        	    	    		else
+	        	    	    		routingContext
+	    			    	   	      .response()
+	    				              .setStatusCode(400)
+	    				              .end("No model selected.");
+        	    	    	}
+        	    	    	else {
+        	    	    		/*
+        	    	    		 * Avviamo una nuova classificazione
+        	    	    		 */
+        	    	    		Classificator c= new Classificator(dataSet);
+        	    	    		try {
+        	    	    			//Genero una nuova classificatione sintetica
+            	    	    		ClassificationSint cs=c.unZipAndClassification(this.modelController.getSelectedModel().getName());
+            	    	    		
+            	    	    		//Inviamo il json al front-end
+            	    	    		try { 	
+            	    	    			//Genero il json della classificazione
+            	    	    			String jsonClassifications=new ObjectMapper().writeValueAsString(cs);
+        								//Invio il json al front-end
+            	    	    			routingContext
+        								.response()
+        								.setStatusCode(200)
+        								.end(jsonClassifications);
+            	    	    			
+        								//Memorizzio nel database tutte le classificazioni
+            	    	    			//JsonArray newClassificationsJson= new JsonArray(jsonClassifications);
+            	    	    			JsonObject singleClassification= new JsonObject(jsonClassifications);
+            	    	    			mongoClient.insert("ClassificazioniSintetiche", singleClassification , res ->{
+  						    			  if(res.succeeded())
+  						    				  System.out.println("Classificazione sintetica salvata correttamente nel DB.");
+  						    			  else
+  						    				  System.err.println("ERRORE salvataggio misura");  
+            	    	    			});
+            	    	    					
+        							} catch (JsonProcessingException e) {
+        								System.err.println("Errore conversione json");
+        								e.printStackTrace();
+
+        								routingContext
+        				    	   	      .response()
+        					              .setStatusCode(400)
+        					              .end("Errore json convertito");
+									}  
+        	    	    			
+        	    	    		}catch(FileNotFoundException e) {
+        								System.err.println("Modello selezionato non esistente");
+        								e.printStackTrace();
+
+        								routingContext
+        				    	   	      .response()
+        					              .setStatusCode(400)
+        					              .end("Modello selezionato non esistente");
+        						}     	    	    
+        	    	    		   	    	    	
+        	    	    	}
+    	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}
+    	    	    	
+    	    	    	
+    	    	    });
+    	    	    
+    	    	    
+    	    	    /*
     	    	     * Richiesta le classificazioni di una certa data
     	    	     */
     	    	    routerFactory.addHandlerByOperationId("getClassificationByDate", routingContext ->{
@@ -741,6 +828,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	    		 */
         	    	    	String modelName= routingContext.request().getParam("modelName");
         	    	    	try {
+        	    	    		System.out.println("Modello selezionato: "+modelName+"... ");
     							this.modelController.setModelSelected(modelName);
     							routingContext
     							.response()
