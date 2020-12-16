@@ -5,12 +5,13 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.innovare.ui.utils.UIUtils;
 import com.innovare.ui.utils.BadgeColor;
 
+import java.sql.Timestamp;
 import java.time.LocalDate;
 
 public class Classification {
 
 	private Status status;
-	private LocalDate date;
+	private Timestamp date;
 	private int percCarenza;
 	private int percSane;
 	private int percEccesso;
@@ -47,7 +48,9 @@ public class Classification {
 
 	
 
-	public Classification(Status status, LocalDate date, int percCarenza, int percSane, 
+	public Classification() {}
+	
+	public Classification(Status status, Timestamp date, int percCarenza, int percSane, 
 			int percEccesso, int percScartate, int percInfestanti, String model) {
 		super();
 		this.status = status;
@@ -66,7 +69,7 @@ public class Classification {
 	}
 
 
-	public LocalDate getDate() {
+	public Timestamp getDate() {
 		return date;
 	}
 
@@ -82,6 +85,30 @@ public class Classification {
 		return percEccesso;
 	}
 	
+	public void setStatus(Status status) {
+		this.status = status;
+	}
+
+	public void setDate(Timestamp date) {
+		this.date = date;
+	}
+
+	public void setPercCarenza(int percCarenza) {
+		this.percCarenza = percCarenza;
+	}
+
+	public void setPercSane(int percSane) {
+		this.percSane = percSane;
+	}
+
+	public void setPercEccesso(int percEccesso) {
+		this.percEccesso = percEccesso;
+	}
+
+	public void setPercScartate(int percScartate) {
+		this.percScartate = percScartate;
+	}
+
 	public int getPercScartate() {
 		return percScartate;
 	}
@@ -103,6 +130,14 @@ public class Classification {
 	public void setModel(String model) {
 		this.model = model;
 	}
+
+	@Override
+	public String toString() {
+		return "Classification\n[status=" + status + ",\ndate=" + date + ",\npercCarenza=" + percCarenza + ",\npercSane="
+				+ percSane + ",\npercEccesso=" + percEccesso + ",\npercScartate=" + percScartate + ",\npercInfestanti="
+				+ percInfestanti + ",\nmodel=" + model + "]";
+	}
+
 
 	
 }

@@ -4,7 +4,6 @@ package com.innovare.views.configurazione;
 import java.awt.Toolkit;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -38,22 +37,18 @@ import com.innovare.ui.utils.Top;
 import com.innovare.ui.utils.UIUtils;
 import com.innovare.ui.utils.Uniform;
 import com.innovare.utils.ConfigurationItem;
+import com.innovare.utils.Constants;
 import com.innovare.utils.IrrigationState;
+import com.innovare.utils.Model;
 import com.innovare.utils.Property;
 import com.innovare.views.home.HomeView;
 import com.innovare.views.main.ContentView;
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.HasComponents;
-import com.vaadin.flow.component.HasValue.ValueChangeEvent;
-import com.vaadin.flow.component.HasValue.ValueChangeListener;
-import com.vaadin.flow.component.HtmlComponent;
-import com.vaadin.flow.component.Tag;
 import com.vaadin.flow.component.board.Row;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
@@ -61,26 +56,18 @@ import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.UploadI18N;
-import com.vaadin.flow.internal.MessageDigestUtil;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.server.Sizeable.Unit;
-import com.vaadin.ui.Notification.Type;
-import com.vaadin.ui.Slider;
 
 import org.json.simple.parser.ParseException;
 
 @Route(value = "config", layout = ContentView.class)
 @PageTitle("Configurazione")
 @CssImport("./styles/views/innovare/innovare-view.css")
-//@Secured(Role.ADMIN)
 public class ConfigurazioneView extends Div {
 	
-	private String separator = System.getProperty("file.separator");
-	private String zipDirectoryPath = System.getProperty("user.home") + separator + "InnovareZip" + separator;
-	private String modelsDirectoryPath = System.getProperty("user.home") + separator + "InnovareModels" + separator;
 	private ArrayList<ConfigurationItem> configurationItems = new ArrayList<ConfigurationItem>();
-	public static final String MAX_WIDTH = (Toolkit.getDefaultToolkit().getScreenSize().width - 100) + "px";
+	private ArrayList<Model> models;
 	private UploadI18N i18n;
 	private UploadBuffer buffer;
 
@@ -91,6 +78,7 @@ public class ConfigurazioneView extends Div {
         
         buffer = new UploadBuffer();
         
+        // UploadI18N permette di personalizzare i messaggi visibili nel componente di upload
         i18n = new UploadI18N();
         i18n.setDropFiles(
                 new UploadI18N.DropFiles().setOne("Trascina il file qui...")
@@ -126,6 +114,8 @@ public class ConfigurazioneView extends Div {
 		
     }
 
+    // Recupera i dati da mostrare: i configuration item, i modelli disponibili per la classificazione, 
+    // lo stato dell'irrigazione e le info sull'ultima irrigazione (quella attuale se l'irrigazione è in corso)
     private void getData() {
     	ConfigurationItem item = new ConfigurationItem();
     	item.setId("Gateway");
@@ -140,6 +130,7 @@ public class ConfigurazioneView extends Div {
     	properties[1] = prop2;
     	item.setProperties(properties);
     	configurationItems.add(item);
+    	
     	/*URIBuilder builder = new URIBuilder();
 		builder.setScheme("http").setHost("localhost:8888").setPath("/configuration");
 	        
@@ -159,11 +150,39 @@ public class ConfigurazioneView extends Div {
 				e.printStackTrace();
 			} catch (URISyntaxException e) {
 				e.printStackTrace();
+			}*/
+    	
+    	URIBuilder builder = new URIBuilder();
+		builder.setScheme("http").setHost("localhost:8888").setPath("/models");
+	        
+	    HttpClient client = HttpClient.newHttpClient();
+	        HttpRequest request;
+			try {
+				request = HttpRequest.newBuilder()
+				        .uri(builder.build())
+				        .build();
+				HttpResponse<String> response = client.send(request,
+				         HttpResponse.BodyHandlers.ofString());
+				
+				models = new ObjectMapper().readValue(response.body(), new TypeReference<ArrayList<Model>>(){});
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			} catch (URISyntaxException e) {
+				e.printStackTrace();
 			}
-		*/
+			
+		
+		
 		
 	}
 
+    // Crea tutte viste che devono essere mostrate in ConfigurationView:
+    // stato dell'irrigazione (con possibilità di modificarlo),
+    // informazioni sull'ultima irrigazione (quella attuale se è ancora in corso),
+    // il componente di upload dello zip con le immagini da classificare e la scelta del modello da usare per la classificazione,
+    // il componente di upload di un nuovo modello di classificazione
 	private Component createContent() {
 		Component irrigation = createIrrigationState();
 		Component lastIrrigation = createLastIrrigation();
@@ -176,6 +195,8 @@ public class ConfigurazioneView extends Div {
 		return content;
 	}
 	
+	
+	// Crea header della card relativa all'ultima irrigazione e chiama il metodo per la creazione della card stessa
 	private Component createLastIrrigation() {
     	FlexBoxLayout lastIrr = new FlexBoxLayout(
   				createHeader(VaadinIcon.DROP, "Ultima Irrigazione"),
@@ -183,18 +204,19 @@ public class ConfigurazioneView extends Div {
     	lastIrr.setBoxSizing(BoxSizing.BORDER_BOX);
     	lastIrr.setDisplay(Display.BLOCK);
     	lastIrr.setMargin(Top.L);
-    	lastIrr.setMaxWidth(MAX_WIDTH);
+    	lastIrr.setMaxWidth(Constants.MAX_WIDTH);
     	lastIrr.setPadding(Horizontal.RESPONSIVE_L);
     	lastIrr.setWidthFull();
   		return lastIrr;
 	}
 
+	// Crea la card in cui si forniscono le info sull'ultima irrigazione (quella in corso se l'irrigazione è attiva)
 	private Component createLastIrrigationCard() {
 		
 		FlexBoxLayout fromLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Dalle:"));
 		fromLabel.setWidth("200px");
-		FlexBoxLayout fromDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, HomeView.DATE_FORMAT.format(new Date()) 
-				+ " " + HomeView.TIME_FORMAT.format(new Date())));
+		FlexBoxLayout fromDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, Constants.DATE_FORMAT.format(new Date()) 
+				+ " " + Constants.TIME_FORMAT.format(new Date())));
 		
 		
 		FlexBoxLayout from = new FlexBoxLayout(fromLabel, fromDate);
@@ -232,6 +254,7 @@ public class ConfigurazioneView extends Div {
 		return card;
 	}
 
+	// Crea header della card relativa allo stato dell'irrigazione e chiama il metodo per la creazione della card stessa
 	private Component createIrrigationState() {
     	FlexBoxLayout irrState = new FlexBoxLayout(
   				createHeader(VaadinIcon.SLIDER, "Stato Irrigazione"),
@@ -239,12 +262,15 @@ public class ConfigurazioneView extends Div {
     	irrState.setBoxSizing(BoxSizing.BORDER_BOX);
   		irrState.setDisplay(Display.BLOCK);
   		irrState.setMargin(Top.L);
-  		irrState.setMaxWidth(MAX_WIDTH);
+  		irrState.setMaxWidth(Constants.MAX_WIDTH);
   		irrState.setPadding(Horizontal.RESPONSIVE_L);
   		irrState.setWidthFull();
   		return irrState;
 	}
 
+	
+	// Crea la card in cui si fornisce lo stato dell'irrigazione (Attiva o Spenta);
+	// inoltre è presente la possibilità di accendere o spegnere l'irrigazione
 	private Component createIrrigationStateCard() {
 		
 		/* 
@@ -304,7 +330,7 @@ public class ConfigurazioneView extends Div {
 
 		Row uploads = new Row(uploadZip, uploadModel);
 		uploads.addClassName(LumoStyles.Margin.Top.XL);
-		UIUtils.setMaxWidth(MAX_WIDTH, uploads);
+		UIUtils.setMaxWidth(Constants.MAX_WIDTH, uploads);
 		uploads.setWidthFull();
 
 		return uploads;
@@ -315,7 +341,8 @@ public class ConfigurazioneView extends Div {
 		Upload uploadModel = new Upload(buffer);
         uploadModel.setId("i18n-uploadModel");
         uploadModel.setSizeFull();
-        //uploadModel.setAcceptedFileTypes("application/x-hdf"); 
+        String[] ACCEPTED_MIME_TYPES = {"application/zip", "application/x-zip", "application/x-zip-compressed", "multipart/x-zip"};
+        uploadModel.setAcceptedFileTypes(ACCEPTED_MIME_TYPES); 
         uploadModel.setAutoUpload(true);
         //Div output = new Div();
 
@@ -324,9 +351,9 @@ public class ConfigurazioneView extends Div {
             System.out.println("MIMEtype: " + event.getMIMEType());
             String filename = buffer.getFileName();
             try {
-            	File f = new File(modelsDirectoryPath);
+            	File f = new File(Constants.modelPath);
         		if(!f.exists()) f.mkdirs();
-				Files.copy(buffer.getTmpFile().toPath(), Path.of(modelsDirectoryPath + filename));
+				Files.copy(buffer.getTmpFile().toPath(), Path.of(Constants.zipSourcePath + filename));
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -351,16 +378,37 @@ public class ConfigurazioneView extends Div {
 	}
 
 	private Component createUploadZip() {
-		Collection<String> models = new ArrayList();
-		models.add("modello1");
-		models.add("modello2");
-		models.add("modello3");
+		Collection<String> modelsNames = new ArrayList<String>();
+		for(Model m : models) {
+			modelsNames.add(m.getName());
+		}
 		
-		ComboBox<String> modelSelection = new ComboBox<>("Seleziona il modello che vuoi usare", models);
+		ComboBox<String> modelSelection = new ComboBox<>("Seleziona il modello che vuoi usare", modelsNames);
 		 
         modelSelection.setPlaceholder("Nessun modello selezionato");
         modelSelection.setWidthFull();;
- 
+        modelSelection.addValueChangeListener(event -> {
+        	URIBuilder builder = new URIBuilder();
+    		builder.setScheme("http").setHost("localhost:8888").setPath("/setModel/" + event.getValue());
+    	        
+    	    HttpClient client = HttpClient.newHttpClient();
+    	        HttpRequest request;
+    			try {
+    				request = HttpRequest.newBuilder()
+    				        .uri(builder.build())
+    				        .build();
+    				HttpResponse<String> response = client.send(request,
+    				         HttpResponse.BodyHandlers.ofString());
+    				if(response.statusCode() == 200);
+    				else modelSelection.setValue(event.getOldValue());
+    			} catch (IOException e) {
+    				e.printStackTrace();
+    			} catch (InterruptedException e) {
+    				e.printStackTrace();
+    			} catch (URISyntaxException e) {
+    				e.printStackTrace();
+    			}
+        });
         
 		
 		FlexBoxLayout header = createHeader(VaadinIcon.FILE_ZIP, "Carica Nuova Classificazione del Campo");
@@ -371,19 +419,15 @@ public class ConfigurazioneView extends Div {
         uploadZipImages.setAcceptedFileTypes(ACCEPTED_MIME_TYPES); 
         uploadZipImages.setAutoUpload(true);
         uploadZipImages.setSizeFull();
-        Div output = new Div();
         uploadZipImages.setVisible(false);
 
         uploadZipImages.addSucceededListener(event -> {
-            Component component = createComponent(event.getMIMEType(),
-                    event.getFileName(), buffer.getInputStream());
-            showOutput(event.getFileName(), component, output);
             System.out.println("Absolute path: " + buffer.getTmpFile().getAbsolutePath());
             String filename = buffer.getFileName();
             try {
-            	File f = new File(zipDirectoryPath);
+            	File f = new File(Constants.zipSourcePath);
         		if(!f.exists()) f.mkdirs();
-				Files.copy(buffer.getTmpFile().toPath(), Path.of(zipDirectoryPath + filename));
+				Files.copy(buffer.getTmpFile().toPath(), Path.of(Constants.zipSourcePath + filename));
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -423,7 +467,7 @@ public class ConfigurazioneView extends Div {
   		confItem.setBoxSizing(BoxSizing.BORDER_BOX);
   		confItem.setDisplay(Display.BLOCK);
   		confItem.setMargin(Top.L);
-  		confItem.setMaxWidth(MAX_WIDTH);
+  		confItem.setMaxWidth(Constants.MAX_WIDTH);
   		confItem.setPadding(Horizontal.RESPONSIVE_L);
   		confItem.setWidthFull();
   		return confItem;
@@ -469,22 +513,5 @@ public class ConfigurazioneView extends Div {
 			return header;
 		}
 
-	private Component createComponent(String mimeType, String fileName, InputStream stream) {
-        Div content = new Div();
-        String text = String.format("Mime type: '%s'\nSHA-256 hash: '%s'",
-                mimeType, MessageDigestUtil.sha256(stream.toString()));
-        content.setText(text);
-        return content;
-
-    }
-    
-
-    private void showOutput(String text, Component content,
-            HasComponents outputContainer) {
-        HtmlComponent p = new HtmlComponent(Tag.P);
-        p.getElement().setText(text);
-        outputContainer.add(p);
-        outputContainer.add(content);
-    }
-
 }
+
