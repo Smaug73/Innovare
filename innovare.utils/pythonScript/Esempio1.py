@@ -99,7 +99,11 @@ def classificaImmagini(imageName):
     img_array= keras.preprocessing.image.img_to_array(img)
     img_array = tf.expand_dims(img_array, 0)
     preds = model.predict(img_array)
+    #print("preds ",preds)
+    #print("preds 0", preds[0])
+    #print("preds 0 0", preds[0][0])
     score = tf.nn.softmax(preds[0])
+    #print("Score ",score)
     #print(score[0])
     #print(score.shape.as_list())
     #print(score.numpy()[4])
@@ -108,7 +112,7 @@ def classificaImmagini(imageName):
     #    singleClass={ "classe":"{}".format(i) , "score":score.numpy()[4]*100}
     #    allClass.append(singleClass)  
     for i in range(5):
-        singleClass={ "classe":"{}".format(labels[i]) , "score":score.numpy()[4]*100}
+        singleClass={ "classe":"{}".format(labels[i]) , "score":round(preds[0][i]*100,1)}
         allClass.append(singleClass)
 
     return allClass
