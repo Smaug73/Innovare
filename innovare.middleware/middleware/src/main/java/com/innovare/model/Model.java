@@ -5,14 +5,14 @@ import java.util.Random;
 public class Model {
 	
 	private String name;
-	private String uid;
+	private String _id;
 	
 	public Model() {}
 
 	public Model(String name, String uid) {
 		super();
 		this.name = name;
-		this.uid = uid;	
+		this._id = uid;	
 	}
 	
 	/*
@@ -21,7 +21,7 @@ public class Model {
 	public Model(String name) {
 		super();
 		this.name = name;
-		this.uid = Integer.toString(new Random().nextInt());
+		this._id = Integer.toString(new Random().nextInt());
 	}
 
 	public String getName() {
@@ -32,13 +32,15 @@ public class Model {
 		this.name = name;
 	}
 
-	public String getUid() {
-		return uid;
+	public String get_id() {
+		return _id;
 	}
 
-	public void setUid(String uid) {
-		this.uid = uid;
-	}	
+	public void set_id(String _id) {
+		this._id = _id;
+	}
+
+		
 	
 	
 

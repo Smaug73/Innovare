@@ -56,7 +56,7 @@ public class MainVerticle extends AbstractVerticle {
 	 * 	
 	 */
 	
-	private final String LOG="MAIN-VERTICLE-LOG";
+	private final String LOG="MAIN-VERTICLE-LOG: ";
 	final List<JsonObject> configuration = new ArrayList<>(
 			//Arrays.asList(
 		 //   new JsonObject().put("Gateway", "prova").put("Model", "prova")	    
@@ -138,6 +138,44 @@ public class MainVerticle extends AbstractVerticle {
 	   */
 	  this.modelController= new ModelController();
 	  System.out.println(this.LOG+": modelController creato: "+this.modelController.toString());
+	  
+	  /*
+	   *Recuperiamo il modello selezionato in precedenza 
+	   */
+	  JsonObject querySelectedModel = new JsonObject();
+	  System.out.println(this.LOG+" Avvio ricerca modello selezionato.");
+	  mongoClient.find("selectedModel", query, res -> {
+	    if (res.succeeded()) {
+		    	
+		    if(!res.result().isEmpty()){
+		      /*
+		       * Esiste un unico documento in questa collezione
+		       * Ricerchiamo il modello selezionato in precedenza nel db e lo impostiamo come modello selezionato
+		       */
+		    	JsonObject jsonSelectedModel=res.result().get(0);
+		    	System.out.println(this.LOG+"Modello selezionato predentemente: "+jsonSelectedModel.encodePrettily());
+		    	Model selectedModel;
+				try {
+					selectedModel = new ObjectMapper().readValue(jsonSelectedModel.toString(), Model.class);
+					this.modelController.setModelSelected(selectedModel.getName());
+				} catch (JsonProcessingException e) {
+					System.err.println("Errore parsing json del modello selezionato");
+					System.err.println("Verra impostato a null il modello selezionato.");
+					e.printStackTrace();
+				} catch (FileNotFoundException e) {
+					System.err.println("Il modello che è stato selezionato in precedenza non è più disponibile nel fileSystem!");
+					System.err.println("Verra impostato a null il modello selezionato.");
+					e.printStackTrace();
+				}
+	    	}
+		    System.out.println(this.LOG+"Nessun modello selezionato.");
+		    
+	    } else {
+	      res.cause().printStackTrace();
+	    
+	    }
+	  });
+	  
 	  /*
 	   * LOGGIN CONTROLLER
 	   */
@@ -648,6 +686,21 @@ public class MainVerticle extends AbstractVerticle {
   						    			  else
   						    				  System.err.println("ERRORE salvataggio misura");  
             	    	    			});
+            	    	    			
+            	    	    			//Salviamo nel db le classificazioni delle singole immagini
+            	    	    			String imagesClassifications= c.getJsonStringLastClassification();
+            	    	    			//Memorizzio nel database tutte le classificazioni
+            	    	    			JsonArray newClassificationsJson= new JsonArray(imagesClassifications);
+            	    	    			JsonObject singleImageClassification;
+        								for(int i=0;i< newClassificationsJson.size() ; i++) {
+        									singleImageClassification = newClassificationsJson.getJsonObject(i);
+        					    			mongoClient.insert("classifications", singleImageClassification , res ->{
+        						    			  if(res.succeeded())
+        						    				  System.out.println("Singola classificazione salvata correttamente nel DB.");
+        						    			  else
+        						    				  System.err.println("ERRORE salvataggio misura");  
+        						    		});
+        								}	
             	    	    					
         							} catch (JsonProcessingException e) {
         								System.err.println("Errore conversione json");
@@ -828,19 +881,76 @@ public class MainVerticle extends AbstractVerticle {
     	    	    		 */
         	    	    	String modelName= routingContext.request().getParam("modelName");
         	    	    	try {
-        	    	    		System.out.println("Modello selezionato: "+modelName+"... ");
-    							this.modelController.setModelSelected(modelName);
-    							routingContext
-    							.response()
-    							.setStatusCode(200)
-    							.end();
+        	    	    		System.out.println("Modello selezionato: "+modelName+"... ");			
+    							/*
+    							 * Salviamo nel db come modello selezionato
+    							 */
+        	    	    		if(this.modelController.getSelectedModel() != null) {
+        	    	    			/*
+        	    	    			 * Caso nel quale esiste un modello già selezionato
+        	    	    			 */
+        	    	    			//Verifico che il modello sia nel filesystem e aggiorno il controller
+        							this.modelController.setModelSelected(modelName);
+
+        	    	    			JsonObject oldmodel= new JsonObject().put("name", this.modelController.getSelectedModel().getName());
+        	    	    			JsonObject update = new JsonObject().put("$set", new JsonObject()
+        	    	    					  .put("name", modelName));
+        	    	    			mongoClient.updateCollection("selectedModel", query, update, res -> {
+        	    	    				  if (res.succeeded()) {
+        	    	    				    System.out.println("Modello selezionato salvato nel db");
+        	    	    				    routingContext
+    	        							.response()
+    	        							.setStatusCode(200)
+    	        							.end();
+        	    	    				  } else {
+        	    	    				    res.cause().printStackTrace();
+        	    	    				    routingContext
+    	        							.response()
+    	        							.setStatusCode(400)
+    	        							.end("ERROR: modello non salvato correttamente");
+        	    	    				  }
+        	    	    				});
+        	    	    			
+        	    	    			
+        	    	    		}else {
+        	    	    			System.out.println("Nessun modello è presente nel db, aggiunta nuovo modello...");
+        	    	    			//Verifico che il modello sia nel filesystem e aggiorno il controller
+        							this.modelController.setModelSelected(modelName);
+
+        	    	    			Model newModel= new Model(modelName);
+        	    	    			String jsonStringModel= new ObjectMapper().writeValueAsString(newModel);
+        	    	    			JsonObject newModelJson = new JsonObject();		  
+        	    	    			mongoClient.save("selectedModel", newModelJson, res -> {
+        	    	    					  if (res.succeeded()) {
+        	    	    					    System.out.println("Modello selezionato salvato nel db");
+        	    	    					    routingContext
+        	        							.response()
+        	        							.setStatusCode(200)
+        	        							.end();
+        	    	    					  } else {
+        	    	    					    res.cause().printStackTrace();
+        	    	    					    routingContext
+        	        							.response()
+        	        							.setStatusCode(400)
+        	        							.end("ERROR: modello non salvato correttamente");
+        	    	    					  }
+        	    	    			});    			    			
+        	    	    		}  	        	    	      							
+    							
     						} catch (FileNotFoundException e) {					
     							e.printStackTrace();
     							routingContext
     							.response()
     							.setStatusCode(400)
     							.end("ERROR: MODEL SELECTED NOT FOUND");
-    						}  
+    						} catch (JsonProcessingException e) {
+								System.err.println("Errore aggiunta nuovo modello nel db.Il modello non verrà selezionato.");
+								e.printStackTrace();
+								routingContext
+    							.response()
+    							.setStatusCode(400)
+    							.end("ERROR: MODELLO NON AGGIUNTO.");
+							}  
     	    	    	}
     	    	    	else {
     	    	    		routingContext

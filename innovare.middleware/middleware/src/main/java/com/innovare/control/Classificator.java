@@ -98,8 +98,8 @@ public class Classificator {
 			System.out.println(outPSeg.toString());
 			
 			//Finita la segmentazione avviamo la classificazione
-			System.out.println("python "+Utilities.scriptPath+"ClassificationScript.py "+Utilities.modelPath+modelName+" "+Utilities.segmentDataSetPath+this.imagesDirName+"/");
-			Process process= Runtime.getRuntime().exec("python "+Utilities.scriptPath+"ClassificationScript.py "+Utilities.modelPath+modelName+" "+Utilities.segmentDataSetPath+this.imagesDirName+"/");
+			System.out.println("python3 "+Utilities.scriptPath+"ClassificationScript.py "+Utilities.modelPath+modelName+" "+Utilities.segmentDataSetPath+this.imagesDirName+System.getProperty("file.separator"));
+			Process process= Runtime.getRuntime().exec("python3 "+Utilities.scriptPath+"ClassificationScript.py "+Utilities.modelPath+modelName+" "+Utilities.segmentDataSetPath+this.imagesDirName+System.getProperty("file.separator"));
 			
 			//Attendiamo la fine del processo di classificazione
 			int processOutput=process.waitFor();
@@ -229,7 +229,7 @@ public class Classificator {
 	 * Ritorna il json della classificazione in formato Stringa
 	 */
 	public String getJsonStringLastClassification() throws FileNotFoundException {
-		File jsonFile= new File(this.imagesDirName+"classification.json");
+		File jsonFile= new File(Utilities.segmentDataSetPath+this.imagesDirName+System.getProperty("file.separator")+"classification.json");
 		Scanner reader= new Scanner(jsonFile);
 		String jsonStrings="";
 		//Leggiamo tutto il json
