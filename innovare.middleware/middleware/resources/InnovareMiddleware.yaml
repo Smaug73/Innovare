@@ -7,19 +7,6 @@ info:
     Effettuiamo una nuova classificazione passando il nome del modello
     da voler utilizzare.
 paths:
-  /configuration:
-    get:
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ConfigurationItem'
-          description: Configuration response
-      operationId: actualConfiguration
-      description: Return the actual configuration.
   /allsample/{idcanale}:
     get:
       parameters:
@@ -116,23 +103,6 @@ paths:
           description: Json of last classification.
       operationId: lastclassificazion
       summary: Return the last classification
-  /getClassifications/{date}:
-    summary: Restituisce tutte le classificazioni di una certa data
-    get:
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Classification'
-          description: Restituisce tutte le classificationi in base alla data
-      operationId: getClassificationByDate
-    parameters:
-    - name: date
-      in: path
-      required: true
   /setModel/{modelName}:
     get:
       responses:
@@ -228,22 +198,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Irrigation'
+                type: boolean
           description: RIchiesta stato irrigazione
       operationId: getStatoIrrigazione
       summary: RIchiesta stato irrigazione.
-  /getClassifications:
-    get:
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Classification'
-          description: Restituisce l'array di tutte le classificazioni
-      summary: Restituisce tutte le classificazioni
   /allIrrigationStates:
     get:
       responses:
@@ -288,6 +246,62 @@ paths:
         dal dataset.
     parameters:
     - name: dataset
+      in: path
+      required: true
+  /newModel/{fileName}:
+    summary: Aggiunta nuovo modello per la classificazione in formato .zip
+    get:
+      responses:
+        "200":
+          description: Aggiunta nuovo modello in formato .zip
+      operationId: newModel
+      summary: Aggiunta modello in formato .zip
+    parameters:
+    - name: fileName
+      in: path
+      required: true
+  /configurations:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConfigurationItem'
+          description: Configuration response
+      operationId: getConfigurations
+      description: Return the actual configuration.
+  /classifications:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClassificationSint'
+          description: Restituisce l'array di tutte le classificazioni
+      operationId: getClassifications
+      summary: Restituisce tutte le classificazioni
+  /classifications/{date}:
+    summary: Restituisce tutte le classificazioni di una certa data
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClassificationSint'
+          description: Restituisce tutte le classificationi in base alla data
+      operationId: getClassificationsByDate
+    parameters:
+    - name: date
+      description: In millisencond dal timestamp
       in: path
       required: true
 components:

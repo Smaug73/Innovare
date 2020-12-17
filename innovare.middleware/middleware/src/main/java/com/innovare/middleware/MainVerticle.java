@@ -57,11 +57,7 @@ public class MainVerticle extends AbstractVerticle {
 	 */
 	
 	private final String LOG="MAIN-VERTICLE-LOG: ";
-	final List<JsonObject> configuration = new ArrayList<>(
-			//Arrays.asList(
-		 //   new JsonObject().put("Gateway", "prova").put("Model", "prova")	    
-		  //)
-			);
+	private JsonArray configuration ;
 	
 	//private MongoClient mongo=null;
 	
@@ -87,7 +83,7 @@ public class MainVerticle extends AbstractVerticle {
 	private MqttClient irrigationCommandClient;
 	private MqttClient irrigationLog;
 	
-	private IrrigationState irrigationState=null;
+	private String irrigationState=null;
 	
 	/*
 	 * AGGIUNGERE PRIORITY QUEUE DELLE CLASSIFICAZIONI, DEVE CONTENERE LE ULTIME 4 CLASSIFICAZIONI EFFETTUATE
@@ -95,6 +91,9 @@ public class MainVerticle extends AbstractVerticle {
 	
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
+	  //INSTANZIAZIONI INIZIALI
+	  configuration = new JsonArray();
+	  
 	  
 	  //Connessione a MongoDB
       System.out.println("Starting MongoConnection..");
@@ -144,7 +143,7 @@ public class MainVerticle extends AbstractVerticle {
 	   */
 	  JsonObject querySelectedModel = new JsonObject();
 	  System.out.println(this.LOG+" Avvio ricerca modello selezionato.");
-	  mongoClient.find("selectedModel", query, res -> {
+	  mongoClient.find("selectedModel", querySelectedModel, res -> {
 	    if (res.succeeded()) {
 		    	
 		    if(!res.result().isEmpty()){
@@ -168,7 +167,7 @@ public class MainVerticle extends AbstractVerticle {
 					e.printStackTrace();
 				}
 	    	}
-		    System.out.println(this.LOG+"Nessun modello selezionato.");
+		    //System.out.println(this.LOG+"Nessun modello selezionato.");
 		    
 	    } else {
 	      res.cause().printStackTrace();
@@ -192,9 +191,9 @@ public class MainVerticle extends AbstractVerticle {
 		  
 		  clientLog.publishHandler(c -> {
 	    		//Ogni qual volta viene pubblicata una misura la stampiamo e la salviamo.
-				  System.out.println("There are new message in topic: " + c.topicName());
-	    		  System.out.println("Content(as string) of the message: " + c.payload().toString());
-	    		  System.out.println("QoS: " + c.qosLevel());	
+				  //System.out.println("There are new message in topic: " + c.topicName());
+	    		  //System.out.println("Content(as string) of the message: " + c.payload().toString());
+	    		  //System.out.println("QoS: " + c.qosLevel());	
 	    		  System.out.println("LOG-GATEWAY: "+c.payload().toString());
 	    		  
 	    		  if(c.payload().toString().startsWith("channelNumber:")) {
@@ -205,9 +204,15 @@ public class MainVerticle extends AbstractVerticle {
 	    			  this.mqttClientCreation();
 	    		  }
 	    		  
+	    		  //Salviamo i configurationItem
+	    		  if(c.payload().toString().contains("id")) {
+	    			 this.configuration.add(new JsonObject(c.payload().toString()));
+	    			 System.out.println("LOG-GATEWAY: Aggiunto "+c.payload().toString()+" alle configurazioni.");
+	    		  }
 	    		  //JsonObject confJson= new JsonObject( c.payload().toString());
 	    		})
 	    		  .subscribe("gatewayLog", 2);	    
+		  
 	    });
 	  
 	  /*
@@ -224,12 +229,16 @@ public class MainVerticle extends AbstractVerticle {
 	  System.out.println("Creazione client mqtt per il log dell'irrigazione.");
 	  this.irrigationLog= MqttClient.create(vertx);
 	  this.irrigationLog.connect(1883, Utilities.ipMqtt, s ->{
-		  clientLog.publishHandler(c -> {
-	    		  //Ogni qual volta viene pubblicata una misura la stampiamo e la salviamo.
-				  //System.out.println("There are new message in topic: " + c.topicName());
-	    		  //System.out.println("Content(as string) of the message: " + c.payload().toString());
-	    		  //System.out.println("QoS: " + c.qosLevel());	
-	    		  System.out.println(Utilities.irrigationLogMqttChannel+":"+c.payload().toString());	  
+		  irrigationLog.publishHandler(c -> {
+	    		  
+	    		  System.out.println(Utilities.irrigationLogMqttChannel+":"+c.payload().toString());	
+	    		  //Modifichiamo lo stato dell'irrigazione corrente
+	    		  if(c.payload().toString().contains(Utilities.stateOn))
+	    			  this.irrigationState=Utilities.stateOn;
+	    		  else
+	    			  if(c.payload().toString().contains(Utilities.stateOff))
+	    				  this.irrigationState=Utilities.stateOff;
+	    		  
 	    		  //JsonObject confJson= new JsonObject( c.payload().toString());
 	    		})
 	    		  .subscribe(Utilities.irrigationLogMqttChannel, 2);	  
@@ -250,7 +259,7 @@ public class MainVerticle extends AbstractVerticle {
     		  
     		//Router per la richiesta della configuratone attuale  
     	    OpenAPI3RouterFactory routerFactory = ar.result(); // (1)
-    	    routerFactory.addHandlerByOperationId("actualConfiguration", routingContext ->{
+    	   /* routerFactory.addHandlerByOperationId("actualConfiguration", routingContext ->{
     	    	
     	    	mongoClient.find("ConfigurationItem", query, res -> {
     	    		  if (res.succeeded()) {
@@ -270,7 +279,7 @@ public class MainVerticle extends AbstractVerticle {
     	    		  }
     	    		});
     	    });
-    	   
+    	   */
     	    //Login     
     	    routerFactory.addHandlerByOperationId("login", routingContext ->{
     	    	//Controlliamo che non si già loggato
@@ -365,7 +374,7 @@ public class MainVerticle extends AbstractVerticle {
     	    
     	      
     	    /*
-    	     * Ultima misura registrata in un determinato canale
+    	     * Ultima misura registrata in un determinato canale  	LASTSAMPLE
     	     */
     	    	    routerFactory.addHandlerByOperationId("lastsample", routingContext ->{
     	    	    	
@@ -406,12 +415,11 @@ public class MainVerticle extends AbstractVerticle {
     			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
     			              .end("Non autorizzato: non sei loggato.");
     	    	    	}
-    	    	    	
-    
+    	   
     	    	    });  	
     	    		
     	    	/*
-    	    	 * Restituiamo le ultime misure non ancora mostrate dalla DashBoard e le eliminiamo dall'array   
+    	    	 * Restituiamo le ultime misure non ancora mostrate dalla DashBoard e le eliminiamo dall'array   LASTSAMPLES
     	    	 */   	    	    
     	    	    routerFactory.addHandlerByOperationId("lastsamples", routingContext ->{
     	    	    	if(this.loggingController.isUserLogged()) {
@@ -503,7 +511,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	    }); 
     	    	    
     	    	    /*
-    	    	     * Restituiamo tutti i sample di un determinato canale
+    	    	     * Restituiamo tutti i sample di un determinato canale  ALL SAMPLE
     	    	     */
     	    	    routerFactory.addHandlerByOperationId("allsamples", routingContext ->{
     	    	    	if(this.loggingController.isUserLogged()) {
@@ -556,7 +564,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	    }); 
     	    	    
     	    	    /*
-    	    	     * Richiesta di una nuova classificazione utilizzando un certo dataset
+    	    	     * Richiesta di una nuova classificazione utilizzando un certo dataset  NEWCLASSIFICAZION OLD
     	    	     */
     	    	    routerFactory.addHandlerByOperationId("newclassification", routingContext ->{
     	    	    	if(this.loggingController.isUserLogged()) {
@@ -737,15 +745,15 @@ public class MainVerticle extends AbstractVerticle {
     	    	    
     	    	    
     	    	    /*
-    	    	     * Richiesta le classificazioni di una certa data
+    	    	     * Richiesta le classificazioni di una certa data   GET-CLASSIFICATION-BY-DATE
     	    	     */
-    	    	    routerFactory.addHandlerByOperationId("getClassificationByDate", routingContext ->{
+    	    	    routerFactory.addHandlerByOperationId("getClassificationsByDate", routingContext ->{
     	    	    	if(this.loggingController.isUserLogged()) {
-    	    	    		String date= routingContext.request().getParam("date");
+    	    	    		String dateString= routingContext.request().getParam("date");
         	    	    	/*
         	    	    	 * Fallimento se il parametro non è stato inserito correttamente
         	    	    	 */
-        	    	    	if(date==null)
+        	    	    	if(dateString==null)
         	    	    		routingContext
     			    	   	      .response()
     				              .setStatusCode(400)
@@ -754,9 +762,10 @@ public class MainVerticle extends AbstractVerticle {
         	    	    		/*
         	    	    		 * Avviamo una nuova classificazione
         	    	    		 */
+        	    	    		long date = Long.parseLong(dateString);
         	    	    		//System.out.println(date);
         	    	    		JsonObject q= new JsonObject().put("date",date );
-            	    	    	this.mongoClient.find("classifications",q, res-> {
+            	    	    	this.mongoClient.find("ClassificazioniSintetiche",q, res-> {
             	    	    		/*
             	    	    		 * Successo nel trovare i sample nel db
             	    	    		 */
@@ -790,6 +799,48 @@ public class MainVerticle extends AbstractVerticle {
     	    	    	
     	    	    }); 
     	    	    
+    	    	    /*
+    	    	     * Richiesta le classificazioni di una certa data   GET-ALL-CLASSIFICATIONS
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("getClassifications", routingContext ->{
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		/*
+    	    	    		 * Restituiamo tutte le classificazioni fatte.
+    	    	    		 */
+     
+        	    	    		JsonObject q= new JsonObject();
+            	    	    	this.mongoClient.find("ClassificazioniSintetiche",q, res-> {
+            	    	    		/*
+            	    	    		 * Successo nel trovare i sample nel db
+            	    	    		 */
+            	    	    		if(res.succeeded()) {
+            	    	    			routingContext
+        								.response()
+        								.setStatusCode(200)
+        								.end(res.result().toString());
+            	    	    		}
+            	    	    		/*
+            	    	    		 * Caso di fallimento
+            	    	    		 */
+            	    	    		else {
+            	    	    			routingContext
+          			    	   	      .response()
+          				              .setStatusCode(400)
+          				              .end("No-sample-find");
+            	    	    		}
+            	    	    	});
+        	    	    		    	    	
+        	    	    	}
+	    	    	    	else {
+	    	    	    		routingContext
+	    		    	   	      .response()
+	    			              .setStatusCode(401)
+	    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+	    			              .end("Non autorizzato: non sei loggato.");
+	    	    	    	}
+    	    	    	
+    	    	    	
+    	    	    }); 
     	    	    
     	    	    		    	    	
     	    	    /*
@@ -872,7 +923,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	    
     	    	    
     	    	    /*
-    	    	     * Scelta modello da utilizzare: SETMODEL
+    	    	     * Scelta modello da utilizzare: SET-MODEL
     	    	     */
     	    	    routerFactory.addHandlerByOperationId("setModel", routingContext ->{	
     	    	    	if(this.loggingController.isUserLogged()) {
@@ -1067,13 +1118,13 @@ public class MainVerticle extends AbstractVerticle {
 	      			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
 	      			              .end(Utilities.stateOff);
     	    	    		}else {
-    	    	    			
-    	    	    			
-    	    	    			
-    	    	    		}
-        	    	    
-    	    	    		
-    	    	    		
+    	    	    			routingContext
+	      		    	   	      .response()
+	      			              .setStatusCode(200)
+	      			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+	      			              .end(this.irrigationState);
+    	    	    			 	    			
+    	    	    		}    	    		
     	    	    	}
     	    	    	else {
     	    	    		routingContext
@@ -1084,35 +1135,28 @@ public class MainVerticle extends AbstractVerticle {
     	    	    	}	    	    	 	    	
     	    	    }); 
     	    	    
-    	    	/*
-    	    	 * Dalla dashboard dobbiamo capire se si sta cercando di entrare come admin o user. 
-    	    	 * Da definire i dati comunicati dalla dashboard, questo è solo un test.
-    	    	 * 
-    	    	 *
-    	    	 * 
-    	    	 * 
-    	    	try {
-					userLog= User.convertJsonToUser(userJson.toString());	//variabile dove si salva l'utente loggato correttamente
-					routingContext
-	    	    	 .response()
-	    	    	 .setStatusCode(200)
-	    	    	 .end("Conferma login effettu");
-				} catch (JsonMappingException e1) {
-					// TODO Auto-generated catch block
-					System.out.println("Errore");
-					e1.printStackTrace();
-				} catch (JsonProcessingException e1) {
-					// TODO Auto-generated catch block
-					System.out.println("Errore");
-					e1.printStackTrace();
-				}
-    	    	/*
-    	    	 * Aggiungere la verifica sul database.
-    	    	 */  	    	
-    	   
-    	  
-  
-    	    
+    	    	    
+    	    	    /*
+    	    	     * GET CONFIGURATIONS
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("getConfigurations", routingContext ->{	
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		//Caso nel quale non è stata creata nessuna irrigazione	    
+    	    	    		System.out.println("Invio configuazioni: "+this.configuration.toString());
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(200)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end(this.configuration.toString());	    		
+    	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}	    	    	 	    	
+    	    	    }); 
     	    
     	    Router router = routerFactory.getRouter(); // <1>
             router.errorHandler(404, routingContext -> { // <2>
@@ -1238,16 +1282,5 @@ public class MainVerticle extends AbstractVerticle {
   }
   
   
-  public JsonObject getConfigurazione(){
-	  return null;
-  }
-  
 
-  private List<JsonObject> getAllConfiguration() {
-	  if(this.configuration.isEmpty())
-		  System.out.println("La lista dei gateway è vuota");
-    return this.configuration;
-  }
-  
-  
 }

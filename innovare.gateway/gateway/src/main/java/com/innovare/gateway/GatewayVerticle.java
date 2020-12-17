@@ -64,13 +64,14 @@ public class GatewayVerticle extends AbstractVerticle {
   private int numberOfChannel= 2; //per ora test
   private HashMap<Channel,MqttClient> mapClient;
   private IrrigationController irrigation;
-  
+  private ConfigurationItem cfi;
+
   
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
 	  
 	 //Metodi di verifica del corretto caricamento del gateway. Da aggiungere..
-	  
+	 this.cfi=this.generateConfigurationItem();
 	
 	  
 	//Creazione client MQTT
@@ -91,11 +92,24 @@ public class GatewayVerticle extends AbstractVerticle {
 		    		  MqttQoS.AT_LEAST_ONCE,
 		    		  false,
 		    		  false);
-	    	 
+	    	 //Comunicazione numero di canali
+	    	 try {
+				client.publish("gatewayLog",
+						 //Configurazione di test salvata come oggetto json
+						  Buffer.buffer(new ObjectMapper().writeValueAsString(this.cfi)),
+						  MqttQoS.AT_LEAST_ONCE,
+						  false,
+						  false);
+			} catch (JsonProcessingException e) {
+				System.err.println("ERRORE: conversione json del configuration item");
+				e.printStackTrace();
+			}
+	    	 client.disconnect();
 	    	/*
 	    	 * Richiamo operazione per l'instanziazione dei canali dopo aver comunicato il loro numero
 	    	 */
-	    	 //this.channelCreation();
+	    	 //RIATTIVARE LA CREAZIONE DEI THREAD , COMMENTATO PER TEST
+	    //	 this.channelCreation();   ///////////////////////////////////////////////////
 	    	 
 	    	 
 	    	 //Si può anche disconnettere questo client dopo l'instanziazione dei client dei singoli sensori...
@@ -212,7 +226,13 @@ public class GatewayVerticle extends AbstractVerticle {
   }
   
   
-  
+  private ConfigurationItem generateConfigurationItem() {
+	  Property p1= new Property("indirizzo","localhost");
+	  Property p2= new Property("porta","8888");
+	  Property[] pa = {p1,p2};
+	  ConfigurationItem cfiN= new ConfigurationItem("sensor-gateway",pa);
+	  return cfiN;
+  }
   
   
   

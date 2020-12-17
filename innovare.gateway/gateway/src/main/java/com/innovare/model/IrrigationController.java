@@ -23,6 +23,9 @@ public class IrrigationController extends Thread{
 	private MqttClient logClient=null;
 	private MqttClient commandClient=null;
 	
+	public static final String scriptPathIrrigation="python3 "+System.getProperty("user.home")+System.getProperty("file.separator")+"InnovareData"+System.getProperty("file.separator")+"InnovareScript"+System.getProperty("file.separator")+"irrigationCommand.py";
+
+	
 	private long irrigationTime; 
 	
 	/*
@@ -42,8 +45,7 @@ public class IrrigationController extends Thread{
 	public void startIrrigation(long time) {
 		/*
 		 * Manca la parte dell'avvio dell'irrigazione
-		 */
-		
+		 */	
 		this.irrigationTime=time;
 		////
 		this.stato=this.stateOn;
@@ -53,7 +55,7 @@ public class IrrigationController extends Thread{
 			this.logClient.connect(1883, GatewayVerticle.serverIP, s -> {	
 				
 				System.out.println(tm+": Avvio irrigazione.");
-				this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+": Avvio irrigazione."),
+				this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+": "+this.stateOn),
 						  MqttQoS.AT_LEAST_ONCE,
 						  false,
 						  false);		
@@ -82,7 +84,7 @@ public class IrrigationController extends Thread{
 			this.logClient.connect(1883, GatewayVerticle.serverIP, s -> {	
 				
 				System.out.println(tm+": Avvio irrigazione.");
-				this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+": Avvio irrigazione."),
+				this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+": "+this.stateOn),
 						  MqttQoS.AT_LEAST_ONCE,
 						  false,
 						  false);		
@@ -108,7 +110,7 @@ public class IrrigationController extends Thread{
 			 */
 			
 			//Aggiungere lo script di irrigazione al quale va aggiunto 
-			Process process= Runtime.getRuntime().exec("");
+			Process process= Runtime.getRuntime().exec(this.scriptPathIrrigation+" on");
 			int processOutput=process.waitFor();
 			
 			/*
@@ -138,7 +140,7 @@ public class IrrigationController extends Thread{
 			this.logClient.connect(1883, GatewayVerticle.serverIP, s -> {	
 				
 				System.out.println(tm+": Stop irrigazione.");
-				this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+": Stop irrigazione."),
+				this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+": "+this.stateOn),
 						  MqttQoS.AT_LEAST_ONCE,
 						  false,
 						  false);		

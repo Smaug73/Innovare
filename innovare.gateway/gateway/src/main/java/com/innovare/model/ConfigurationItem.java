@@ -19,7 +19,8 @@ public class ConfigurationItem {
 	
 	
 	public ConfigurationItem(String string, Property[] ps) {
-		// TODO Auto-generated constructor stub
+		this.id=string;
+		this.properties=ps;
 	}
 
 
