@@ -146,13 +146,13 @@ public class ConfigurazioneView extends Div {
 
 		configurationItems = HttpHandler.getAllConfigurationItems();
 		isIrrigationOn = HttpHandler.getCurrentIrrigationState();
-		//lastIrrigation = HttpHandler.getLastIrrigation();
+		lastIrrigation = HttpHandler.getLastIrrigation();
 		selectedModel = HttpHandler.getSelectedModel();
 		models = HttpHandler.getAllModels();
-		lastIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 64872389),
+		/*lastIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 64872389),
 				new Timestamp(System.currentTimeMillis()), 58.34);
 
-
+		*/
 
 	}
 
