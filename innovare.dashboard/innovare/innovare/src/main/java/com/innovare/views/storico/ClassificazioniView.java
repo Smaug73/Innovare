@@ -22,6 +22,7 @@ import com.innovare.ui.utils.TextColor;
 import com.innovare.ui.utils.UIUtils;
 import com.innovare.utils.Classification;
 import com.innovare.utils.Classification.Status;
+import com.innovare.utils.HttpHandler;
 import com.innovare.views.home.HomeView;
 import com.innovare.views.main.ContentView;
 import com.vaadin.flow.component.Component;
@@ -44,7 +45,7 @@ import com.vaadin.flow.router.Route;
 @JsModule("@vaadin/vaadin-lumo-styles/badge.js")
 public class ClassificazioniView extends StoricoView{
 	
-	private ArrayList<Classification> CLASSIFICATIONS;
+	private ArrayList<Classification> classifications;
 	
 	public ClassificazioniView() {
 		super();
@@ -54,50 +55,31 @@ public class ClassificazioniView extends StoricoView{
 	@Override
 	protected void getData() {
 		/* Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-		CLASSIFICATIONS = new ArrayList<>();
-		CLASSIFICATIONS.add(new Classification(Classification.Status.CARENZA, timestamp, 73, 10, 8, 9, 4, "modello1"));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.INFESTANTI, timestamp, 6, 20, 73, 1, 79, "modello2"));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, timestamp, 3, 75, 20, 2, 4, "modello1"));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.CARENZA, timestamp, 58, 29, 13, 7, 4, "modello1"));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.ECCESSO, timestamp, 2, 88, 10, 7, 4, "modello1"));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, timestamp, 8, 90, 2, 7, 4, "modello1"));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, timestamp, 1, 93, 6, 7, 4, "modello1"));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, timestamp, 4, 84, 12, 7, 4, "modello1"));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello1"));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello1"));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.SCARTATE, timestamp, 0, 0, 0, 100, 4, "modello2"));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 6, 4, "modello2"));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 3, 4, "modello2"));
-		CLASSIFICATIONS.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 9, 4, "modello2"));
+		classifications = new ArrayList<>();
+		classifications.add(new Classification(Classification.Status.CARENZA, timestamp, 73, 10, 8, 9, 4, "modello1"));
+		classifications.add(new Classification(Classification.Status.INFESTANTI, timestamp, 6, 20, 73, 1, 79, "modello2"));
+		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 3, 75, 20, 2, 4, "modello1"));
+		classifications.add(new Classification(Classification.Status.CARENZA, timestamp, 58, 29, 13, 7, 4, "modello1"));
+		classifications.add(new Classification(Classification.Status.ECCESSO, timestamp, 2, 88, 10, 7, 4, "modello1"));
+		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 8, 90, 2, 7, 4, "modello1"));
+		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 1, 93, 6, 7, 4, "modello1"));
+		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 4, 84, 12, 7, 4, "modello1"));
+		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello1"));
+		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello1"));
+		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
+		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
+		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
+		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
+		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
+		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
+		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
+		classifications.add(new Classification(Classification.Status.SCARTATE, timestamp, 0, 0, 0, 100, 4, "modello2"));
+		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 6, 4, "modello2"));
+		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 3, 4, "modello2"));
+		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 9, 4, "modello2"));
 		*/
 		
-		URIBuilder builder = new URIBuilder();
-		builder.setScheme("http").setHost("localhost:8888").setPath("/getClassifications");
-	        
-	    HttpClient client = HttpClient.newHttpClient();
-	        HttpRequest request;
-			try {
-				request = HttpRequest.newBuilder()
-				        .uri(builder.build())
-				        .build();
-				HttpResponse<String> response = client.send(request,
-				         HttpResponse.BodyHandlers.ofString());
-				
-				CLASSIFICATIONS = new ObjectMapper().readValue(response.body(), new TypeReference<ArrayList<Classification>>(){});
-			} catch (IOException e) {
-				e.printStackTrace();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			} catch (URISyntaxException e) {
-				e.printStackTrace();
-			}
+		classifications = HttpHandler.getAllClassifications();
 		
 	}
 
@@ -108,7 +90,7 @@ public class ClassificazioniView extends StoricoView{
 		grid.setSelectionMode(SelectionMode.SINGLE);
 
 		
-		ListDataProvider<Classification> dataProvider = DataProvider.ofCollection(CLASSIFICATIONS);
+		ListDataProvider<Classification> dataProvider = DataProvider.ofCollection(classifications);
 		
 		grid.setDataProvider(dataProvider);
 		grid.setSizeFull();

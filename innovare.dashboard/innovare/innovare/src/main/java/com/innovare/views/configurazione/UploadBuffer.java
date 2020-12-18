@@ -24,7 +24,7 @@ public class UploadBuffer extends FileBuffer {
     }
 
     private File createFile(String fileName) throws IOException {
-        String tempFileName = "upload_tmpfile_" + fileName;
+        String tempFileName = fileName;
         return File.createTempFile(tempFileName, (String) null);
     }
 

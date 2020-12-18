@@ -1,32 +1,34 @@
 package com.innovare.utils;
 
-import java.util.Date;
+import java.sql.Timestamp;
 
 public class Irrigazione {
-	private Date inizioIrrig;
-	private Date fineIrrig;
+	private Timestamp inizioIrrig;
+	private Timestamp fineIrrig;
 	private double quantita;
 	
-	public Irrigazione(Date inizioIrrig, Date fineIrrig, double quantita) {
-		super();
+	public Irrigazione(Timestamp inizioIrrig, Timestamp fineIrrig, double quantita) {
 		this.inizioIrrig = inizioIrrig;
 		this.fineIrrig = fineIrrig;
 		this.quantita = quantita;
 	}
+	
+	public Irrigazione() {}
+	
 
-	public Date getInizioIrrig() {
+	public Timestamp getInizioIrrig() {
 		return inizioIrrig;
 	}
 
-	public void setInizioIrrig(Date inizioIrrig) {
+	public void setInizioIrrig(Timestamp inizioIrrig) {
 		this.inizioIrrig = inizioIrrig;
 	}
 
-	public Date getFineIrrig() {
+	public Timestamp getFineIrrig() {
 		return fineIrrig;
 	}
 
-	public void setFineIrrig(Date fineIrrig) {
+	public void setFineIrrig(Timestamp fineIrrig) {
 		this.fineIrrig = fineIrrig;
 	}
 

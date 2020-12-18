@@ -1,5 +1,6 @@
 package com.innovare.views.storico;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -35,11 +36,12 @@ private ArrayList<Irrigazione> IRRIGAZIONI;
 
 	@Override
 	protected void getData() {
+		Timestamp time = new Timestamp(System.currentTimeMillis());
 		IRRIGAZIONI = new ArrayList<>();
-		IRRIGAZIONI.add(new Irrigazione(new Date(), new Date(), 45.87));
-		IRRIGAZIONI.add(new Irrigazione(new Date(), new Date(), 60.22));
-		IRRIGAZIONI.add(new Irrigazione(new Date(), new Date(), 76.03));
-		IRRIGAZIONI.add(new Irrigazione(new Date(), new Date(), 43.99));
+		IRRIGAZIONI.add(new Irrigazione(time, time, 45.87));
+		IRRIGAZIONI.add(new Irrigazione(time, time, 60.22));
+		IRRIGAZIONI.add(new Irrigazione(time, time, 76.03));
+		IRRIGAZIONI.add(new Irrigazione(time, time, 43.99));
 	}
 
 	@Override

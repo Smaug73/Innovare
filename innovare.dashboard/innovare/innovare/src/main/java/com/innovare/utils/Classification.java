@@ -10,6 +10,7 @@ import java.time.LocalDate;
 
 public class Classification {
 
+	private String _id;
 	private Status status;
 	private Timestamp date;
 	private int percCarenza;
@@ -50,9 +51,10 @@ public class Classification {
 
 	public Classification() {}
 	
-	public Classification(Status status, Timestamp date, int percCarenza, int percSane, 
+	public Classification(String _id, Status status, Timestamp date, int percCarenza, int percSane, 
 			int percEccesso, int percScartate, int percInfestanti, String model) {
 		super();
+		this._id = _id;
 		this.status = status;
 		this.date = date;
 		this.percCarenza = percCarenza;
@@ -63,6 +65,15 @@ public class Classification {
 		this.model = model;
 	}
 
+	
+
+	public String get_id() {
+		return _id;
+	}
+
+	public void set_id(String _id) {
+		this._id = _id;
+	}
 
 	public String getStatus() {
 		return status.name;
