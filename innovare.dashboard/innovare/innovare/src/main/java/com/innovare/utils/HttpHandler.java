@@ -21,8 +21,8 @@ public class HttpHandler {
 	private final static String LAST = "/lastsample/";
 	private final static String LAST_MULTI = "/lastsamples/";
 	private final static String MODELS = "/models";
-	private final static String CONFIGURATION = "/configuration";
-	private final static String ALL_CLASSIF = "/getClassifications";
+	private final static String CONFIGURATION = "/configurations";
+	private final static String ALL_CLASSIF = "/classifications";
 	private final static String LAST_CLASSIF = "/lastClassifications";
 	private final static String ALL_IRR_STATES = "/allIrrigationStates";
 	private final static String CURR_IRR_STATE = "/statoIrrigazione";
@@ -30,7 +30,7 @@ public class HttpHandler {
 	private final static String STOP_IRR = "/stopIrrigation";
 	private final static String SET_MODEL = "/setModel/";
 	private final static String SELECTED_MODEL = "/models/selected";
-	private final static String LAST_IRR = "/getLastIrrigation";
+	private final static String LAST_IRR = "/lastIrrigation";
 	private final static String NEW_MODEL = "/newModel/";
 	private final static String NEW_CLASSIF = "/newClassification/";
 
@@ -367,6 +367,7 @@ public class HttpHandler {
 	public static ArrayList<ConfigurationItem> getAllConfigurationItems() {
 		String path = CONFIGURATION;
 		HttpResponse<String> response = sendRequest(path);
-		return getConfigItems(response);
+		ArrayList<ConfigurationItem> items = getConfigItems(response);
+		return items;
 	}
 }
