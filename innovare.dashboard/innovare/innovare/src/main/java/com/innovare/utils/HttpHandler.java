@@ -166,15 +166,9 @@ public class HttpHandler {
 	// Ricostruisce lo stato dell'irrigazione facendo il parsing del json nel body della risposta
 	private static String getIrrigationState(HttpResponse<String> response){
 		String irrState;
-		try {
-			irrState = new ObjectMapper().readValue(response.body(), new TypeReference<String>(){});
-			return irrState;
-		} catch (JsonMappingException e) {
-			e.printStackTrace();
-		} catch (JsonProcessingException e) {
-			e.printStackTrace();
-		}
-		return null;
+		irrState = response.body();
+		return irrState;
+		
 	}
 
 	// Ricostruisce lo stato dell'irrigazione facendo il parsing del json nel body della risposta
