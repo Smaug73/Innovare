@@ -1,26 +1,15 @@
 package com.innovare.views.configurazione;
 
-
-import java.awt.Toolkit;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import org.apache.http.client.utils.URIBuilder;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.model.ConfigurationItem;
 import com.innovare.model.IrrigationState;
 import com.innovare.model.Irrigazione;
@@ -44,7 +33,6 @@ import com.innovare.ui.utils.UIUtils;
 import com.innovare.ui.utils.Uniform;
 import com.innovare.utils.Constants;
 import com.innovare.utils.HttpHandler;
-import com.innovare.views.home.HomeView;
 import com.innovare.views.main.ContentView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasValue.ValueChangeEvent;
@@ -58,7 +46,6 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
-import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexDirection;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
@@ -539,4 +526,3 @@ public class ConfigurazioneView extends Div {
 	}
 
 }
-
