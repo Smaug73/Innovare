@@ -77,7 +77,7 @@ public class ConfigurazioneView extends Div {
 	private ArrayList<ConfigurationItem> configurationItems;
 	private ArrayList<Model> models;
 	private Model selectedModel;
-	private boolean isIrrigationOn;
+	private String isIrrigationOn;
 	private Irrigazione lastIrrigation;
 	private UploadI18N i18n;
 	private UploadBuffer buffer;
@@ -277,7 +277,7 @@ public class ConfigurazioneView extends Div {
 		on_off.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
 		on_off.setItems(accendi, spegni);
 		
-		if(isIrrigationOn) {
+		if(isIrrigationOn.equals("ON")) {
 			state = IrrigationState.ACCESO.getName();
 			colorState = IrrigationState.ACCESO.getColor();
 			on_off.setValue(accendi);

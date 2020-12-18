@@ -164,10 +164,10 @@ public class HttpHandler {
 	}
 
 	// Ricostruisce lo stato dell'irrigazione facendo il parsing del json nel body della risposta
-	private static Boolean getIrrigationState(HttpResponse<String> response){
-		boolean irrState;
+	private static String getIrrigationState(HttpResponse<String> response){
+		String irrState;
 		try {
-			irrState = new ObjectMapper().readValue(response.body(), new TypeReference<Boolean>(){});
+			irrState = new ObjectMapper().readValue(response.body(), new TypeReference<String>(){});
 			return irrState;
 		} catch (JsonMappingException e) {
 			e.printStackTrace();
@@ -314,7 +314,7 @@ public class HttpHandler {
 
 
 	// Recupera lo stato attuale dell'irrigazione dal middleware
-	public static boolean getCurrentIrrigationState() {
+	public static String getCurrentIrrigationState() {
 		String path = CURR_IRR_STATE;
 		HttpResponse<String> response = sendRequest(path);
 		return getIrrigationState(response);
