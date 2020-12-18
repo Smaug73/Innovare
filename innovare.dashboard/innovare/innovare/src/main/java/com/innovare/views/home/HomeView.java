@@ -84,10 +84,12 @@ public class HomeView extends Div {
     
     private void getData() {
     	isIrrigationOn = HttpHandler.getCurrentIrrigationState();
-		lastIrrigation = HttpHandler.getLastIrrigation();
-    	classifications = HttpHandler.getLastClassifications();
-		
+		//lastIrrigation = HttpHandler.getLastIrrigation();
+    	lastIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 64872389),
+				new Timestamp(System.currentTimeMillis()), 58.34);
 
+    	classifications = HttpHandler.getLastClassifications();
+    	
     	/*lastIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 64872389),
 				new Timestamp(System.currentTimeMillis()), 58.34);
     	classifications = new ArrayList();
@@ -106,7 +108,7 @@ public class HomeView extends Div {
 		Component irrigation = createIrrigationState();
 		Component lastIrrigation = createLastIrrigation();
 
-		FlexBoxLayout content = new FlexBoxLayout(irrigation, lastIrrigation, data, createSensorData());
+		FlexBoxLayout content = new FlexBoxLayout(irrigation, lastIrrigation, data);
 		content.setAlignItems(FlexComponent.Alignment.CENTER);
 		content.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
 		return content;

@@ -28,7 +28,7 @@ public class HttpHandler {
 	private final static String MODELS = "/models";
 	private final static String CONFIGURATION = "/configurations";
 	private final static String ALL_CLASSIF = "/classifications";
-	private final static String LAST_CLASSIF = "/lastClassifications";
+	private final static String LAST_CLASSIF = "/lastClassification";
 	private final static String ALL_IRR_STATES = "/allIrrigationStates";
 	private final static String CURR_IRR_STATE = "/statoIrrigazione";
 	private final static String START_IRR = "/startIrrigation";

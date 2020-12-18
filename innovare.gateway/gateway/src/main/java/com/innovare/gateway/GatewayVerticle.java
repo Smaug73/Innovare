@@ -59,7 +59,7 @@ public class GatewayVerticle extends AbstractVerticle {
 	 * 
 	 */
 	
-  public static final String serverIP="localhost";	
+  public static final String serverIP="192.168.0.185";	
 	
   private int numberOfChannel= 2; //per ora test
   private HashMap<Channel,MqttClient> mapClient;

@@ -81,6 +81,8 @@ public class ConfigurazioneView extends Div {
 	private Irrigazione lastIrrigation;
 	private UploadI18N i18n;
 	private UploadBuffer buffer;
+	private Collection<String> modelsNames;
+	private ComboBox<String> modelSelection;
 
 	public ConfigurazioneView() throws IOException, InterruptedException, URISyntaxException, ParseException {
 		setId("config-view");
@@ -146,13 +148,13 @@ public class ConfigurazioneView extends Div {
 
 		configurationItems = HttpHandler.getAllConfigurationItems();
 		isIrrigationOn = HttpHandler.getCurrentIrrigationState();
-		lastIrrigation = HttpHandler.getLastIrrigation();
+		//lastIrrigation = HttpHandler.getLastIrrigation();
 		selectedModel = HttpHandler.getSelectedModel();
 		models = HttpHandler.getAllModels();
-		/*lastIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 64872389),
+		lastIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 64872389),
 				new Timestamp(System.currentTimeMillis()), 58.34);
 
-		*/
+		
 
 	}
 
@@ -386,6 +388,11 @@ public class ConfigurazioneView extends Div {
 				ArrayList<Model> newModels = HttpHandler.getAllModels();
 				models.removeAll(models);
 				models.addAll(newModels);
+				modelsNames.removeAll(modelsNames);
+				for(Model m : models) {
+					modelsNames.add(m.getName());
+				}
+				modelSelection.setItems(modelsNames);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -410,12 +417,12 @@ public class ConfigurazioneView extends Div {
 	}
 
 	private Component createUploadZip() {
-		Collection<String> modelsNames = new ArrayList<String>();
+		modelsNames = new ArrayList<String>();
 		for(Model m : models) {
 			modelsNames.add(m.getName());
 		}
 
-		ComboBox<String> modelSelection = new ComboBox<>("Seleziona il modello che vuoi usare", modelsNames);
+		modelSelection = new ComboBox<>("Seleziona il modello che vuoi usare", modelsNames);
 
 		if(selectedModel != null) {
 			modelSelection.setValue(selectedModel.getName());
