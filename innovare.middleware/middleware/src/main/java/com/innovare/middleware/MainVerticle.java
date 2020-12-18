@@ -4,6 +4,8 @@ import java.io.FileNotFoundException;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -14,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.control.Classificator;
 import com.innovare.control.LoggingController;
 import com.innovare.control.ModelController;
+import com.innovare.model.ClassificationSint;
 import com.innovare.model.IrrigationState;
 import com.innovare.model.Model;
 import com.innovare.model.PlantClassification;
@@ -37,6 +40,7 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.messages.MqttPublishMessage;
+import net.lingala.zip4j.exception.ZipException;
 
 public class MainVerticle extends AbstractVerticle {
 
@@ -55,12 +59,8 @@ public class MainVerticle extends AbstractVerticle {
 	 * 	
 	 */
 	
-	private final String LOG="MAIN-VERTICLE-LOG";
-	final List<JsonObject> configuration = new ArrayList<>(
-			//Arrays.asList(
-		 //   new JsonObject().put("Gateway", "prova").put("Model", "prova")	    
-		  //)
-			);
+	private final String LOG="MAIN-VERTICLE-LOG: ";
+	private JsonArray configuration ;
 	
 	//private MongoClient mongo=null;
 	
@@ -86,11 +86,17 @@ public class MainVerticle extends AbstractVerticle {
 	private MqttClient irrigationCommandClient;
 	private MqttClient irrigationLog;
 	
-	private IrrigationState irrigationState=null;
+	private String irrigationState=null;
 	
+	/*
+	 * AGGIUNGERE PRIORITY QUEUE DELLE CLASSIFICAZIONI, DEVE CONTENERE LE ULTIME 4 CLASSIFICAZIONI EFFETTUATE
+	 */
 	
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
+	  //INSTANZIAZIONI INIZIALI
+	  configuration = new JsonArray();
+	  
 	  
 	  //Connessione a MongoDB
       System.out.println("Starting MongoConnection..");
@@ -134,6 +140,44 @@ public class MainVerticle extends AbstractVerticle {
 	   */
 	  this.modelController= new ModelController();
 	  System.out.println(this.LOG+": modelController creato: "+this.modelController.toString());
+	  
+	  /*
+	   *Recuperiamo il modello selezionato in precedenza 
+	   */
+	  JsonObject querySelectedModel = new JsonObject();
+	  System.out.println(this.LOG+" Avvio ricerca modello selezionato.");
+	  mongoClient.find("selectedModel", querySelectedModel, res -> {
+	    if (res.succeeded()) {
+		    	
+		    if(!res.result().isEmpty()){
+		      /*
+		       * Esiste un unico documento in questa collezione
+		       * Ricerchiamo il modello selezionato in precedenza nel db e lo impostiamo come modello selezionato
+		       */
+		    	JsonObject jsonSelectedModel=res.result().get(0);
+		    	System.out.println(this.LOG+"Modello selezionato predentemente: "+jsonSelectedModel.encodePrettily());
+		    	Model selectedModel;
+				try {
+					selectedModel = new ObjectMapper().readValue(jsonSelectedModel.toString(), Model.class);
+					this.modelController.setModelSelected(selectedModel.getName());
+				} catch (JsonProcessingException e) {
+					System.err.println("Errore parsing json del modello selezionato");
+					System.err.println("Verra impostato a null il modello selezionato.");
+					e.printStackTrace();
+				} catch (FileNotFoundException e) {
+					System.err.println("Il modello che è stato selezionato in precedenza non è più disponibile nel fileSystem!");
+					System.err.println("Verra impostato a null il modello selezionato.");
+					e.printStackTrace();
+				}
+	    	}
+		    //System.out.println(this.LOG+"Nessun modello selezionato.");
+		    
+	    } else {
+	      res.cause().printStackTrace();
+	    
+	    }
+	  });
+	  
 	  /*
 	   * LOGGIN CONTROLLER
 	   */
@@ -150,9 +194,9 @@ public class MainVerticle extends AbstractVerticle {
 		  
 		  clientLog.publishHandler(c -> {
 	    		//Ogni qual volta viene pubblicata una misura la stampiamo e la salviamo.
-				  System.out.println("There are new message in topic: " + c.topicName());
-	    		  System.out.println("Content(as string) of the message: " + c.payload().toString());
-	    		  System.out.println("QoS: " + c.qosLevel());	
+				  //System.out.println("There are new message in topic: " + c.topicName());
+	    		  //System.out.println("Content(as string) of the message: " + c.payload().toString());
+	    		  //System.out.println("QoS: " + c.qosLevel());	
 	    		  System.out.println("LOG-GATEWAY: "+c.payload().toString());
 	    		  
 	    		  if(c.payload().toString().startsWith("channelNumber:")) {
@@ -163,9 +207,15 @@ public class MainVerticle extends AbstractVerticle {
 	    			  this.mqttClientCreation();
 	    		  }
 	    		  
+	    		  //Salviamo i configurationItem
+	    		  if(c.payload().toString().contains("id")) {
+	    			 this.configuration.add(new JsonObject(c.payload().toString()));
+	    			 System.out.println("LOG-GATEWAY: Aggiunto "+c.payload().toString()+" alle configurazioni.");
+	    		  }
 	    		  //JsonObject confJson= new JsonObject( c.payload().toString());
 	    		})
 	    		  .subscribe("gatewayLog", 2);	    
+		  
 	    });
 	  
 	  /*
@@ -182,12 +232,16 @@ public class MainVerticle extends AbstractVerticle {
 	  System.out.println("Creazione client mqtt per il log dell'irrigazione.");
 	  this.irrigationLog= MqttClient.create(vertx);
 	  this.irrigationLog.connect(1883, Utilities.ipMqtt, s ->{
-		  clientLog.publishHandler(c -> {
-	    		//Ogni qual volta viene pubblicata una misura la stampiamo e la salviamo.
-				  //System.out.println("There are new message in topic: " + c.topicName());
-	    		  //System.out.println("Content(as string) of the message: " + c.payload().toString());
-	    		  //System.out.println("QoS: " + c.qosLevel());	
-	    		  System.out.println(Utilities.irrigationLogMqttChannel+":"+c.payload().toString());	  
+		  irrigationLog.publishHandler(c -> {
+	    		  
+	    		  System.out.println(Utilities.irrigationLogMqttChannel+":"+c.payload().toString());	
+	    		  //Modifichiamo lo stato dell'irrigazione corrente
+	    		  if(c.payload().toString().contains(Utilities.stateOn))
+	    			  this.irrigationState=Utilities.stateOn;
+	    		  else
+	    			  if(c.payload().toString().contains(Utilities.stateOff))
+	    				  this.irrigationState=Utilities.stateOff;
+	    		  
 	    		  //JsonObject confJson= new JsonObject( c.payload().toString());
 	    		})
 	    		  .subscribe(Utilities.irrigationLogMqttChannel, 2);	  
@@ -208,7 +262,7 @@ public class MainVerticle extends AbstractVerticle {
     		  
     		//Router per la richiesta della configuratone attuale  
     	    OpenAPI3RouterFactory routerFactory = ar.result(); // (1)
-    	    routerFactory.addHandlerByOperationId("actualConfiguration", routingContext ->{
+    	   /* routerFactory.addHandlerByOperationId("actualConfiguration", routingContext ->{
     	    	
     	    	mongoClient.find("ConfigurationItem", query, res -> {
     	    		  if (res.succeeded()) {
@@ -228,7 +282,7 @@ public class MainVerticle extends AbstractVerticle {
     	    		  }
     	    		});
     	    });
-    	   
+    	   */
     	    //Login     
     	    routerFactory.addHandlerByOperationId("login", routingContext ->{
     	    	//Controlliamo che non si già loggato
@@ -323,7 +377,7 @@ public class MainVerticle extends AbstractVerticle {
     	    
     	      
     	    /*
-    	     * Ultima misura registrata in un determinato canale
+    	     * Ultima misura registrata in un determinato canale  	LASTSAMPLE
     	     */
     	    	    routerFactory.addHandlerByOperationId("lastsample", routingContext ->{
     	    	    	
@@ -364,12 +418,11 @@ public class MainVerticle extends AbstractVerticle {
     			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
     			              .end("Non autorizzato: non sei loggato.");
     	    	    	}
-    	    	    	
-    
+    	   
     	    	    });  	
     	    		
     	    	/*
-    	    	 * Restituiamo le ultime misure non ancora mostrate da la DashBoard e le eliminiamo dall'array   
+    	    	 * Restituiamo le ultime misure non ancora mostrate dalla DashBoard e le eliminiamo dall'array   LASTSAMPLES
     	    	 */   	    	    
     	    	    routerFactory.addHandlerByOperationId("lastsamples", routingContext ->{
     	    	    	if(this.loggingController.isUserLogged()) {
@@ -461,7 +514,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	    }); 
     	    	    
     	    	    /*
-    	    	     * Restituiamo tutti i sample di un determinato canale
+    	    	     * Restituiamo tutti i sample di un determinato canale  ALL SAMPLE
     	    	     */
     	    	    routerFactory.addHandlerByOperationId("allsamples", routingContext ->{
     	    	    	if(this.loggingController.isUserLogged()) {
@@ -514,7 +567,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	    }); 
     	    	    
     	    	    /*
-    	    	     * Richiesta di una nuova classificazione utilizzando un certo dataset
+    	    	     * Richiesta di una nuova classificazione utilizzando un certo dataset  NEWCLASSIFICAZION OLD
     	    	     */
     	    	    routerFactory.addHandlerByOperationId("newclassification", routingContext ->{
     	    	    	if(this.loggingController.isUserLogged()) {
@@ -594,15 +647,116 @@ public class MainVerticle extends AbstractVerticle {
     	    	    
     	    	    
     	    	    /*
-    	    	     * Richiesta le classificazioni di una certa data
+    	    	     * Richiesta di una nuova CLASSIFICATION SINT
     	    	     */
-    	    	    routerFactory.addHandlerByOperationId("getClassificationByDate", routingContext ->{
+    	    	    routerFactory.addHandlerByOperationId("newclassificationSint", routingContext ->{
     	    	    	if(this.loggingController.isUserLogged()) {
-    	    	    		String date= routingContext.request().getParam("date");
+        	    	    	String dataSet= routingContext.request().getParam("datasetName");
+        	    	    	System.out.println("Dataset: "+dataSet);
+        	    	    	/*
+        	    	    	 * Fallimento se il parametro non è stato inserito o non esiste il canale selezionato
+        	    	    	 */
+        	    	    	
+        	    	    	if(this.modelController.getSelectedModel()==null || dataSet==null) {
+        	    	    		if(dataSet==null)
+        	    	    			routingContext
+	      			    	   	      .response()
+	      				              .setStatusCode(400)
+	      				              .end("No dataset selected.");
+        	    	    		else
+	        	    	    		routingContext
+	    			    	   	      .response()
+	    				              .setStatusCode(400)
+	    				              .end("No model selected.");
+        	    	    	}
+        	    	    	else {
+        	    	    		/*
+        	    	    		 * Avviamo una nuova classificazione
+        	    	    		 */
+        	    	    		Classificator c= new Classificator(dataSet);
+        	    	    		try {
+        	    	    			//Genero una nuova classificatione sintetica
+            	    	    		ClassificationSint cs=c.unZipAndClassification(this.modelController.getSelectedModel().getName());
+            	    	    		
+            	    	    		//Inviamo il json al front-end
+            	    	    		try { 	
+            	    	    			//Genero il json della classificazione
+            	    	    			String jsonClassifications=new ObjectMapper().writeValueAsString(cs);
+        								//Invio il json al front-end
+            	    	    			routingContext
+        								.response()
+        								.setStatusCode(200)
+        								.end(jsonClassifications);
+            	    	    			
+        								//Memorizzio nel database tutte le classificazioni
+            	    	    			//JsonArray newClassificationsJson= new JsonArray(jsonClassifications);
+            	    	    			JsonObject singleClassification= new JsonObject(jsonClassifications);
+            	    	    			mongoClient.insert("ClassificazioniSintetiche", singleClassification , res ->{
+  						    			  if(res.succeeded())
+  						    				  System.out.println("Classificazione sintetica salvata correttamente nel DB.");
+  						    			  else
+  						    				  System.err.println("ERRORE salvataggio misura");  
+            	    	    			});
+            	    	    			
+            	    	    			//Salviamo nel db le classificazioni delle singole immagini
+            	    	    			String imagesClassifications= c.getJsonStringLastClassification();
+            	    	    			//Memorizzio nel database tutte le classificazioni
+            	    	    			JsonArray newClassificationsJson= new JsonArray(imagesClassifications);
+            	    	    			JsonObject singleImageClassification;
+        								for(int i=0;i< newClassificationsJson.size() ; i++) {
+        									singleImageClassification = newClassificationsJson.getJsonObject(i);
+        					    			mongoClient.insert("classifications", singleImageClassification , res ->{
+        						    			  if(res.succeeded())
+        						    				  System.out.println("Singola classificazione salvata correttamente nel DB.");
+        						    			  else
+        						    				  System.err.println("ERRORE salvataggio misura");  
+        						    		});
+        								}	
+            	    	    					
+        							} catch (JsonProcessingException e) {
+        								System.err.println("Errore conversione json");
+        								e.printStackTrace();
+
+        								routingContext
+        				    	   	      .response()
+        					              .setStatusCode(400)
+        					              .end("Errore json convertito");
+									}  
+        	    	    			
+        	    	    		}catch(FileNotFoundException e) {
+        								System.err.println("Modello selezionato non esistente");
+        								e.printStackTrace();
+
+        								routingContext
+        				    	   	      .response()
+        					              .setStatusCode(400)
+        					              .end("Modello selezionato non esistente");
+        						}     	    	    
+        	    	    		   	    	    	
+        	    	    	}
+    	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}
+    	    	    	
+    	    	    	
+    	    	    });
+    	    	    
+    	    	    
+    	    	    /*
+    	    	     * Richiesta le classificazioni di una certa data   GET-CLASSIFICATION-BY-DATE
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("getClassificationsByDate", routingContext ->{
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		String dateString= routingContext.request().getParam("date");
         	    	    	/*
         	    	    	 * Fallimento se il parametro non è stato inserito correttamente
         	    	    	 */
-        	    	    	if(date==null)
+        	    	    	if(dateString==null)
         	    	    		routingContext
     			    	   	      .response()
     				              .setStatusCode(400)
@@ -611,9 +765,10 @@ public class MainVerticle extends AbstractVerticle {
         	    	    		/*
         	    	    		 * Avviamo una nuova classificazione
         	    	    		 */
+        	    	    		long date = Long.parseLong(dateString);
         	    	    		//System.out.println(date);
         	    	    		JsonObject q= new JsonObject().put("date",date );
-            	    	    	this.mongoClient.find("classifications",q, res-> {
+            	    	    	this.mongoClient.find("ClassificazioniSintetiche",q, res-> {
             	    	    		/*
             	    	    		 * Successo nel trovare i sample nel db
             	    	    		 */
@@ -647,6 +802,125 @@ public class MainVerticle extends AbstractVerticle {
     	    	    	
     	    	    }); 
     	    	    
+    	    	    /*
+    	    	     * Richiesta le classificazioni di una certa data   GET-ALL-CLASSIFICATIONS
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("getClassifications", routingContext ->{
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		/*
+    	    	    		 * Restituiamo tutte le classificazioni fatte.
+    	    	    		 */
+     
+        	    	    		JsonObject q= new JsonObject();
+            	    	    	this.mongoClient.find("ClassificazioniSintetiche",q, res-> {
+            	    	    		/*
+            	    	    		 * Successo nel trovare i sample nel db
+            	    	    		 */
+            	    	    		if(res.succeeded()) {
+            	    	    			routingContext
+        								.response()
+        								.setStatusCode(200)
+        								.end(res.result().toString());
+            	    	    		}
+            	    	    		/*
+            	    	    		 * Caso di fallimento
+            	    	    		 */
+            	    	    		else {
+            	    	    			routingContext
+          			    	   	      .response()
+          				              .setStatusCode(400)
+          				              .end("No-sample-find");
+            	    	    		}
+            	    	    	});
+        	    	    		    	    	
+        	    	    	}
+	    	    	    	else {
+	    	    	    		routingContext
+	    		    	   	      .response()
+	    			              .setStatusCode(401)
+	    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+	    			              .end("Non autorizzato: non sei loggato.");
+	    	    	    	}
+    	    	    	
+    	    	    	
+    	    	    }); 
+    	    	    
+    	    	    /*
+    	    	     * Richiede le ultime 4 classificazioni   GET-LAST-CLASSIFICATIONS
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("lastclassificazion", routingContext ->{
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		/*
+    	    	    		 * Restituiamo tutte le classificazioni fatte.
+    	    	    		 */
+        	    	    		JsonObject q= new JsonObject();
+            	    	    	this.mongoClient.find("ClassificazioniSintetiche",q, res-> {
+            	    	    		/*
+            	    	    		 * Successo nel trovare i sample nel db
+            	    	    		 */
+            	    	    		if(res.succeeded()) {
+            	    	    			/*
+            	    	    			 * Prendiamo solo le ultime 4 massimo
+            	    	    			 */
+            	    	    			ArrayList<ClassificationSint> csa= new ArrayList<ClassificationSint>();
+            	    	    			ClassificationSint csObj;
+            	    	    			for(JsonObject jo: res.result()) {
+            	    	    				try {
+												csObj= new ObjectMapper().readValue(jo.toString(), ClassificationSint.class);
+												csa.add(csObj);
+												
+											} catch (JsonProcessingException e) {
+												System.err.println("Errore conversione json.");
+												e.printStackTrace();
+											}		
+            	    	    			}
+            	    	    			
+            	    	    			Collections.sort((List<ClassificationSint>) csa);
+            	    	    			ArrayList<ClassificationSint> arrayResp= new ArrayList<ClassificationSint>();
+            	    	    			System.out.println(csa.toString());
+            	    	    			for(int i=0; i<4; i++) {
+            	    	    				if((csa.size()-i)!=0)
+            	    	    					arrayResp.add(csa.get(i));
+            	    	    				else
+            	    	    					i=4;
+            	    	    			}
+            	    	    			
+            	    	    			try {
+											routingContext
+											.response()
+											.setStatusCode(200)
+											.end(new ObjectMapper().writeValueAsString(arrayResp));
+										} catch (JsonProcessingException e) {
+											// TODO Auto-generated catch block
+											e.printStackTrace();
+											routingContext
+		          			    	   	      .response()
+		          				              .setStatusCode(400)
+		          				              .end("ERRORE CONVERSIONE JSON.");
+										}
+            	    	    		}
+            	    	    		/*
+            	    	    		 * Caso di fallimento
+            	    	    		 */
+            	    	    		else {
+            	    	    			routingContext
+          			    	   	      .response()
+          				              .setStatusCode(400)
+          				              .end("No-sample-find");
+            	    	    		}
+            	    	    	});
+        	    	    		    	    	
+        	    	    	}
+	    	    	    	else {
+	    	    	    		routingContext
+	    		    	   	      .response()
+	    			              .setStatusCode(401)
+	    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+	    			              .end("Non autorizzato: non sei loggato.");
+	    	    	    	}
+    	    	    	
+    	    	    	
+    	    	    }); 
     	    	    
     	    	    		    	    	
     	    	    /*
@@ -729,7 +1003,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	    
     	    	    
     	    	    /*
-    	    	     * Scelta modello da utilizzare: SETMODEL
+    	    	     * Scelta modello da utilizzare: SET-MODEL
     	    	     */
     	    	    routerFactory.addHandlerByOperationId("setModel", routingContext ->{	
     	    	    	if(this.loggingController.isUserLogged()) {
@@ -738,18 +1012,76 @@ public class MainVerticle extends AbstractVerticle {
     	    	    		 */
         	    	    	String modelName= routingContext.request().getParam("modelName");
         	    	    	try {
-    							this.modelController.setModelSelected(modelName);
-    							routingContext
-    							.response()
-    							.setStatusCode(200)
-    							.end();
+        	    	    		System.out.println("Modello selezionato: "+modelName+"... ");			
+    							/*
+    							 * Salviamo nel db come modello selezionato
+    							 */
+        	    	    		if(this.modelController.getSelectedModel() != null) {
+        	    	    			/*
+        	    	    			 * Caso nel quale esiste un modello già selezionato
+        	    	    			 */
+        	    	    			//Verifico che il modello sia nel filesystem e aggiorno il controller
+        							this.modelController.setModelSelected(modelName);
+
+        	    	    			JsonObject oldmodel= new JsonObject().put("name", this.modelController.getSelectedModel().getName());
+        	    	    			JsonObject update = new JsonObject().put("$set", new JsonObject()
+        	    	    					  .put("name", modelName));
+        	    	    			mongoClient.updateCollection("selectedModel", query, update, res -> {
+        	    	    				  if (res.succeeded()) {
+        	    	    				    System.out.println("Modello selezionato salvato nel db");
+        	    	    				    routingContext
+    	        							.response()
+    	        							.setStatusCode(200)
+    	        							.end();
+        	    	    				  } else {
+        	    	    				    res.cause().printStackTrace();
+        	    	    				    routingContext
+    	        							.response()
+    	        							.setStatusCode(400)
+    	        							.end("ERROR: modello non salvato correttamente");
+        	    	    				  }
+        	    	    				});
+        	    	    			
+        	    	    			
+        	    	    		}else {
+        	    	    			System.out.println("Nessun modello è presente nel db, aggiunta nuovo modello...");
+        	    	    			//Verifico che il modello sia nel filesystem e aggiorno il controller
+        							this.modelController.setModelSelected(modelName);
+
+        	    	    			Model newModel= new Model(modelName);
+        	    	    			String jsonStringModel= new ObjectMapper().writeValueAsString(newModel);
+        	    	    			JsonObject newModelJson = new JsonObject();		  
+        	    	    			mongoClient.save("selectedModel", newModelJson, res -> {
+        	    	    					  if (res.succeeded()) {
+        	    	    					    System.out.println("Modello selezionato salvato nel db");
+        	    	    					    routingContext
+        	        							.response()
+        	        							.setStatusCode(200)
+        	        							.end();
+        	    	    					  } else {
+        	    	    					    res.cause().printStackTrace();
+        	    	    					    routingContext
+        	        							.response()
+        	        							.setStatusCode(400)
+        	        							.end("ERROR: modello non salvato correttamente");
+        	    	    					  }
+        	    	    			});    			    			
+        	    	    		}  	        	    	      							
+    							
     						} catch (FileNotFoundException e) {					
     							e.printStackTrace();
     							routingContext
     							.response()
     							.setStatusCode(400)
     							.end("ERROR: MODEL SELECTED NOT FOUND");
-    						}  
+    						} catch (JsonProcessingException e) {
+								System.err.println("Errore aggiunta nuovo modello nel db.Il modello non verrà selezionato.");
+								e.printStackTrace();
+								routingContext
+    							.response()
+    							.setStatusCode(400)
+    							.end("ERROR: MODELLO NON AGGIUNTO.");
+							}  
     	    	    	}
     	    	    	else {
     	    	    		routingContext
@@ -761,6 +1093,48 @@ public class MainVerticle extends AbstractVerticle {
 	    	    	 	    	
     	    	    }); 
     	    	    
+    	    	    
+    	    	    /*
+    	    	     * Scelta modello da utilizzare: NEW-MODEL
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("newModel", routingContext ->{	
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		/*
+    	    	    		 * Aggiungo un nuovo modello di classificazione
+    	    	    		 */
+        	    	    	String modelNameZip= routingContext.request().getParam("fileName");
+        	    	    	System.out.println("File Zip da estrarre: "+modelNameZip+"... ");
+							ModelController mc= new ModelController();
+							try {
+							
+								mc.unZipModel(modelNameZip);
+								routingContext
+								.response()
+								.setStatusCode(200)
+								.end();
+							} catch (FileNotFoundException | ZipException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+    							routingContext
+    							.response()
+    							.setStatusCode(400)
+    							.end("ERROR: FILE ZIP NON VALIDO");
+								e.printStackTrace();
+							}
+							
+							/*
+							 * Salviamo nel db come modello selezionato
+							 */  
+    	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}
+	    	    	 	    	
+    	    	    }); 
     	    	    
     	    	    
     	    	    /*
@@ -866,13 +1240,13 @@ public class MainVerticle extends AbstractVerticle {
 	      			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
 	      			              .end(Utilities.stateOff);
     	    	    		}else {
-    	    	    			
-    	    	    			
-    	    	    			
-    	    	    		}
-        	    	    
-    	    	    		
-    	    	    		
+    	    	    			routingContext
+	      		    	   	      .response()
+	      			              .setStatusCode(200)
+	      			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+	      			              .end(this.irrigationState);
+    	    	    			 	    			
+    	    	    		}    	    		
     	    	    	}
     	    	    	else {
     	    	    		routingContext
@@ -883,35 +1257,66 @@ public class MainVerticle extends AbstractVerticle {
     	    	    	}	    	    	 	    	
     	    	    }); 
     	    	    
-    	    	/*
-    	    	 * Dalla dashboard dobbiamo capire se si sta cercando di entrare come admin o user. 
-    	    	 * Da definire i dati comunicati dalla dashboard, questo è solo un test.
-    	    	 * 
-    	    	 *
-    	    	 * 
-    	    	 * 
-    	    	try {
-					userLog= User.convertJsonToUser(userJson.toString());	//variabile dove si salva l'utente loggato correttamente
-					routingContext
-	    	    	 .response()
-	    	    	 .setStatusCode(200)
-	    	    	 .end("Conferma login effettu");
-				} catch (JsonMappingException e1) {
-					// TODO Auto-generated catch block
-					System.out.println("Errore");
-					e1.printStackTrace();
-				} catch (JsonProcessingException e1) {
-					// TODO Auto-generated catch block
-					System.out.println("Errore");
-					e1.printStackTrace();
-				}
-    	    	/*
-    	    	 * Aggiungere la verifica sul database.
-    	    	 */  	    	
-    	   
-    	  
-  
-    	    
+    	    	    /*
+    	    	     * GET ALL IRRIGAZIONI
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("irrigationStorico", routingContext ->{	
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		//Caso nel quale non è stata creata nessuna irrigazione	    
+    	    	    		System.out.println("Invio irrigazioni...");
+    	    	    		JsonObject irrigazioniQuery= new JsonObject();
+    	    	    		this.mongoClient.find("Irrigazioni",irrigazioniQuery , res -> {
+    	    	    		    if (res.succeeded()) {
+    	    	    			      for (JsonObject json : res.result()) {
+    	    	    			        System.out.println(json.encodePrettily());
+    	    	    			        System.out.println("Connessione effettuata con successo al db!");
+    	    	    			      }
+    	    	    			      routingContext
+    	    		    	   	      .response()
+    	    			              .setStatusCode(200)
+    	    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    	    			              .end(res.result().toString());
+    	    	    			    } else {
+    	    	    			      res.cause().printStackTrace();
+    	    	    			      routingContext
+    	    		    	   	      .response()
+    	    			              .setStatusCode(200)
+    	    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    	    			              .end();
+    	    	    			    }
+    	    	    			  });
+    	    	    			    		
+    	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}	    	    	 	    	
+    	    	    }); 
+    	    	    
+    	    	    /*
+    	    	     * GET CONFIGURATIONS
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("getConfigurations", routingContext ->{	
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		//Caso nel quale non è stata creata nessuna irrigazione	    
+    	    	    		System.out.println("Invio configuazioni: "+this.configuration.toString());
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(200)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end(this.configuration.toString());	    		
+    	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}	    	    	 	    	
+    	    	    }); 
     	    
     	    Router router = routerFactory.getRouter(); // <1>
             router.errorHandler(404, routingContext -> { // <2>
@@ -1037,16 +1442,5 @@ public class MainVerticle extends AbstractVerticle {
   }
   
   
-  public JsonObject getConfigurazione(){
-	  return null;
-  }
-  
 
-  private List<JsonObject> getAllConfiguration() {
-	  if(this.configuration.isEmpty())
-		  System.out.println("La lista dei gateway è vuota");
-    return this.configuration;
-  }
-  
-  
 }

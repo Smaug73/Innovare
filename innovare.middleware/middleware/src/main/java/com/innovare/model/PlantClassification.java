@@ -15,7 +15,7 @@ public class PlantClassification {
 	private String date;
 	private String originalImage;
 	private String path;
-	private String modelName;
+	private String model;
 	
 	
 	public PlantClassification() {}
@@ -29,7 +29,7 @@ public class PlantClassification {
 		this.date = date;
 		this.originalImage = originalImage;
 		this.path = path;
-		this.modelName=modelname;
+		this.model=modelname;
 	}
 
 	public String getHash() {
@@ -72,20 +72,20 @@ public class PlantClassification {
 		this.path = path;
 	}
 
-	public String getModelName() {
-		return modelName;
+	public String getModel() {
+		return model;
 	}
 
 
-	public void setModelName(String modelName) {
-		this.modelName = modelName;
+	public void setModel(String modelName) {
+		this.model = modelName;
 	}
 
 
 	@Override
 	public String toString() {
 		return "PlantClassification [hash=" + hash + ", classification=" + classification + ", date=" + date
-				+ ", originalImage=" + originalImage + ", path=" + path + ", modelName=" + modelName + "]";
+				+ ", originalImage=" + originalImage + ", path=" + path + ", modelName=" + model + "]";
 	}
 
 

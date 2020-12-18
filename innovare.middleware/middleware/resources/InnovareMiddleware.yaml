@@ -7,19 +7,6 @@ info:
     Effettuiamo una nuova classificazione passando il nome del modello
     da voler utilizzare.
 paths:
-  /configuration:
-    get:
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ConfigurationItem'
-          description: Configuration response
-      operationId: actualConfiguration
-      description: Return the actual configuration.
   /allsample/{idcanale}:
     get:
       parameters:
@@ -116,59 +103,13 @@ paths:
           description: Json of last classification.
       operationId: lastclassificazion
       summary: Return the last classification
-  /getClassifications/{date}:
-    summary: Restituisce tutte le classificazioni di una certa data
-    get:
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Classification'
-          description: Restituisce tutte le classificationi in base alla data
-      operationId: getClassificationByDate
-    parameters:
-    - name: date
-      in: path
-      required: true
-  /newClassification/{dataSetName}:
-    summary: Generete a new classification data. La classificazione utilizzera' il
-      modello preselezionato dall'amministratore.
-    get:
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Classification'
-          description: Classification is done correctly
-      operationId: newclassification
-      summary: Generete a new classification data.
-    parameters:
-    - name: dataSetName
-      in: path
-      required: true
   /setModel/{modelName}:
-    post:
-      requestBody:
-        content:
-          application/json: {}
-        required: false
-      parameters:
-      - name: modelName
-        schema:
-          type: string
-        in: path
-        required: true
+    get:
       responses:
         "200":
-          description: Notifica l'avvenuta selezione del modello.
+          description: Modello selezionato.
       operationId: setModel
-      summary: Seleziona il modello da utilizzare per la classificazione.
+      summary: Selezione modello.
     parameters:
     - name: modelName
       in: path
@@ -177,6 +118,12 @@ paths:
     get:
       responses:
         "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Model'
           description: Restituisce un json con tutti i modelli presenti nel sistema.
       operationId: getModels
       summary: Restituisce tutti i modelli utilizzabili
@@ -248,9 +195,115 @@ paths:
     get:
       responses:
         "200":
+          content:
+            application/json:
+              schema:
+                type: boolean
           description: RIchiesta stato irrigazione
       operationId: getStatoIrrigazione
       summary: RIchiesta stato irrigazione.
+  /allIrrigationStates:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Irrigation'
+          description: Storico irrigazioni
+      operationId: irrigationStorico
+      summary: Storico irrigazioni
+  /newClassification/{datasetName}:
+    summary: Genera una nuova classificazione sintetica a partire da un dataset selezionato.
+    get:
+      parameters:
+      - name: datasetName
+        in: path
+        required: true
+      responses:
+        "200":
+          description: Classificazione andata a buon fine.
+      operationId: newclassificationSint
+      summary: Genera una nuova classificazione sintetica.
+    parameters:
+    - name: datasetName
+      in: path
+      required: true
+  /newClassificationArray/{dataset}:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Classification'
+          description: "Restituisce l'array json contenente le singole classificazioni\
+            \ per ogni immagine \ndedotta dalla segmanetazione."
+      operationId: newclassification
+      summary: Genera una lista di classificazioni di tutte le immagini segmentate
+        dal dataset.
+    parameters:
+    - name: dataset
+      in: path
+      required: true
+  /newModel/{fileName}:
+    summary: Aggiunta nuovo modello per la classificazione in formato .zip
+    get:
+      responses:
+        "200":
+          description: Aggiunta nuovo modello in formato .zip
+      operationId: newModel
+      summary: Aggiunta modello in formato .zip
+    parameters:
+    - name: fileName
+      in: path
+      required: true
+  /configurations:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConfigurationItem'
+          description: Configuration response
+      operationId: getConfigurations
+      description: Return the actual configuration.
+  /classifications:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClassificationSint'
+          description: Restituisce l'array di tutte le classificazioni
+      operationId: getClassifications
+      summary: Restituisce tutte le classificazioni
+  /classifications/{date}:
+    summary: Restituisce tutte le classificazioni di una certa data
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClassificationSint'
+          description: Restituisce tutte le classificationi in base alla data
+      operationId: getClassificationsByDate
+    parameters:
+    - name: date
+      description: In millisencond dal timestamp
+      in: path
+      required: true
 components:
   schemas:
     ConfigurationItem:
@@ -344,3 +397,69 @@ components:
     Model:
       description: Modello di classificazione utilizzato dal sistema
       type: object
+    Irrigation:
+      description: ""
+      type: object
+    ClassificationSint:
+      title: Root Type for ClassificationSint
+      description: Classificazione sintetica di una dataset di piante.
+      type: object
+      properties:
+        status:
+          type: string
+        date:
+          type: object
+          properties:
+            year:
+              format: int32
+              type: integer
+            month:
+              type: string
+            monthValue:
+              format: int32
+              type: integer
+            dayOfMonth:
+              format: int32
+              type: integer
+            chronology:
+              type: object
+              properties:
+                id:
+                  type: string
+                calendarType:
+                  type: string
+            dayOfWeek:
+              type: string
+            leapYear:
+              type: boolean
+            dayOfYear:
+              format: int32
+              type: integer
+            era:
+              type: string
+        percCarenza:
+          format: int32
+          type: integer
+        percSane:
+          format: int32
+          type: integer
+        percEccesso:
+          format: int32
+          type: integer
+        percScartate:
+          format: int32
+          type: integer
+        percInfestanti:
+          format: int32
+          type: integer
+        model:
+          type: string
+      example:
+        status: SCARTATE
+        date: 1598824800000
+        percCarenza: 0
+        percSane: 0
+        percEccesso: 0
+        percScartate: 100
+        percInfestanti: 0
+        model: stub.h5

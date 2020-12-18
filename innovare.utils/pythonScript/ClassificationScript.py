@@ -99,18 +99,10 @@ def classificaImmagini(imageName):
     img_array= keras.preprocessing.image.img_to_array(img)
     img_array = tf.expand_dims(img_array, 0)
     preds = model.predict(img_array)
-    #print("preds ",preds)
-    #print("preds 0", preds[0])
-    #print("preds 0 0", preds[0][0])
-    score = tf.nn.softmax(preds[0])
-    #print("Score ",score)
-    #print(score[0])
-    #print(score.shape.as_list())
-    #print(score.numpy()[4])
+    
+    
     allClass=[]
-    #for i in range(score.shape.as_list()[0]):
-    #    singleClass={ "classe":"{}".format(i) , "score":score.numpy()[4]*100}
-    #    allClass.append(singleClass)  
+   
     for i in range(5):
         singleClass={ "classe":"{}".format(labels[i]) , "score":round(preds[0][i]*100,1)}
         allClass.append(singleClass)
@@ -118,17 +110,7 @@ def classificaImmagini(imageName):
     return allClass
     #return PhotoDict={"uid":"'"+row[7]+"'" , "classification":allClass} 
 
-            
 
-            
-'''
-image_generator = image.ImageDataGenerator(rescale=1./255,validation_split=0.99)   #Effettuiamo delle predizioni utilizzando alcune foto prese casualmente da una cartella presa a parte dal dataset
-                                                                                  
-pred_gen= image_generator.flow_from_directory(directory=pathImages,
-                                                           shuffle=True,
-                                                           class_mode='input',
-                                                           subset='validation')
-'''
 allImageClassification=[]
 count=0
 for row in csv_reader:
@@ -157,30 +139,6 @@ newFile= open(referencePath+"classification.json","w")
 newFile.write(result)
 newFile.close()
 #print(result)
-
-'''
-#try:
-img= keras.preprocessing.image.load_img(
-        pathImages, grayscale=False, color_mode='rgb', target_size=(256,256),
-        interpolation='nearest'
-    )
-img_array= keras.preprocessing.image.img_to_array(img)
-img_array = tf.expand_dims(img_array, 0)
-
-preds = model.predict(img_array)
-    # decode the results into a list of tuples (class, description, probability)
-    # (one such list for each sample in the batch)
-score = tf.nn.softmax(preds[0])
-
-result = "[class:'{}', score: '{}']".format(np.argmax(score), 100 * np.max(score) )
-print(
-    result
-)
-exit(result)
-
-#except Exception:
- #   print('Errore durante la classificazione')
-'''
 
 
 
