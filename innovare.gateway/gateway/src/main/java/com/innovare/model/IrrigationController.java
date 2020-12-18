@@ -23,7 +23,7 @@ public class IrrigationController extends Thread{
 	private MqttClient logClient=null;
 	private MqttClient commandClient=null;
 	
-	public static final String scriptPathIrrigation="python3 "+System.getProperty("user.home")+System.getProperty("file.separator")+"InnovareData"+System.getProperty("file.separator")+"InnovareScript"+System.getProperty("file.separator")+"irrigationCommand.py";
+	public static final String scriptPathIrrigation="python3 "+System.getProperty("user.home")+System.getProperty("file.separator")+"InnovareData"+System.getProperty("file.separator")+"InnovareScript"+System.getProperty("file.separator")+" python3 irrigationCommand.py";
 
 	
 	private long irrigationTime; 
@@ -97,6 +97,19 @@ public class IrrigationController extends Thread{
 		//AGGIUNGERLO DOPO AVER CREATO LO SCRIPT DI AVVIO
 		//Avvio dello script per l'irrigazione
 		//this.run();
+		//Aggiungere lo script di irrigazione al quale va aggiunto 
+		Process process;
+		try {
+			process = Runtime.getRuntime().exec(this.scriptPathIrrigation+" on");
+			int processOutput=process.waitFor();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		
 	}
 	
@@ -152,6 +165,17 @@ public class IrrigationController extends Thread{
 		}
 		
 		//FERMARE IRRIGAZIONE CON SCRIPT
+		Process process;
+		try {
+			process = Runtime.getRuntime().exec(this.scriptPathIrrigation+" off");
+			int processOutput=process.waitFor();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	
