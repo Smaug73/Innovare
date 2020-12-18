@@ -100,6 +100,13 @@ public class GatewayVerticle extends AbstractVerticle {
 						  MqttQoS.AT_LEAST_ONCE,
 						  false,
 						  false);
+				//TEST PER AGGIUNGERE UN CONFIGURATION ITEM IN PIÙ
+				client.publish("gatewayLog",
+						 //Configurazione di test salvata come oggetto json
+						  Buffer.buffer(new ObjectMapper().writeValueAsString(this.cfi)),
+						  MqttQoS.AT_LEAST_ONCE,
+						  false,
+						  false);
 			} catch (JsonProcessingException e) {
 				System.err.println("ERRORE: conversione json del configuration item");
 				e.printStackTrace();

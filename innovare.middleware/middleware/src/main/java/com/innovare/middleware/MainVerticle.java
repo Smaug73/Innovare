@@ -302,7 +302,8 @@ public class MainVerticle extends AbstractVerticle {
         	    			 .put("password", password);
         	    	 
         	    	 mongoClient.findOne("Utenti", q, null , res -> {
-        	    		 if (res.succeeded()) {
+        	    		 if (res.succeeded() && (res.result()!=null)) {
+							System.out.println("test login: "+res.result());
         	    			 if(this.loggingController.logIn(res.result().toString())) {
         	    				 try {
     								System.out.println("Conferma login effettuato per utente: user: "+this.loggingController.getUserLogged().toString());
@@ -330,15 +331,15 @@ public class MainVerticle extends AbstractVerticle {
         	    			 }
         	    			
         	    		}else{
-    		    	   	      res.cause().printStackTrace();
+        	    			  System.out.println("Utente "+username+" "+password+" non esistente.");
+    		    	   	      //res.cause().printStackTrace();
     		    	   	      /*
     		    	   	       * Caso nel quale non esiste lo User
     		    	   	       */
-    		    	   	      routingContext
-    		    	   	      .response()
-    			              .setStatusCode(404)
-    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-    			              .end("Errore username o password");
+    		    	   	   routingContext
+    	    	    		.response()
+    	    	    		.setStatusCode(404)
+    	    	    		.end("Dati di login errati");
     		    	   	    }
     		    	   	  });
     	    	}
