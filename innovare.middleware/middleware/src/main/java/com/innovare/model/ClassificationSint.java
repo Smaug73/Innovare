@@ -10,7 +10,7 @@ import java.util.Date;
 
 import com.innovare.utils.Utilities;
 
-public class ClassificationSint {
+public class ClassificationSint implements Comparable<ClassificationSint>{
 
 
 	private Status status;
@@ -21,6 +21,12 @@ public class ClassificationSint {
 	private int percScartate;
 	private int percInfestanti;
 	private String model;
+	private String _id;
+
+	
+
+
+
 
 	public enum Status {
 		CARENZA("CARENZA",
@@ -62,6 +68,24 @@ public class ClassificationSint {
 		this.percScartate = percScartate;
 		this.percInfestanti = percInfestanti;
 		this.model = model;
+	}
+	
+	
+
+
+
+	public ClassificationSint(Status status, Timestamp date, int percCarenza, int percSane, int percEccesso,
+			int percScartate, int percInfestanti, String model, String _id) {
+		super();
+		this.status = status;
+		this.date = date;
+		this.percCarenza = percCarenza;
+		this.percSane = percSane;
+		this.percEccesso = percEccesso;
+		this.percScartate = percScartate;
+		this.percInfestanti = percInfestanti;
+		this.model = model;
+		this._id = _id;
 	}
 
 
@@ -238,6 +262,17 @@ public class ClassificationSint {
 	public void setModel(String model) {
 		this.model = model;
 	}
+	
+	public String get_id() {
+		return _id;
+	}
+
+
+
+
+	public void set_id(String _id) {
+		this._id = _id;
+	}
 
 	@Override
 	public String toString() {
@@ -257,6 +292,14 @@ public class ClassificationSint {
 				max=i;
 		}
 		return max;
+	}
+
+
+
+
+	@Override
+	public int compareTo(ClassificationSint arg0) {
+		 return  this.getDate().compareTo(arg0.getDate());
 	}
 	
 

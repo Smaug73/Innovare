@@ -31,6 +31,8 @@ import com.innovare.model.ClassificationSint;
 import com.innovare.model.PlantClassification;
 import com.innovare.utils.Utilities;
 
+import net.lingala.zip4j.exception.ZipException;
+
 
 public class TestClassificator {
 	
@@ -106,7 +108,7 @@ public class TestClassificator {
 		String jsonCs= new ObjectMapper().writeValueAsString(cs);
 		System.out.println(jsonCs);
 
-	}*/
+	}
 	
 	@Test
 	public void foundModel() throws FileNotFoundException {
@@ -118,7 +120,12 @@ public class TestClassificator {
 		mc.setModelSelected("stub.h5");
 		System.out.println("Modello selezionato: "+mc.getSelectedModel().getName());
 	}
-	
+	*/
+	@Test
+	public void unzipModel() throws FileNotFoundException, ZipException {
+		ModelController mc= new ModelController();
+		mc.unZipModel("stubdsds.zip");
+	}
 	/*
 	@Test
 	public void testData() throws ParseException, JsonMappingException, JsonProcessingException {

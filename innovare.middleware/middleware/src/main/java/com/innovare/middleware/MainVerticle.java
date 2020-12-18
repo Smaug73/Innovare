@@ -4,6 +4,8 @@ import java.io.FileNotFoundException;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -38,6 +40,7 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
 import io.vertx.mqtt.MqttClient;
 import io.vertx.mqtt.messages.MqttPublishMessage;
+import net.lingala.zip4j.exception.ZipException;
 
 public class MainVerticle extends AbstractVerticle {
 
@@ -842,6 +845,83 @@ public class MainVerticle extends AbstractVerticle {
     	    	    	
     	    	    }); 
     	    	    
+    	    	    /*
+    	    	     * Richiede le ultime 4 classificazioni   GET-LAST-CLASSIFICATIONS
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("lastclassificazion", routingContext ->{
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		/*
+    	    	    		 * Restituiamo tutte le classificazioni fatte.
+    	    	    		 */
+        	    	    		JsonObject q= new JsonObject();
+            	    	    	this.mongoClient.find("ClassificazioniSintetiche",q, res-> {
+            	    	    		/*
+            	    	    		 * Successo nel trovare i sample nel db
+            	    	    		 */
+            	    	    		if(res.succeeded()) {
+            	    	    			/*
+            	    	    			 * Prendiamo solo le ultime 4 massimo
+            	    	    			 */
+            	    	    			ArrayList<ClassificationSint> csa= new ArrayList<ClassificationSint>();
+            	    	    			ClassificationSint csObj;
+            	    	    			for(JsonObject jo: res.result()) {
+            	    	    				try {
+												csObj= new ObjectMapper().readValue(jo.toString(), ClassificationSint.class);
+												csa.add(csObj);
+												
+											} catch (JsonProcessingException e) {
+												System.err.println("Errore conversione json.");
+												e.printStackTrace();
+											}		
+            	    	    			}
+            	    	    			
+            	    	    			Collections.sort((List<ClassificationSint>) csa);
+            	    	    			ArrayList<ClassificationSint> arrayResp= new ArrayList<ClassificationSint>();
+            	    	    			System.out.println(csa.toString());
+            	    	    			for(int i=0; i<4; i++) {
+            	    	    				if((csa.size()-i)!=0)
+            	    	    					arrayResp.add(csa.get(i));
+            	    	    				else
+            	    	    					i=4;
+            	    	    			}
+            	    	    			
+            	    	    			try {
+											routingContext
+											.response()
+											.setStatusCode(200)
+											.end(new ObjectMapper().writeValueAsString(arrayResp));
+										} catch (JsonProcessingException e) {
+											// TODO Auto-generated catch block
+											e.printStackTrace();
+											routingContext
+		          			    	   	      .response()
+		          				              .setStatusCode(400)
+		          				              .end("ERRORE CONVERSIONE JSON.");
+										}
+            	    	    		}
+            	    	    		/*
+            	    	    		 * Caso di fallimento
+            	    	    		 */
+            	    	    		else {
+            	    	    			routingContext
+          			    	   	      .response()
+          				              .setStatusCode(400)
+          				              .end("No-sample-find");
+            	    	    		}
+            	    	    	});
+        	    	    		    	    	
+        	    	    	}
+	    	    	    	else {
+	    	    	    		routingContext
+	    		    	   	      .response()
+	    			              .setStatusCode(401)
+	    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+	    			              .end("Non autorizzato: non sei loggato.");
+	    	    	    	}
+    	    	    	
+    	    	    	
+    	    	    }); 
+    	    	    
     	    	    		    	    	
     	    	    /*
     	    	     * Richiede tutti i modelli presenti nel sistema GET-MODELS
@@ -1014,6 +1094,48 @@ public class MainVerticle extends AbstractVerticle {
     	    	    }); 
     	    	    
     	    	    
+    	    	    /*
+    	    	     * Scelta modello da utilizzare: NEW-MODEL
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("newModel", routingContext ->{	
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		/*
+    	    	    		 * Aggiungo un nuovo modello di classificazione
+    	    	    		 */
+        	    	    	String modelNameZip= routingContext.request().getParam("fileName");
+        	    	    	System.out.println("File Zip da estrarre: "+modelNameZip+"... ");
+							ModelController mc= new ModelController();
+							try {
+							
+								mc.unZipModel(modelNameZip);
+								routingContext
+								.response()
+								.setStatusCode(200)
+								.end();
+							} catch (FileNotFoundException | ZipException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+    							routingContext
+    							.response()
+    							.setStatusCode(400)
+    							.end("ERROR: FILE ZIP NON VALIDO");
+								e.printStackTrace();
+							}
+							
+							/*
+							 * Salviamo nel db come modello selezionato
+							 */  
+    	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}
+	    	    	 	    	
+    	    	    }); 
+    	    	    
     	    	    
     	    	    /*
     	    	     * START IRRIGATION
@@ -1135,6 +1257,44 @@ public class MainVerticle extends AbstractVerticle {
     	    	    	}	    	    	 	    	
     	    	    }); 
     	    	    
+    	    	    /*
+    	    	     * GET ALL IRRIGAZIONI
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("irrigationStorico", routingContext ->{	
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		//Caso nel quale non è stata creata nessuna irrigazione	    
+    	    	    		System.out.println("Invio irrigazioni...");
+    	    	    		JsonObject irrigazioniQuery= new JsonObject();
+    	    	    		this.mongoClient.find("Irrigazioni",irrigazioniQuery , res -> {
+    	    	    		    if (res.succeeded()) {
+    	    	    			      for (JsonObject json : res.result()) {
+    	    	    			        System.out.println(json.encodePrettily());
+    	    	    			        System.out.println("Connessione effettuata con successo al db!");
+    	    	    			      }
+    	    	    			      routingContext
+    	    		    	   	      .response()
+    	    			              .setStatusCode(200)
+    	    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    	    			              .end(res.result().toString());
+    	    	    			    } else {
+    	    	    			      res.cause().printStackTrace();
+    	    	    			      routingContext
+    	    		    	   	      .response()
+    	    			              .setStatusCode(200)
+    	    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    	    			              .end();
+    	    	    			    }
+    	    	    			  });
+    	    	    			    		
+    	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}	    	    	 	    	
+    	    	    }); 
     	    	    
     	    	    /*
     	    	     * GET CONFIGURATIONS
