@@ -2,7 +2,7 @@ package com.innovare.views.storico;
 
 import java.util.ArrayList;
 
-import com.innovare.utils.Sample;
+import com.innovare.model.Sample;
 import com.innovare.views.main.ContentView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.charts.Chart;

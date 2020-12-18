@@ -8,6 +8,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import org.apache.http.client.utils.URIBuilder;
+
+import com.innovare.model.Role;
 import com.vaadin.flow.server.VaadinSession;
 
 public class Authenticator {
@@ -35,7 +37,7 @@ public class Authenticator {
 				String body = response.body();
 				if(body.trim().equals(Role.ADMIN))  vaadinSession.setAttribute(ATTRIBUTE_ROLE , Role.ADMIN);
 				else if (body.trim().equals(Role.USER)) vaadinSession.setAttribute(ATTRIBUTE_ROLE , Role.USER);
-				else return false;
+				else return false; 
 				vaadinSession.setAttribute(ATTRIBUTE_USERNAME , username);
 				vaadinSession.setAttribute(ATTRIBUTE_IS_AUTH , true);
 				return true;
@@ -51,4 +53,35 @@ public class Authenticator {
 			}
     }
 
+	public static boolean logout() {
+		VaadinSession vaadinSession = getCurrent();
+		
+		URIBuilder builder = new URIBuilder();
+		builder.setScheme("http").setHost("localhost:8888").setPath("/logout");
+	        
+	    HttpClient client = HttpClient.newHttpClient();
+	        HttpRequest request;
+			try {
+				request = HttpRequest.newBuilder()
+				        .uri(builder.build())
+				        .build();
+				HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+				
+				if(response.statusCode() == 200) {
+					vaadinSession.setAttribute(ATTRIBUTE_USERNAME, null);
+					vaadinSession.setAttribute(ATTRIBUTE_IS_AUTH, false);
+					vaadinSession.setAttribute(ATTRIBUTE_ROLE, null);
+				}
+				return true;
+			} catch (IOException e) {
+				e.printStackTrace();
+				return false;
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+				return false;
+			} catch (URISyntaxException e) {
+				e.printStackTrace();
+				return false;
+			}
+	}
 }

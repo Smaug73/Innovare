@@ -1,8 +1,6 @@
 package com.innovare.views.storico;
 
 import com.innovare.views.main.ContentView;
-import com.vaadin.addon.charts.ChartOptions;
-import com.vaadin.addon.charts.model.Lang;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.charts.Chart;
 import com.vaadin.flow.component.charts.model.AxisType;

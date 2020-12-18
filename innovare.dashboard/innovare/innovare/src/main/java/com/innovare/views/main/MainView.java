@@ -3,16 +3,6 @@ package com.innovare.views.main;
 
 import static com.vaadin.flow.server.VaadinSession.getCurrent;
 import static java.util.Optional.ofNullable;
-
-import java.util.ArrayList;
-import java.util.Collection;
-
-import com.vaadin.flow.server.VaadinSession;
-
-import com.vaadin.addon.charts.ChartOptions;
-import com.vaadin.addon.charts.ChartSelectionEvent;
-import com.vaadin.addon.charts.model.Lang;
-import com.vaadin.addon.charts.shared.ChartOptionsState;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.dependency.JsModule;
@@ -21,10 +11,8 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.RouterLayout;
 import com.vaadin.flow.server.PWA;
 import com.innovare.views.main.MainView;
-import com.innovare.ui.utils.FlexBoxLayout;
 import com.innovare.utils.Authenticator;
 import com.innovare.views.login.LoginView;
-import com.vaadin.flow.component.UI;
 
 @CssImport("./styles/lumo/border-radius.css")
 @CssImport("./styles/lumo/icon-size.css")

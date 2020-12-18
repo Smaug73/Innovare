@@ -2,12 +2,11 @@ package com.innovare.views.storico;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Date;
 
+import com.innovare.model.Irrigazione;
 import com.innovare.ui.utils.FontSize;
 import com.innovare.ui.utils.UIUtils;
-import com.innovare.utils.Irrigazione;
-import com.innovare.views.home.HomeView;
+import com.innovare.utils.Constants;
 import com.innovare.views.main.ContentView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.dependency.CssImport;
@@ -82,15 +81,15 @@ private ArrayList<Irrigazione> IRRIGAZIONI;
 	
 	// Crea gli item della colonna Inizio
 	private Component createDateStartLabel(Irrigazione irrig) {
-		String dateString = HomeView.DATE_FORMAT.format(irrig.getInizioIrrig()) 
-				+ " " + HomeView.TIME_FORMAT.format(irrig.getInizioIrrig());
+		String dateString = Constants.DATE_FORMAT.format(irrig.getInizioIrrig()) 
+				+ " " + Constants.TIME_FORMAT.format(irrig.getInizioIrrig());
 		return UIUtils.createLabel(FontSize.S, dateString);
 	}
 		
 	// Crea gli item della colonna Fine
 	private Component createDateFinishLabel(Irrigazione irrig) {
-		String dateString = HomeView.DATE_FORMAT.format(irrig.getFineIrrig()) 
-				+ " " + HomeView.TIME_FORMAT.format(irrig.getFineIrrig());
+		String dateString = Constants.DATE_FORMAT.format(irrig.getFineIrrig()) 
+				+ " " + Constants.TIME_FORMAT.format(irrig.getFineIrrig());
 		return UIUtils.createLabel(FontSize.S, dateString);
 	}
 		

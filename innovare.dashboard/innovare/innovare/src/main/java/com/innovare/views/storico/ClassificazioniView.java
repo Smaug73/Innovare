@@ -1,29 +1,15 @@
 package com.innovare.views.storico;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.sql.Timestamp;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-
-import org.apache.http.client.utils.URIBuilder;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.innovare.backend.stub.DummyData;
+import com.innovare.model.Classification;
+import com.innovare.model.Classification.Status;
 import com.innovare.ui.utils.FlexBoxLayout;
 import com.innovare.ui.utils.FontSize;
 import com.innovare.ui.utils.IconSize;
 import com.innovare.ui.utils.Right;
 import com.innovare.ui.utils.TextColor;
 import com.innovare.ui.utils.UIUtils;
-import com.innovare.utils.Classification;
-import com.innovare.utils.Classification.Status;
 import com.innovare.utils.HttpHandler;
-import com.innovare.views.home.HomeView;
 import com.innovare.views.main.ContentView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.dependency.CssImport;

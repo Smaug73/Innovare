@@ -14,6 +14,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.innovare.model.Classification;
+import com.innovare.model.ConfigurationItem;
+import com.innovare.model.Irrigazione;
+import com.innovare.model.Model;
+import com.innovare.model.Sample;
 
 public class HttpHandler {
 	private final static String HOST = "localhost:8888";

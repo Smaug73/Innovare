@@ -7,7 +7,6 @@ import com.vaadin.flow.component.charts.model.AxisTitle;
 import com.vaadin.flow.component.charts.model.ChartType;
 import com.vaadin.flow.component.charts.model.Configuration;
 import com.vaadin.flow.component.charts.model.Crosshair;
-import com.vaadin.flow.component.charts.model.DataSeries;
 import com.vaadin.flow.component.charts.model.ListSeries;
 import com.vaadin.flow.component.charts.model.PlotOptionsColumn;
 import com.vaadin.flow.component.charts.model.PlotOptionsSeries;
@@ -17,39 +16,31 @@ import com.vaadin.flow.component.charts.model.VerticalAlign;
 import com.vaadin.flow.component.charts.model.XAxis;
 import com.vaadin.flow.component.charts.model.YAxis;
 import com.vaadin.flow.component.dependency.CssImport;
+import com.vaadin.flow.component.grid.ColumnTextAlign;
+import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.Grid.SelectionMode;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Label;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
-import com.vaadin.flow.component.tabs.Tab;
-import com.vaadin.flow.component.tabs.Tabs;
+import com.vaadin.flow.data.provider.DataProvider;
+import com.vaadin.flow.data.provider.ListDataProvider;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-
-import java.awt.Toolkit;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Random;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-
-import org.apache.http.client.utils.URIBuilder;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.ui.utils.Left;
 import com.innovare.ui.utils.ListItem;
+import com.innovare.model.Classification;
+import com.innovare.model.IrrigationState;
+import com.innovare.model.Irrigazione;
+import com.innovare.model.Sample;
+import com.innovare.model.Sensor;
 import com.innovare.ui.utils.BorderRadius;
 import com.innovare.ui.utils.Bottom;
 import com.innovare.ui.utils.BoxSizing;
@@ -65,13 +56,10 @@ import com.innovare.ui.utils.TextColor;
 import com.innovare.ui.utils.Top;
 import com.innovare.ui.utils.UIUtils;
 import com.innovare.ui.utils.Uniform;
-import com.innovare.utils.IrrigationState;
-import com.innovare.utils.Property;
-import com.innovare.utils.Sample;
+import com.innovare.utils.Constants;
+import com.innovare.utils.HttpHandler;
 import com.innovare.views.main.ContentView;
 import com.vaadin.flow.router.RouteAlias;
-import com.vaadin.flow.server.Command;
-import com.vaadin.ui.UI;
 
 
 @CssImport("./styles/views/main/main-view.css")
@@ -80,49 +68,45 @@ import com.vaadin.ui.UI;
 @RouteAlias(value = "", layout = ContentView.class)
 public class HomeView extends Div {
 	
-	public static final String MAX_WIDTH = (Toolkit.getDefaultToolkit().getScreenSize().width - 100) + "px";
-	public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yyyy");
-	public static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm");
-
+	private String isIrrigationOn;
+	private Irrigazione lastIrrigation;
+	private ArrayList<Classification> classifications;
+	private ArrayList<Sensor> sensors;
 	private ArrayList<Sample> samples;
-	private HttpClient client;
-	private URIBuilder builder;
 	
     public HomeView() {
         setId("home-view");
-        /*
-         * Richiesta dati
-         */
-        /*builder = new URIBuilder();
-		builder.setScheme("http").setHost("localhost:8888").setPath("/daysamples/1");
-   	    client = HttpClient.newHttpClient();
-   	        HttpRequest request;
-   			try {
-   				request = HttpRequest.newBuilder()
-   				        .uri(builder.build())
-   				        .build();
-   				HttpResponse<String> response = client.send(request,
-   				         HttpResponse.BodyHandlers.ofString());
-   				
-   				samples = new ObjectMapper().readValue(response.body(), new TypeReference<ArrayList<Sample>>(){});
-   			} catch (IOException e) {
-   				e.printStackTrace();
-   			} catch (InterruptedException e) {
-   				e.printStackTrace();
-   			} catch (URISyntaxException e) {
-   				e.printStackTrace();
-   			}*/
+        getData();
         
         add(createContent());
         
     }
     
-    private Component createContent() {
+    private void getData() {
+    	isIrrigationOn = HttpHandler.getCurrentIrrigationState();
+		lastIrrigation = HttpHandler.getLastIrrigation();
+    	classifications = HttpHandler.getLastClassifications();
+		
+
+    	/*lastIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 64872389),
+				new Timestamp(System.currentTimeMillis()), 58.34);
+    	classifications = new ArrayList();
+    	isIrrigationOn = "OFF";
+    	sensors = new ArrayList<Sensor>();
+    	Sensor sens1 = new Sensor("Sensor1", 20.56, 33, new Timestamp(System.currentTimeMillis()));
+    	Sensor sens2 = new Sensor("Sensor2", 21.08, 37, new Timestamp(System.currentTimeMillis()));
+    	Sensor sens3 = new Sensor("Sensor3", 19.88, 32, new Timestamp(System.currentTimeMillis()));
+    	sensors.add(sens1);
+    	sensors.add(sens2);
+    	sensors.add(sens3);*/
+	}
+
+	private Component createContent() {
 		Component data = createData();
 		Component irrigation = createIrrigationState();
 		Component lastIrrigation = createLastIrrigation();
 
-		FlexBoxLayout content = new FlexBoxLayout(irrigation, lastIrrigation, data);
+		FlexBoxLayout content = new FlexBoxLayout(irrigation, lastIrrigation, data, createSensorData());
 		content.setAlignItems(FlexComponent.Alignment.CENTER);
 		content.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
 		return content;
@@ -135,7 +119,7 @@ public class HomeView extends Div {
     	lastIrr.setBoxSizing(BoxSizing.BORDER_BOX);
     	lastIrr.setDisplay(Display.BLOCK);
     	lastIrr.setMargin(Top.L);
-    	lastIrr.setMaxWidth(MAX_WIDTH);
+    	lastIrr.setMaxWidth(Constants.MAX_WIDTH);
     	lastIrr.setPadding(Horizontal.RESPONSIVE_L);
     	lastIrr.setWidthFull();
   		return lastIrr;
@@ -145,33 +129,37 @@ public class HomeView extends Div {
 		
 		FlexBoxLayout fromLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Dalle:"));
 		fromLabel.setWidth("200px");
-		FlexBoxLayout fromDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, DATE_FORMAT.format(new Date()) 
-				+ " " + TIME_FORMAT.format(new Date())));
-		
-		
+		FlexBoxLayout fromDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, lastIrrigation.getInizioIrrig().toString()));
+
+
 		FlexBoxLayout from = new FlexBoxLayout(fromLabel, fromDate);
 		from.setFlexDirection(FlexLayout.FlexDirection.ROW);
 		from.setFlexGrow(2, fromLabel, fromDate);
-		
+
 		FlexBoxLayout toLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Alle:"));
 		toLabel.setWidth("200px");
-		/*FlexBoxLayout toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, DATE_FORMAT.format(new Date()) 
-				+ " " + TIME_FORMAT.format(new Date())));*/
-		FlexBoxLayout toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "In corso"));
-		
+
+		FlexBoxLayout toDate;
+		if(lastIrrigation.getFineIrrig() != null) {
+			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, lastIrrigation.getFineIrrig().toString()));
+		}
+		else {
+			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "In corso"));
+		}
+
 		FlexBoxLayout to = new FlexBoxLayout(toLabel, toDate);
 		to.setFlexDirection(FlexLayout.FlexDirection.ROW);
 		to.setFlexGrow(2, toLabel, toDate);
-		
+
 		FlexBoxLayout quantitaLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Quantità:"));
 		quantitaLabel.setWidth("200px");
-		FlexBoxLayout quantitaL = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "230.92 L"));
-		
-		
+		FlexBoxLayout quantitaL = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "" + lastIrrigation.getQuantita()));
+
+
 		FlexBoxLayout quantita = new FlexBoxLayout(quantitaLabel, quantitaL);
 		to.setFlexDirection(FlexLayout.FlexDirection.ROW);
 		to.setFlexGrow(2, quantitaLabel, quantitaL);
-		
+
 		FlexBoxLayout card = new FlexBoxLayout(from, to, quantita);
 		card.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
 		card.setBackgroundColor(LumoStyles.Color.BASE_COLOR);
@@ -191,22 +179,17 @@ public class HomeView extends Div {
     	irrState.setBoxSizing(BoxSizing.BORDER_BOX);
   		irrState.setDisplay(Display.BLOCK);
   		irrState.setMargin(Top.L);
-  		irrState.setMaxWidth(MAX_WIDTH);
+  		irrState.setMaxWidth(Constants.MAX_WIDTH);
   		irrState.setPadding(Horizontal.RESPONSIVE_L);
   		irrState.setWidthFull();
   		return irrState;
 	}
 
 	private Component createIrrigationStateCard() {
-		
-		/* 
-		 * Recupero stato irrigazione da middleware per iniziallizare
-		 * la variabile booleana "acceso"
-		 */
-		boolean acceso = true;
 		String state;
 		String colorState;
-		if(acceso) {
+
+		if(isIrrigationOn.equals("ON")) {
 			state = IrrigationState.ACCESO.getName();
 			colorState = IrrigationState.ACCESO.getColor();
 		}
@@ -214,19 +197,21 @@ public class HomeView extends Div {
 			state = IrrigationState.SPENTO.getName();
 			colorState = IrrigationState.SPENTO.getColor();
 		}
-		
+
+
 		FlexBoxLayout descLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Stato dell'impianto irriguo:"));
 		descLabel.setWidth("200px");
-		FlexBoxLayout status = new FlexBoxLayout(
-				UIUtils.createIcon(IconSize.S, colorState, VaadinIcon.CIRCLE),
-				UIUtils.createLabel(FontSize.L, state));
+		descLabel.setAlignItems(Alignment.CENTER);
+
+		Icon icon = UIUtils.createIcon(IconSize.S, colorState, VaadinIcon.CIRCLE);
+		Label label = UIUtils.createLabel(FontSize.L, state);
+		FlexBoxLayout status = new FlexBoxLayout(icon, label);
 		status.setSpacing(Right.S);
 		status.setAlignItems(Alignment.CENTER);
-		
-		
+
 		FlexBoxLayout card = new FlexBoxLayout(descLabel, status);
 		card.setFlexDirection(FlexLayout.FlexDirection.ROW);
-		card.setFlexGrow(2, descLabel, status);
+		card.setFlexGrow(1, descLabel, status);
 		card.setBackgroundColor(LumoStyles.Color.BASE_COLOR);
 		card.setBorderRadius(BorderRadius.S);
 		card.setBoxSizing(BoxSizing.BORDER_BOX);
@@ -244,7 +229,7 @@ public class HomeView extends Div {
 		Row docs = new Row(ambientData, classificationData);
 		docs.addClassName(LumoStyles.Margin.Top.XL);
 		docs.setComponentSpan(classificationData, 3);
-		UIUtils.setMaxWidth(MAX_WIDTH, docs);
+		UIUtils.setMaxWidth(Constants.MAX_WIDTH, docs);
 		docs.setWidthFull();
 
 		return docs;
@@ -272,40 +257,49 @@ public class HomeView extends Div {
          Configuration configuration = chart.getConfiguration();
          chart.getConfiguration().getChart().setType(ChartType.BAR);
          
-
-         ListSeries carenza = new ListSeries("Carenza di acqua", 15, 9, 5, 10);
+         XAxis x = new XAxis();
+         
+         ListSeries carenza = new ListSeries(Classification.Status.CARENZA.getName());
+         ListSeries sane = new ListSeries(Classification.Status.NORMALE.getName());
+         ListSeries eccesso = new ListSeries(Classification.Status.ECCESSO.getName());
+         ListSeries scartate = new ListSeries(Classification.Status.SCARTATE.getName());
+         ListSeries infestanti = new ListSeries(Classification.Status.INFESTANTI.getName());
+         for(Classification classif : classifications) {
+        	 carenza.addData(classif.getPercCarenza());
+        	 sane.addData(classif.getPercSane());
+        	 eccesso.addData(classif.getPercEccesso());
+        	 scartate.addData(classif.getPercScartate());
+        	 infestanti.addData(classif.getPercInfestanti());
+        	 x.addCategory(classif.getDate().toString());
+         }
+         
          PlotOptionsSeries posCarenza = new PlotOptionsSeries();
          posCarenza.setColorIndex(8);
          carenza.setPlotOptions(posCarenza);
          configuration.addSeries(carenza);
          
-         ListSeries sane = new ListSeries("Sane", 75, 81, 95, 70);
          PlotOptionsSeries posSane = new PlotOptionsSeries();
          posSane.setColorIndex(2);
          sane.setPlotOptions(posSane);
          configuration.addSeries(sane);
          
-         ListSeries eccesso = new ListSeries("Eccesso di acqua", 5, 6, 0, 10);
          PlotOptionsSeries posEccesso = new PlotOptionsSeries();
          posEccesso.setColorIndex(4);
          eccesso.setPlotOptions(posEccesso);
          configuration.addSeries(eccesso);
          
-         ListSeries scartate = new ListSeries("Immagini scartate", 3, 2, 0, 5);
          PlotOptionsSeries posScartate = new PlotOptionsSeries();
          posScartate.setColorIndex(1);
          scartate.setPlotOptions(posScartate);
          configuration.addSeries(scartate);
          
-         ListSeries infestanti = new ListSeries("Infestanti", 2, 2, 0, 5);
          PlotOptionsSeries posInfestanti = new PlotOptionsSeries();
          posInfestanti.setColorIndex(3);
          infestanti.setPlotOptions(posInfestanti);
          configuration.addSeries(infestanti);
          
-         XAxis x = new XAxis();
+
          x.setCrosshair(new Crosshair());
-         x.setCategories("08/09/2020", "28/08/2020", "18/08/2020", "08/08/2020");
          configuration.addxAxis(x);
      
 
@@ -371,8 +365,8 @@ public class HomeView extends Div {
 	
 			
 		FlexBoxLayout dateLabel = new FlexBoxLayout(
-				UIUtils.createLabel(FontSize.XS, DATE_FORMAT.format(lastMeasureDate) 
-				+ " " + TIME_FORMAT.format(lastMeasureDate)));
+				UIUtils.createLabel(FontSize.XS, Constants.DATE_FORMAT.format(lastMeasureDate) 
+				+ " " + Constants.TIME_FORMAT.format(lastMeasureDate)));
 		dateLabel.setMargin(Bottom.M);
 		
 		
@@ -457,43 +451,58 @@ public class HomeView extends Div {
 	}
 
 	private Component createSensorData() {
-		FlexBoxLayout header = createHeader(VaadinIcon.ROAD, "Dati Suolo");
+		Grid<Sensor> grid = new Grid<>();
+		grid.setSelectionMode(SelectionMode.SINGLE);
+
 		
-		Date lastMeasureDate = new Date();
-		int lastMeasureTemp = 10;
-		int lastMeasureHum = 68;
+		ListDataProvider<Sensor> dataProvider = DataProvider.ofCollection(sensors);
+		
+		grid.setDataProvider(dataProvider);
+		grid.setSizeFull();
+		grid.setHeightByRows(true);
 
-		Tabs tabs = new Tabs();
-		for (String label : new String[]{"Sensore 1", "Sensore 2", "Sensore 3",
-				"Sensore 4"}) {
-			tabs.add(new Tab(label));
-		}
-
-		Div items = new Div(
-				new ListItem(
-						UIUtils.createIcon(IconSize.M, TextColor.TERTIARY.getValue(),
-								VaadinIcon.SUN_O),
-						"Temperatura: " + lastMeasureTemp + "°C", "Data: " + DATE_FORMAT.format(lastMeasureDate) 
-						+ " " + TIME_FORMAT.format(lastMeasureDate)),
-				new ListItem(
-						UIUtils.createIcon(IconSize.M, TextColor.TERTIARY.getValue(),
-								VaadinIcon.DROP),
-						"Umidità: " + lastMeasureHum + "%", "Data: " + DATE_FORMAT.format(lastMeasureDate) 
-						+ " " + TIME_FORMAT.format(lastMeasureDate)));
-		items.addClassNames(LumoStyles.Padding.Vertical.XS);
-
-		Div card = new Div(tabs, items);
-		card.setMinHeight("200px");
-		UIUtils.setBackgroundColor(LumoStyles.Color.BASE_COLOR, card);
-		UIUtils.setBorderRadius(BorderRadius.S, card);
-		UIUtils.setShadow(Shadow.XS, card);
-
-		FlexBoxLayout logs = new FlexBoxLayout(header, card);
-		//logs.addClassName(CLASS_NAME + "__logs");
-		logs.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
-		logs.setPadding(Bottom.XL, Right.RESPONSIVE_L, Left.RESPONSIVE_L);
-		return logs;
+		grid.addColumn(Sensor::getName)
+				.setAutoWidth(true)
+				.setFlexGrow(1)
+				.setFrozen(true);
+		grid.addColumn(new ComponentRenderer<>(this::createDateLabel))
+				.setAutoWidth(true)
+				.setFlexGrow(1)
+				.setFrozen(true)
+				.setHeader("Data")
+				.setTextAlign(ColumnTextAlign.CENTER);
+		grid.addColumn(Sensor::getTemperature)
+				.setAutoWidth(true)
+				.setFlexGrow(1)
+				.setHeader("Temperatura [°C]")
+				.setTextAlign(ColumnTextAlign.CENTER)
+				.setSortable(true);
+		grid.addColumn(Sensor::getHumidity)
+				.setAutoWidth(true)
+				.setFlexGrow(1)
+				.setHeader("Umidità [%]")
+				.setTextAlign(ColumnTextAlign.CENTER)
+				.setSortable(true);
+		
+		
+		
+		grid.setVerticalScrollingEnabled(false);
+		
+		FlexBoxLayout card = new FlexBoxLayout(grid);
+		card.setBackgroundColor(LumoStyles.Color.BASE_COLOR);
+		card.setBorderRadius(BorderRadius.S);
+		card.setBoxSizing(BoxSizing.BORDER_BOX);
+		card.setPadding(Uniform.M);
+		card.setShadow(Shadow.XS);
+		card.setHeightFull();
+		card.setMargin(Bottom.XL);
+		return card;
 	}
     
+	// Crea gli item della colonna Data 
+		private Component createDateLabel(Sensor sensor) {
+			String dateString = sensor.getDate().toString();
+			return UIUtils.createLabel(FontSize.S, dateString);
+		}
 
 }

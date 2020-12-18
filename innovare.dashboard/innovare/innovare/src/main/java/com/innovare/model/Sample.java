@@ -1,4 +1,4 @@
-package com.innovare.utils;
+package com.innovare.model;
 
 import java.sql.Timestamp;
 

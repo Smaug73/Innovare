@@ -1,4 +1,4 @@
-package com.innovare.utils;
+package com.innovare.model;
 
 public enum IrrigationState {
 	ACCESO("Acceso", "var(--lumo-success-text-color)"), 

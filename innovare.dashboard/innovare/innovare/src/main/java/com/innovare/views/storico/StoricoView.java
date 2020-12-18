@@ -13,8 +13,6 @@ import com.innovare.ui.utils.LumoStyles;
 import com.innovare.ui.utils.Shadow;
 import com.innovare.ui.utils.Top;
 import com.innovare.ui.utils.Uniform;
-import com.vaadin.addon.charts.ChartOptions;
-import com.vaadin.addon.charts.model.Lang;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;

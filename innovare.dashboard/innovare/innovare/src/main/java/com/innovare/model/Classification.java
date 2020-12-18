@@ -1,4 +1,4 @@
-package com.innovare.utils;
+package com.innovare.model;
 
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;

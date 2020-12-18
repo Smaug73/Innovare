@@ -4,9 +4,9 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
+import com.innovare.model.Wind;
 import com.innovare.ui.utils.FontSize;
 import com.innovare.ui.utils.UIUtils;
-import com.innovare.utils.Wind;
 import com.innovare.views.main.ContentView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.dependency.CssImport;
