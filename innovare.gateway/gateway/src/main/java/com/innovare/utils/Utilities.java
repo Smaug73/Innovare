@@ -7,7 +7,10 @@ public final class Utilities {
 	public static final String zipSourcePath=System.getProperty("user.home")+System.getProperty("file.separator")+"InnovareData"+System.getProperty("file.separator")+"InnovareZip"+System.getProperty("file.separator");
 	public static final String modelPath=System.getProperty("user.home")+System.getProperty("file.separator")+"InnovareData"+System.getProperty("file.separator")+"InnovareModels"+System.getProperty("file.separator");
 	public static final String segmentDataSetPath=System.getProperty("user.home")+System.getProperty("file.separator")+"InnovareData"+System.getProperty("file.separator")+"InnovareSegmentDS"+System.getProperty("file.separator");
+	public static final String configurationJsonPath=System.getProperty("user.home")+System.getProperty("file.separator")+"InnovareData"+System.getProperty("file.separator")+"configuration.json";
 	public static final String ipMqtt="localhost";
+	public static final String ipDashBoad="localhost";
+	public static final String ipMiddleLayer="localhost";
 	public static final String irrigationLogMqttChannel="Irrigation-LOG";
 	public static final String irrigationCommandMqttChannel="Irrigation-COMMAND";
 	public static final String stateOff="OFF";
