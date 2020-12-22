@@ -23,6 +23,15 @@ public class Sample implements Comparable<Sample>{
 		this.misure=30;//solo per il testing
 	}
 	
+	
+
+	public Sample(String timestamp, int misure) {
+		super();
+		this.timestamp = timestamp;
+		this.misure = misure;
+	}
+
+
 
 	public String getTimestamp() {
 		return timestamp;

@@ -17,6 +17,7 @@ import com.innovare.model.Property;
 import com.innovare.model.Role;
 import com.innovare.model.Sample;
 import com.innovare.model.User;
+import com.innovare.utils.Utilities;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.AbstractVerticle;
@@ -76,7 +77,7 @@ public class GatewayVerticle extends AbstractVerticle {
 	  
 	//Creazione client MQTT
 	    MqttClient client = MqttClient.create(vertx);
-	    client.connect(1883, "localhost", t -> {
+	    client.connect(1883, Utilities.ipMiddleLayer, t -> {
 	    	
 	    	//Appena il gateway si collega per avvisare del suo corretto collegamento.
 	    	 client.publish("gatewayLog",
@@ -132,7 +133,7 @@ public class GatewayVerticle extends AbstractVerticle {
 	     * Il controller per il comando deve ricevere, quindi si iscriverà al relativo topic
 	     */
 	    this.irrigation.setCommandClient( MqttClient.create(vertx));
-	    this.irrigation.getCommandClient().connect(1883, "localhost", p -> {
+	    this.irrigation.getCommandClient().connect(1883, Utilities.ipMiddleLayer, p -> {
 	    	System.out.println("Client mqtt per i comandi dell'irrigazione connesso..");
 	    	/*
 		     *Il client mqtt per la ricezione di comandi si iscriverà al relativo topic 
@@ -206,7 +207,7 @@ public class GatewayVerticle extends AbstractVerticle {
     			System.out.println(s.toString());
     		}	
     		System.out.println(chan.toString());
-	    	this.mapClient.get(chan).connect(1883, "localhost", s -> {	
+	    	this.mapClient.get(chan).connect(1883, Utilities.ipMiddleLayer, s -> {	
 		    	//
 					try {
 						this.mapClient.get(chan).publish(chan.getID(),
