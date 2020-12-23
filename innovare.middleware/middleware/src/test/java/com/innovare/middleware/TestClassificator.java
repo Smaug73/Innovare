@@ -2,9 +2,13 @@ package com.innovare.middleware;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Timestamp;
@@ -124,7 +128,7 @@ public class TestClassificator {
 		System.out.println("Modello selezionato: "+mc.getSelectedModel().getName());
 	}
 	*/
-	@Test
+	/*@Test
 	public void unzipModel() throws FileNotFoundException, ZipException {
 		ModelController mc= new ModelController();
 		mc.unZipModel("stubdsds.zip");
@@ -134,6 +138,22 @@ public class TestClassificator {
 	public void testCSVReader() throws IOException {
 		SampleCSVController sc = new SampleCSVController();
 		HashMap<String,ArrayList<Sample>> hsc=sc.readSampleFromCSV();
+	}*/
+	
+	@Test
+	public void testWeatherStation() throws IOException, InterruptedException {
+		System.out.println("cd && cd "+Utilities.scriptPath+"vproweather-1.1"+System.getProperty("file.separator")+" && sudo ./vproweather -x /dev/ttyUSB0\n");
+		Process processSt= Runtime.getRuntime().exec("./vproweather -x /dev/ttyUSB0\n >> sample.txt",null,new File(Utilities.scriptPath+"vproweather-1.1"+System.getProperty("file.separator")));
+		//Attendiamo la fine della segmentazione
+		InputStream is = processSt.getInputStream();
+		    InputStreamReader isr = new InputStreamReader(is);
+		    BufferedReader br = new BufferedReader(isr);
+		    String line;
+		    while ((line = br.readLine()) != null) {
+		      System.out.println(line);
+		    }
+		//OutputStream outPSeg= processSt.getOutputStream();
+		//System.out.println(outPSeg.toString());
 	}
 	/*
 	@Test
