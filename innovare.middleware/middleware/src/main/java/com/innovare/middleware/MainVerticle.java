@@ -680,7 +680,7 @@ public class MainVerticle extends AbstractVerticle {
             	    	    		ClassificationSint cs=c.unZipAndClassification(this.modelController.getSelectedModel().getName());
             	    	    		
             	    	    		//Inviamo il json al front-end
-            	    	    		try { 	
+            	    	    		 	
             	    	    			//Genero il json della classificazione
             	    	    			String jsonClassifications=new ObjectMapper().writeValueAsString(cs);
         								//Invio il json al front-end
@@ -689,6 +689,14 @@ public class MainVerticle extends AbstractVerticle {
         								.setStatusCode(200)
         								.end(jsonClassifications);
             	    	    			
+            	    	    			/*
+            	    	    			 * INSERIRE PARTE PER LA GENERAZIONE DELLA NUOVA IRRIGAZIONE
+            	    	    			 * IrrigationController ic= new IrrigationController();
+            	    	    			 * ic.createIrrigation(....
+            	    	    			 * 
+            	    	    			 * L'IRRIGAZIONE VA DI CONSEGUENZA SALVATA NEL DATABASE MONGO
+            	    	    			 */
+            	    	    			
         								//Memorizzio nel database tutte le classificazioni
             	    	    			//JsonArray newClassificationsJson= new JsonArray(jsonClassifications);
             	    	    			JsonObject singleClassification= new JsonObject(jsonClassifications);
@@ -696,7 +704,7 @@ public class MainVerticle extends AbstractVerticle {
   						    			  if(res.succeeded())
   						    				  System.out.println("Classificazione sintetica salvata correttamente nel DB.");
   						    			  else
-  						    				  System.err.println("ERRORE salvataggio misura");  
+  						    				  System.err.println("ERRORE salvataggio ClassificazioniSintetiche");  
             	    	    			});
             	    	    			
             	    	    			//Salviamo nel db le classificazioni delle singole immagini
@@ -710,11 +718,11 @@ public class MainVerticle extends AbstractVerticle {
         						    			  if(res.succeeded())
         						    				  System.out.println("Singola classificazione salvata correttamente nel DB.");
         						    			  else
-        						    				  System.err.println("ERRORE salvataggio misura");  
+        						    				  System.err.println("ERRORE salvataggio classifications");  
         						    		});
         								}	
             	    	    					
-        							} catch (JsonProcessingException e) {
+        						}catch (JsonProcessingException e) {
         								System.err.println("Errore conversione json");
         								e.printStackTrace();
 
@@ -722,9 +730,7 @@ public class MainVerticle extends AbstractVerticle {
         				    	   	      .response()
         					              .setStatusCode(400)
         					              .end("Errore json convertito");
-									}  
-        	    	    			
-        	    	    		}catch(FileNotFoundException e) {
+								}catch(FileNotFoundException e) {
         								System.err.println("Modello selezionato non esistente");
         								e.printStackTrace();
 

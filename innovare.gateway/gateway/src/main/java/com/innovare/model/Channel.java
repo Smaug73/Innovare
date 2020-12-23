@@ -13,6 +13,10 @@ public class Channel extends Thread{
 	 * Potrebbe essere aggiunta una condizione per fermare il thread di campionamento.
 	 * Nel caso reale ci deve essere una sola misura all'interno della queue, dato che il campionamento risulta
 	 * molto lento, quindi la queue si riempirà solo nel momento nel quale il channel non sarà costantemente liberato.
+	 * 
+	 * Dato che per la WeatherStation la risorsa da andare ad utilizzare e' stessa, verra' generato un file di log della
+	 * stazione meteo dal WeatherStationController e i thread a turno leggeranno il valore di interesse ed invieranno il 
+	 * valore tramite Mqtt
 	 */	
 	private String ID; //Scritto cosi' altrimenti si sovrappone all'id del thread
 	private long periodo;	//Periodo di campionamento
@@ -68,7 +72,7 @@ public class Channel extends Thread{
 	
 
 	/*
-	 * Ci deve essere mutua escluzione nell'andare ad aggiunere nuovi Sample(in scrittura)
+	 * Ci deve essere mutua escluzione nell'andare ad aggiungere nuovi Sample(in scrittura)
 	 */
 	private synchronized void addNewSample() throws Exception {
 		if(this.samplesQueue!=null)
