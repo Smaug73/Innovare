@@ -60,9 +60,9 @@ public class GatewayVerticle extends AbstractVerticle {
 	 * 
 	 */
 	
-  public static final String serverIP="192.168.0.185";	
+  //public static final String serverIP="192.168.0.185";	
 	
-  private int numberOfChannel= 2; //per ora test
+  private int numberOfChannel= Utilities.channelsNames.length; //Canali definiti in channel names
   private HashMap<Channel,MqttClient> mapClient;
   private IrrigationController irrigation;
   private ConfigurationItem cfi;
@@ -117,7 +117,7 @@ public class GatewayVerticle extends AbstractVerticle {
 	    	 * Richiamo operazione per l'instanziazione dei canali dopo aver comunicato il loro numero
 	    	 */
 	    	 //RIATTIVARE LA CREAZIONE DEI THREAD , COMMENTATO PER TEST
-	    //	 this.channelCreation();   ///////////////////////////////////////////////////
+	    	 this.channelCreation();   ///////////////////////////////////////////////////
 	    	 
 	    	 
 	    	 //Si può anche disconnettere questo client dopo l'instanziazione dei client dei singoli sensori...

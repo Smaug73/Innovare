@@ -3,6 +3,7 @@ package com.innovare.model;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.gateway.GatewayVerticle;
+import com.innovare.utils.Utilities;
 
 import afu.org.checkerframework.checker.units.qual.Time;
 import io.netty.handler.codec.mqtt.MqttQoS;
@@ -52,7 +53,7 @@ public class IrrigationController extends Thread{
 		Timestamp tm= new Timestamp(System.currentTimeMillis());
 		if(this.logClient!=null) {
 			//Connesione al server mqtt
-			this.logClient.connect(1883, GatewayVerticle.serverIP, s -> {	
+			this.logClient.connect(1883, Utilities.ipMqtt, s -> {	
 				
 				System.out.println(tm+": Avvio irrigazione.");
 				this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+": "+this.stateOn),
@@ -81,7 +82,7 @@ public class IrrigationController extends Thread{
 		Timestamp tm= new Timestamp(System.currentTimeMillis());
 		if(this.logClient!=null) {
 			//Connesione al server mqtt
-			this.logClient.connect(1883, GatewayVerticle.serverIP, s -> {	
+			this.logClient.connect(1883, Utilities.ipMqtt, s -> {	
 				
 				System.out.println(tm+": Avvio irrigazione.");
 				this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+": "+this.stateOn),
@@ -150,7 +151,7 @@ public class IrrigationController extends Thread{
 		Timestamp tm= new Timestamp(System.currentTimeMillis());
 		if(this.logClient!=null) {
 			//Connesione al server mqtt
-			this.logClient.connect(1883, GatewayVerticle.serverIP, s -> {	
+			this.logClient.connect(1883, Utilities.ipMqtt, s -> {	
 				
 				System.out.println(tm+": Stop irrigazione.");
 				this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+": "+this.stateOn),
