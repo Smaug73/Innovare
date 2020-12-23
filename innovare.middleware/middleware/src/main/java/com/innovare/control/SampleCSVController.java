@@ -29,6 +29,7 @@ public class SampleCSVController {
 		
 		//Al suo interno ci deve essere un solo file che dovra' essere letto
 		if(dirCSV.isDirectory()) {
+			System.out.println("DEBUG file:"+dirCSV.getName());
 			File[] child= dirCSV.listFiles();
 			//Caso nel quale non c'e' nessun nuovo file da leggere
 			if(child.length==0) {
@@ -42,6 +43,7 @@ public class SampleCSVController {
 			else
 				csvFile= child[0];
 			
+			System.out.println("DEBUG file:"+csvFile.getName());
 			//Trovato il file lo leggiamo e lo deparsiamo.
 			
 				FileReader fr= new FileReader(csvFile.getAbsolutePath());

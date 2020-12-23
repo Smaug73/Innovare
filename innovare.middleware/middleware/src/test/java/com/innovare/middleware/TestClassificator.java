@@ -15,6 +15,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 import org.junit.jupiter.api.AfterAll;
@@ -27,8 +28,10 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.control.Classificator;
 import com.innovare.control.ModelController;
+import com.innovare.control.SampleCSVController;
 import com.innovare.model.ClassificationSint;
 import com.innovare.model.PlantClassification;
+import com.innovare.model.Sample;
 import com.innovare.utils.Utilities;
 
 import net.lingala.zip4j.exception.ZipException;
@@ -125,6 +128,12 @@ public class TestClassificator {
 	public void unzipModel() throws FileNotFoundException, ZipException {
 		ModelController mc= new ModelController();
 		mc.unZipModel("stubdsds.zip");
+	}
+	
+	@Test
+	public void testCSVReader() throws IOException {
+		SampleCSVController sc = new SampleCSVController();
+		HashMap<String,ArrayList<Sample>> hsc=sc.readSampleFromCSV();
 	}
 	/*
 	@Test
