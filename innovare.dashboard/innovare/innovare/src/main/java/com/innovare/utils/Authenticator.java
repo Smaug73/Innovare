@@ -41,7 +41,7 @@ public class Authenticator {
 				vaadinSession.setAttribute(ATTRIBUTE_USERNAME , username);
 				vaadinSession.setAttribute(ATTRIBUTE_IS_AUTH , true);
 				return true;
-			} catch (IOException e) {
+					} catch (IOException e) {
 				e.printStackTrace();
 				return false;
 			} catch (InterruptedException e) {

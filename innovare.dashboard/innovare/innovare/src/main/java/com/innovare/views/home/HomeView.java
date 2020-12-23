@@ -84,31 +84,30 @@ public class HomeView extends Div {
     
     private void getData() {
     	isIrrigationOn = HttpHandler.getCurrentIrrigationState();
-		//lastIrrigation = HttpHandler.getLastIrrigation();
+	//lastIrrigation = HttpHandler.getLastIrrigation();
     	lastIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 64872389),
 				new Timestamp(System.currentTimeMillis()), 58.34);
 
     	classifications = HttpHandler.getLastClassifications();
-    	
-    	/*lastIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 64872389),
-				new Timestamp(System.currentTimeMillis()), 58.34);
-    	classifications = new ArrayList();
+/*  classifications = new ArrayList();
     	isIrrigationOn = "OFF";
+*/
     	sensors = new ArrayList<Sensor>();
     	Sensor sens1 = new Sensor("Sensor1", 20.56, 33, new Timestamp(System.currentTimeMillis()));
     	Sensor sens2 = new Sensor("Sensor2", 21.08, 37, new Timestamp(System.currentTimeMillis()));
     	Sensor sens3 = new Sensor("Sensor3", 19.88, 32, new Timestamp(System.currentTimeMillis()));
     	sensors.add(sens1);
     	sensors.add(sens2);
-    	sensors.add(sens3);*/
+    	sensors.add(sens3);
 	}
 
 	private Component createContent() {
 		Component data = createData();
 		Component irrigation = createIrrigationState();
 		Component lastIrrigation = createLastIrrigation();
+		Component sensors = createSensorData();
 
-		FlexBoxLayout content = new FlexBoxLayout(irrigation, lastIrrigation, data);
+		FlexBoxLayout content = new FlexBoxLayout(irrigation, lastIrrigation, data, sensors);
 		content.setAlignItems(FlexComponent.Alignment.CENTER);
 		content.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
 		return content;
@@ -131,7 +130,9 @@ public class HomeView extends Div {
 		
 		FlexBoxLayout fromLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Dalle:"));
 		fromLabel.setWidth("200px");
-		FlexBoxLayout fromDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, lastIrrigation.getInizioIrrig().toString()));
+		FlexBoxLayout fromDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, 
+				Constants.TIME_FORMAT.format(lastIrrigation.getInizioIrrig())
+				+ " " + Constants.DATE_FORMAT.format(lastIrrigation.getInizioIrrig())));
 
 
 		FlexBoxLayout from = new FlexBoxLayout(fromLabel, fromDate);
@@ -143,7 +144,9 @@ public class HomeView extends Div {
 
 		FlexBoxLayout toDate;
 		if(lastIrrigation.getFineIrrig() != null) {
-			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, lastIrrigation.getFineIrrig().toString()));
+			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, 
+					Constants.TIME_FORMAT.format(lastIrrigation.getFineIrrig())
+					+ " " + Constants.DATE_FORMAT.format(lastIrrigation.getInizioIrrig())));
 		}
 		else {
 			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "In corso"));
@@ -451,8 +454,21 @@ public class HomeView extends Div {
 		card.setSizeFull();
 		return card;
 	}
-
+	
 	private Component createSensorData() {
+    	FlexBoxLayout sensorData = new FlexBoxLayout(
+  				createHeader(VaadinIcon.ROAD, "Sensori a Terra"),
+  				createSensorDataGrid());
+    	sensorData .setBoxSizing(BoxSizing.BORDER_BOX);
+    	sensorData .setDisplay(Display.BLOCK);
+    	sensorData .setMargin(Top.L);
+    	sensorData .setMaxWidth(Constants.MAX_WIDTH);
+    	sensorData .setPadding(Horizontal.RESPONSIVE_L);
+    	sensorData .setWidthFull();
+  		return sensorData ;
+	}
+
+	private Component createSensorDataGrid() {
 		Grid<Sensor> grid = new Grid<>();
 		grid.setSelectionMode(SelectionMode.SINGLE);
 

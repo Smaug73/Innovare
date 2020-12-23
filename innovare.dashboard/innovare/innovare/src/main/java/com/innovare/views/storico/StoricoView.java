@@ -13,6 +13,7 @@ import com.innovare.ui.utils.LumoStyles;
 import com.innovare.ui.utils.Shadow;
 import com.innovare.ui.utils.Top;
 import com.innovare.ui.utils.Uniform;
+import com.innovare.utils.Constants;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -20,7 +21,6 @@ import com.vaadin.flow.component.orderedlayout.FlexLayout;
 
 public abstract class StoricoView extends Div{
 	
-	public static final String MAX_WIDTH = (Toolkit.getDefaultToolkit().getScreenSize().width - 100) + "px";
 	
 	public StoricoView() {
 		
@@ -47,7 +47,7 @@ public abstract class StoricoView extends Div{
 		chart.setBoxSizing(BoxSizing.BORDER_BOX);
 		chart.setDisplay(Display.BLOCK);
 		chart.setMargin(Top.L);
-		chart.setMaxWidth(MAX_WIDTH);
+		chart.setMaxWidth(Constants.MAX_WIDTH);
 		chart.setPadding(Horizontal.RESPONSIVE_L);
 		chart.setWidthFull();
 		return chart;

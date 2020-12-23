@@ -6,6 +6,8 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -46,9 +48,11 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
+import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexDirection;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
+import com.vaadin.flow.component.timepicker.TimePicker;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.UploadI18N;
 import com.vaadin.flow.router.PageTitle;
@@ -70,6 +74,7 @@ public class ConfigurazioneView extends Div {
 	private UploadBuffer buffer;
 	private Collection<String> modelsNames;
 	private ComboBox<String> modelSelection;
+	private LocalTime irrigationTime;
 
 	public ConfigurazioneView() throws IOException, InterruptedException, URISyntaxException, ParseException {
 		setId("config-view");
@@ -112,7 +117,7 @@ public class ConfigurazioneView extends Div {
 	// Recupera i dati da mostrare: i configuration item, i modelli disponibili per la classificazione, 
 	// lo stato dell'irrigazione e le info sull'ultima irrigazione (quella attuale se l'irrigazione è in corso)
 	private void getData() {
-		/*configurationItems = new ArrayList<ConfigurationItem>();
+/* 		configurationItems = new ArrayList<ConfigurationItem>();
     	ConfigurationItem item = new ConfigurationItem();
     	item.setId("Gateway");
     	Property prop1 = new Property();
@@ -125,17 +130,23 @@ public class ConfigurazioneView extends Div {
     	properties[0] = prop1;
     	properties[1] = prop2;
     	item.setProperties(properties);
+    	ConfigurationItem item2 = new ConfigurationItem();
+    	item2.setId("conf item");
+    	item2.setProperties(properties);
     	configurationItems.add(item);
+    	configurationItems.add(item2);
     	lastIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 64872389),
     			new Timestamp(System.currentTimeMillis()), 58.34);
-    	isIrrigationOn = true;
+    	isIrrigationOn = "OFF";
     	models = new ArrayList<Model>();
     	Model model = new Model("modello 1");
-    	models.add(model);*/
+    	models.add(model);
+*/
+		irrigationTime = LocalTime.now();
 
 		configurationItems = HttpHandler.getAllConfigurationItems();
 		isIrrigationOn = HttpHandler.getCurrentIrrigationState();
-		//lastIrrigation = HttpHandler.getLastIrrigation();
+		lastIrrigation = HttpHandler.getLastIrrigation();
 		selectedModel = HttpHandler.getSelectedModel();
 		models = HttpHandler.getAllModels();
 		lastIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 64872389),
@@ -153,11 +164,14 @@ public class ConfigurazioneView extends Div {
 	// il componente di upload di un nuovo modello di classificazione
 	private Component createContent() {
 		Component irrigationView = createIrrigationState();
-		// Component lastIrrigationView = createLastIrrigation();
+		
+		Component settingStartIrrigationTime = createSettingStartIrrTime();
 
 		// Per ogni configuration item viene creata una card che ne mostra le proprietà
 		FlexBoxLayout confItemsCards = new FlexBoxLayout();
 		confItemsCards.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
+		confItemsCards.setSizeFull();
+		UIUtils.setMaxWidth(Constants.MAX_WIDTH, confItemsCards);
 		for(ConfigurationItem item : configurationItems) {
 			confItemsCards.add(createConfItemView(item));
 		}
@@ -166,7 +180,7 @@ public class ConfigurazioneView extends Div {
 		//zip con immagini da classificare e zip con nuovo modello di classificazione
 		Component uploads = createUploadsView();
 
-		FlexBoxLayout content = new FlexBoxLayout(irrigationView, confItemsCards, uploads);
+		FlexBoxLayout content = new FlexBoxLayout(irrigationView, settingStartIrrigationTime, confItemsCards, uploads);
 		content.setAlignItems(FlexComponent.Alignment.CENTER);
 		content.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
 		return content;
@@ -185,13 +199,17 @@ public class ConfigurazioneView extends Div {
 		lastIrr.setSizeFull();
 		return lastIrr;
 	}
+	
+	
 
 	// Crea la card in cui si forniscono le info sull'ultima irrigazione (quella in corso se l'irrigazione è attiva)
 	private Component createLastIrrigationCard() {
 
 		FlexBoxLayout fromLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Dalle:"));
 		fromLabel.setWidth("200px");
-		FlexBoxLayout fromDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, lastIrrigation.getInizioIrrig().toString()));
+		FlexBoxLayout fromDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, 
+				Constants.TIME_FORMAT.format(lastIrrigation.getInizioIrrig())
+				+ " " + Constants.DATE_FORMAT.format(lastIrrigation.getInizioIrrig())));
 
 
 		FlexBoxLayout from = new FlexBoxLayout(fromLabel, fromDate);
@@ -203,7 +221,9 @@ public class ConfigurazioneView extends Div {
 
 		FlexBoxLayout toDate;
 		if(lastIrrigation.getFineIrrig() != null) {
-			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, lastIrrigation.getFineIrrig().toString()));
+			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, 
+					Constants.TIME_FORMAT.format(lastIrrigation.getFineIrrig())
+					+ " " + Constants.DATE_FORMAT.format(lastIrrigation.getInizioIrrig())));
 		}
 		else {
 			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "In corso"));
@@ -261,7 +281,7 @@ public class ConfigurazioneView extends Div {
 		on_off.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
 		on_off.setItems(accendi, spegni);
 
-		if(isIrrigationOn.equals("ON")) {
+		if(isIrrigationOn.equalsIgnoreCase(accendi)) {
 			state = IrrigationState.ACCESO.getName();
 			colorState = IrrigationState.ACCESO.getColor();
 			on_off.setValue(accendi);
@@ -299,7 +319,8 @@ public class ConfigurazioneView extends Div {
 		FlexBoxLayout cards = new FlexBoxLayout(card, lastIrrigationView);
 		cards.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
 
-		on_off.addValueChangeListener(new ValueChangeListener() {
+		on_off.addValueChangeListener(new ValueChangeListener<ValueChangeEvent>() {
+
 
 			@Override
 			public void valueChanged(ValueChangeEvent event) {
@@ -340,21 +361,88 @@ public class ConfigurazioneView extends Div {
 
 		return cards;
 	}
+	
+	private Component createSettingStartIrrTime() {
+		FlexBoxLayout setIrr = new FlexBoxLayout(
+				createHeader(VaadinIcon.STOPWATCH, "Orario Inizio Irrigazione"),
+				createSettingStartIrrTimeCard());
+		setIrr.setBoxSizing(BoxSizing.BORDER_BOX);
+		setIrr.setDisplay(Display.BLOCK);
+		setIrr.setMargin(Top.L);
+		setIrr.setMaxWidth(Constants.MAX_WIDTH);
+		setIrr.setPadding(Horizontal.RESPONSIVE_L);
+		setIrr.setWidthFull();
+		return setIrr;
+	}
+
+	private Component createSettingStartIrrTimeCard() {
+		String labelScelta = "Ogni giorno, l'irrigazione inizia alle ore: ";
+		Label label = UIUtils.createLabel(FontSize.L, labelScelta);
+
+		TimePicker timePicker = new TimePicker();
+		timePicker.setValue(irrigationTime);
+		timePicker.setStep(Duration.ofMinutes(30));
+		
+		timePicker.addValueChangeListener(event -> {
+			// Deve essere fatta una chiamata http per settare il nuovo orario
+			System.out.print("Nuovo orario: " + event.getValue().getHour() + ":" + event.getValue().getMinute());
+		});
+		
+		
+		FlexBoxLayout card = new FlexBoxLayout(label, timePicker);
+		card.setFlexDirection(FlexLayout.FlexDirection.ROW);
+		card.setBackgroundColor(LumoStyles.Color.BASE_COLOR);
+		card.setBorderRadius(BorderRadius.S);
+		card.setBoxSizing(BoxSizing.BORDER_BOX);
+		card.setPadding(Uniform.M);
+		card.setShadow(Shadow.XS);
+		card.setHeightFull();
+		card.setMargin(Bottom.L);
+		card.setFlexGrow(1, label, timePicker);
+		card.setAlignItems(Alignment.CENTER);
+		return card;
+	}
 
 	private Component createUploadsView() {
+		Component uploadZipTitle = createUploadZipTitle();
+		Component uploadModelTitle = createUploadModelTitle();
 		Component uploadZip = createUploadZip();
 		Component uploadModel = createUploadModel();
 
+		Row titles = new Row(uploadZipTitle, uploadModelTitle);
+		titles.addClassName(LumoStyles.Margin.Top.XL);
+		UIUtils.setMaxWidth(Constants.MAX_WIDTH, titles);
+		titles.setWidthFull();
 		Row uploads = new Row(uploadZip, uploadModel);
-		uploads.addClassName(LumoStyles.Margin.Top.XL);
+		//uploads.addClassName(LumoStyles.Margin.Top.XL);
 		UIUtils.setMaxWidth(Constants.MAX_WIDTH, uploads);
 		uploads.setWidthFull();
 
-		return uploads;
+		FlexBoxLayout uploadsCard = new FlexBoxLayout(titles, uploads);
+		uploadsCard.setFlexDirection(FlexDirection.COLUMN);
+		uploadsCard.setWidthFull();
+		uploadsCard.setMaxWidth(Constants.MAX_WIDTH);
+		return uploadsCard;
+	}
+
+	private Component createUploadModelTitle() {
+		FlexBoxLayout header = createHeader(VaadinIcon.FILE_TREE_SUB, "Carica Nuovo Classificatore");
+		FlexBoxLayout reports = new FlexBoxLayout(header);
+		reports.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
+		reports.setPadding(Right.RESPONSIVE_L, Left.RESPONSIVE_L);
+		return reports;
+	}
+
+	private Component createUploadZipTitle() {
+		FlexBoxLayout header = createHeader(VaadinIcon.FILE_ZIP, "Carica Nuova Classificazione del Campo");
+		FlexBoxLayout reports = new FlexBoxLayout(header);
+		reports.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
+		reports.setPadding(Right.RESPONSIVE_L, Left.RESPONSIVE_L);
+		return reports;
 	}
 
 	private Component createUploadModel() {
-		FlexBoxLayout header = createHeader(VaadinIcon.FILE_TREE_SUB, "Carica Nuovo Classificatore");
+		//FlexBoxLayout header = createHeader(VaadinIcon.FILE_TREE_SUB, "Carica Nuovo Classificatore");
 		Upload uploadModel = new Upload(buffer);
 		uploadModel.setId("i18n-uploadModel");
 		uploadModel.setSizeFull();
@@ -389,7 +477,7 @@ public class ConfigurazioneView extends Div {
 		uploadModel.setI18n(i18n);
 
 		FlexBoxLayout card = new FlexBoxLayout(uploadModel);
-		card.setPadding(Right.L, Left.L, Top.S, Bottom.S);
+		card.setPadding(Right.L, Left.L, Bottom.S, Top.S);
 		card.setAlignItems(FlexComponent.Alignment.CENTER);
 		card.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
 		card.setMinHeight("200px");
@@ -397,7 +485,7 @@ public class ConfigurazioneView extends Div {
 		UIUtils.setBorderRadius(BorderRadius.S, card);
 		UIUtils.setShadow(Shadow.XS, card);
 
-		FlexBoxLayout reports = new FlexBoxLayout(header, card);
+		FlexBoxLayout reports = new FlexBoxLayout(/*header,*/ card);
 		reports.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
 		reports.setPadding(Bottom.XL, Right.RESPONSIVE_L, Left.RESPONSIVE_L);
 		return reports;
@@ -422,9 +510,6 @@ public class ConfigurazioneView extends Div {
 			if(statusCode == 200);
 			else modelSelection.setValue(event.getOldValue());
 		});
-
-
-		FlexBoxLayout header = createHeader(VaadinIcon.FILE_ZIP, "Carica Nuova Classificazione del Campo");
 
 		Upload uploadZipImages = new Upload(buffer);
 		uploadZipImages.setId("i18n-uploadZipImages");
@@ -467,11 +552,12 @@ public class ConfigurazioneView extends Div {
 		UIUtils.setBackgroundColor(LumoStyles.Color.BASE_COLOR, card);
 		UIUtils.setBorderRadius(BorderRadius.S, card);
 		UIUtils.setShadow(Shadow.XS, card);
-
-		FlexBoxLayout reports = new FlexBoxLayout(header, card);
+		
+		FlexBoxLayout reports = new FlexBoxLayout(/*header,*/ card);
 		reports.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
 		reports.setPadding(Bottom.XL, Right.RESPONSIVE_L, Left.RESPONSIVE_L);
 		return reports;
+
 	}
 
 	private Component createConfItemView(ConfigurationItem item) {
@@ -482,8 +568,8 @@ public class ConfigurazioneView extends Div {
 		confItem.setDisplay(Display.BLOCK);
 		confItem.setMargin(Top.L);
 		confItem.setMaxWidth(Constants.MAX_WIDTH);
-		//confItem.setPadding(Horizontal.RESPONSIVE_L);
-		confItem.setHeightFull();
+		confItem.setPadding(Horizontal.RESPONSIVE_L);
+		confItem.setWidthFull();
 		return confItem;
 	}
 
@@ -491,8 +577,8 @@ public class ConfigurazioneView extends Div {
 		Property[] properties = item.getProperties();
 
 
-		FlexBoxLayout propertiesLabel = new FlexBoxLayout();
-		propertiesLabel.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
+		FlexBoxLayout card = new FlexBoxLayout();
+		card.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
 		for(Property prop : properties) {
 			FlexBoxLayout idLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L,  prop.getId() + ":"));
 			idLabel.setMargin(Right.XL);
@@ -501,18 +587,20 @@ public class ConfigurazioneView extends Div {
 			FlexBoxLayout propertyLabels = new FlexBoxLayout();
 			propertyLabels.setFlexDirection(FlexLayout.FlexDirection.ROW);
 			propertyLabels.add(idLabel, valueLabel);
-			propertiesLabel.add(propertyLabels);
-		}
+			propertyLabels.setFlexGrow(2, idLabel, valueLabel);
+			card.add(propertyLabels);
 
-		FlexBoxLayout card = new FlexBoxLayout(propertiesLabel);
+		}
+		
 		card.setBackgroundColor(LumoStyles.Color.BASE_COLOR);
 		card.setBorderRadius(BorderRadius.S);
 		card.setBoxSizing(BoxSizing.BORDER_BOX);
 		card.setPadding(Uniform.M);
 		card.setShadow(Shadow.XS);
 		card.setHeightFull();
-		card.setMargin(Bottom.XL);
+		card.setMargin(Bottom.L);
 		return card;
+		
 	}
 
 	private FlexBoxLayout createHeader(VaadinIcon icon, String title) {
@@ -520,8 +608,9 @@ public class ConfigurazioneView extends Div {
 				UIUtils.createIcon(IconSize.M, TextColor.TERTIARY.getValue(), icon),
 				UIUtils.createH3Label(title));
 		header.setAlignItems(FlexComponent.Alignment.CENTER);
-		header.setMargin(Bottom.L, Horizontal.RESPONSIVE_L);
+		header.setMargin(Horizontal.RESPONSIVE_L);
 		header.setSpacing(Right.L);
+		header.setMargin(Bottom.L);
 		return header;
 	}
 
