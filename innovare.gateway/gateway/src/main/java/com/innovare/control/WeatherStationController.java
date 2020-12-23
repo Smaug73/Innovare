@@ -1,7 +1,11 @@
 package com.innovare.control;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Scanner;
@@ -31,6 +35,12 @@ public class WeatherStationController extends Thread{
 		for(int i=0; i< Utilities.channelsNames.length; i++) {
 			channelsNames.add(Utilities.channelsNames[i]);
 		}
+		
+		//debug
+		System.out.println("\nDEBUG HASHSET");
+		for(int i=0;i<channelsNames.size();i++)
+			System.out.println(channelsNames.toArray()[i]);
+		////////////
 	}
 	
 	/*
@@ -56,7 +66,7 @@ public class WeatherStationController extends Thread{
 	
 	
 	//Aggiorna i dati della weatherstation da un file 
-	private void campionamentoFromFile() {
+	public void campionamentoFromFile() {
 		File f= new File(Utilities.scriptWeatherPath+"test.txt");
 		//Leggiamo riga per riga il file e aggiungiamo solo quando troviamo un sensore di quelli di interesse
 		try {
@@ -64,29 +74,43 @@ public class WeatherStationController extends Thread{
 			String fileString="";
 			Scanner sc = new Scanner(f);
 			while(sc.hasNext()) {
-				fileString=fileString+sc.nextLine();
+				fileString=fileString+sc.nextLine()+"\n";
 			}
 			
 			//Letto tutto il file facciamo uno split
-			System.out.print(fileString);
-			String reg="[ =]+";
+			System.out.println("\nFILE:");
+			System.out.println(fileString);
+			String reg="[ = \n]+";
 			String[] token=fileString.split(reg);
+			
 			//debug
+			System.out.println("\nDEBUG SPLIT STRING");
 			for(int i=0;i<token.length;i++)
 				System.out.println(token[i]);
+			////////////
+			
 			//Leggiamo per ogni canale il valore corrispondente
 			//Avanziamo di due posizioni alla volta ed ogni volta che leggiamo un channel che e' presente lo aggiungo
-			for(int j=0; j<token.length;j=j+2) {
-				if(this.channelsNames.contains(token[j]))
+			for(int j=0; j<token.length;j=j+1) {
+				System.out.println("Token: "+token[j]);
+				if(this.channelsNames.contains(token[j])) {
 					try {
+						System.out.println("SI!");
 						this.channels.put(token[j], Float.valueOf(token[j+1]));
 					}
 					catch(NumberFormatException n) {
-						System.out.println("Errore conversione numero, sara' aggiunto null");
+						System.err.println("Errore conversione numero, sara' aggiunto null");
 						this.channels.put(token[j], null);
-					}
-					
+					}	
+				}else
+					System.out.println("NO");
 			}
+			
+			//DEBUG
+			System.out.println("DEBUG:");
+			for(String s: this.channels.keySet())
+				System.out.println(this.channels.get(s));
+			////////
 			
 		} catch (FileNotFoundException e) {
 			System.out.println("File non trovato");
@@ -95,7 +119,35 @@ public class WeatherStationController extends Thread{
 	}
 	
 	//Aggiorna i dati della weatherstation da un processo
-	private void campionamentoFromProcess() {}
+	private void campionamentoFromProcess() throws IOException {
+		//Lanciamo il processo e leggiamo l'outputstream
+		Process processSt= Runtime.getRuntime().exec("./vproweather -x /dev/ttyUSB0\n >> sample.txt",null,new File(Utilities.scriptPath+"vproweather-1.1"+System.getProperty("file.separator")));
+		//Leggiamo l'output del processo e lo salviamo in una stringaAttendiamo la fine della segmentazione
+		InputStream is = processSt.getInputStream();
+		InputStreamReader isr = new InputStreamReader(is);
+		BufferedReader br = new BufferedReader(isr);
+		String output="";
+		String line;
+		String[] token;
+		String reg="[ = \n]+";
+		while ((line = br.readLine()) != null) {
+			//L'array generato dove essere di dimensione 2, canale[0] e valore[1]
+			token=line.split(reg);
+			//Se il canale letto fa parte di quelli di interesse allora lo inserisco nella hashMap
+			if(this.channelsNames.contains(token[0])) {
+				try {
+					System.out.println("SI!");
+					this.channels.put(token[0], Float.valueOf(token[1]));
+				}
+				catch(NumberFormatException n) {
+					System.err.println("Errore conversione numero, sara' aggiunto null");
+					this.channels.put(token[0], null);
+				}	
+			}else
+				System.out.println("NO");
+		}
+	
+	}
 	
 	
 	public synchronized Float getDato(String channelName) throws Exception {
@@ -105,4 +157,7 @@ public class WeatherStationController extends Thread{
 			throw new Exception("Il canale richiesto non esite");
 	}
 	
+	public HashMap<String,Float> getMapValue(){
+		return this.channels;
+	}
 }
