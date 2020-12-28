@@ -35,6 +35,15 @@ public class Sample implements Comparable<Sample>{
 		Random random = new Random();
 		this.misure=random.nextFloat()*45;//solo per il testing
 	}
+	
+	
+
+	public Sample(long timestamp, String channel, float misure) {
+		super();
+		this.timestamp = timestamp;
+		this.channel = channel;
+		this.misure = misure;
+	}
 
 	public long getTimestamp() {
 		return timestamp;

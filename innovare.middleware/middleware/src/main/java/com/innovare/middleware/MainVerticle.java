@@ -1400,8 +1400,8 @@ public class MainVerticle extends AbstractVerticle {
 		  
 		this.mqttClients.put(i, MqttClient.create(vertx));
 		this.sampleChannelQueue.put(""+i, new ArrayList<JsonObject>());
-		this.defineClient(i);
-	
+		//this.defineClient(i);
+		defineClientWeatherStation(i);
 	  }  
   }
  
@@ -1443,6 +1443,40 @@ public class MainVerticle extends AbstractVerticle {
 		    		  });
 	    		 
 	    		  }
+				})
+	    		  .subscribe(""+i, 2);	    
+	    });
+  }
+  
+  private void defineClientWeatherStation(int i) {
+	  
+	  MqttClient client= this.mqttClients.get(i);
+	  /*
+	   * Colleghiamo ed iscriviamo il client al canale del suo corrispondente channel
+	   */
+	  client.connect(1883, "localhost", s -> {		 
+		this.mqttClients.get(i).publishHandler(c -> {
+	    		//Ogni qual volta viene pubblicata una misura la stampiamo e la salviamo.
+				  System.out.println("There are new message in topic: " + c.topicName());
+	    		  System.out.println("Content(as string) of the message: " + c.payload().toString());
+	    		  System.out.println("QoS: " + c.qosLevel());	
+	    		  System.out.println("LOG-GATEWAY: "+c.payload().toString());
+	    		  	  
+	    		  /*
+	    		   * La nuova misura viene convertita in jsonObject
+	    		   */
+	    		  JsonObject newMisure=c.payload().toJsonObject();
+	    		  //Salviamo la misura nella priorityQueue
+	    		  this.sampleChannelQueue.get(""+i).add(newMisure);
+	    		  
+	    		  //Salviamo la misura nel DB
+    			  mongoClient.insert("channel-"+i, newMisure , res ->{
+	    			  if(res.succeeded())
+	    				  System.out.println("Misura salvata correttamente nel DB.");
+	    			  else
+	    				  System.err.println("ERRORE salvataggio misura");  
+	    		  });
+	    		  
 				})
 	    		  .subscribe(""+i, 2);	    
 	    });

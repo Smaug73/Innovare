@@ -9,6 +9,7 @@ import java.util.NoSuchElementException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.innovare.control.WeatherStationController;
 import com.innovare.model.Channel;
 import com.innovare.model.ConfigurationItem;
 import com.innovare.model.IrrigationController;
@@ -66,7 +67,7 @@ public class GatewayVerticle extends AbstractVerticle {
   private HashMap<Channel,MqttClient> mapClient;
   private IrrigationController irrigation;
   private ConfigurationItem cfi;
-
+  private WeatherStationController weatherStationC;
   
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
@@ -117,9 +118,11 @@ public class GatewayVerticle extends AbstractVerticle {
 	    	 * Richiamo operazione per l'instanziazione dei canali dopo aver comunicato il loro numero
 	    	 */
 	    	 //RIATTIVARE LA CREAZIONE DEI THREAD , COMMENTATO PER TEST
-	    	 this.channelCreation();   ///////////////////////////////////////////////////
+	    	 //this.channelCreation();   ///////////////////////////////////////////////////
 	    	 
-	    	 
+	    	 this.weatherStationC= new WeatherStationController(Utilities.tempoCampionamentoWeatherStationTest,vertx);
+	    	 this.weatherStationC.start();
+	    	 //this.channelCreation();
 	    	 //Si può anche disconnettere questo client dopo l'instanziazione dei client dei singoli sensori...
 	    });
 	    
@@ -162,7 +165,6 @@ public class GatewayVerticle extends AbstractVerticle {
   
   }
   
-
   
   
   /*
@@ -187,6 +189,10 @@ public class GatewayVerticle extends AbstractVerticle {
 		  
   }
   
+  
+  private void startingClientWeatherStation(Channel chan) {
+	  
+  }
   
   
   

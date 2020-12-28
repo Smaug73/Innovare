@@ -10,7 +10,16 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Scanner;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.innovare.model.Sample;
 import com.innovare.utils.Utilities;
+
+
+import io.netty.handler.codec.mqtt.MqttQoS;
+import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.mqtt.MqttClient;
 
 
 /*
@@ -20,16 +29,22 @@ import com.innovare.utils.Utilities;
  */
 public class WeatherStationController extends Thread{
 	private HashMap<String,Float> channels;
+	private HashMap<String,Sample> channelsSample;
 	private HashSet<String> channelsNames;
 	private String campionamento;
+	private MqttClient mqttClient;
 	
 	private long tempoCampionamento;
 	
-	public WeatherStationController(long tempoCampionamento) {
+	public WeatherStationController(long tempoCampionamento, Vertx vertx) {
 		
 		channels= new HashMap<String,Float>();
+		channelsSample= new HashMap<String,Sample>();
 		channelsNames= new HashSet<String>();
 		this.tempoCampionamento=tempoCampionamento;
+		
+		//Creo il client mqtt
+		this.mqttClient= MqttClient.create(vertx);
 		
 		//Creo l'hash set dei nomi dei vari canali
 		for(int i=0; i< Utilities.channelsNames.length; i++) {
@@ -49,8 +64,35 @@ public class WeatherStationController extends Thread{
 	public void run() {
 		while(true) {
 			//Avvio l'aggiornamento dei valori tramite uno dei due metodi
-			this.campionamentoFromFile();
-			//Attendiamo il tempo per un nuovo campionamento
+			this.campionamentoFromFile();//TEST/////////////////
+			//this.campionamentoFromProcess(); /////VERO
+			
+			//Dopo il campionamento inviamo tramite mqtt i dati
+			this.mqttClient.connect(1883, Utilities.ipMiddleLayer, s -> {	
+					
+					for(int i=0; i<Utilities.channelsNames.length; i++) {
+						
+						//DEBUG
+						try {
+							System.out.println("Nuovo Sample: "+new ObjectMapper().writeValueAsString(this.getDato(Utilities.channelsNames[i])));
+							this.mqttClient.publish(""+i,
+									 //Invio dell'array contenente le misure
+									  Buffer.buffer(new ObjectMapper().writeValueAsString(this.getDato(Utilities.channelsNames[i]))),
+									  MqttQoS.AT_LEAST_ONCE,
+									  false,
+									  false);	
+						} catch (Exception e) {
+							//errore non esiste il canale
+							System.err.println(e.getMessage());
+							e.printStackTrace();
+						}
+						
+									
+					} 
+					
+					//Il client si disconnette dopo aver inviato il messaggio.-NECESSARIO PER EVITARE BUG SULLA RICONNESSIONE-
+					this.mqttClient.disconnect();
+		    });
 			try {
 				this.sleep(tempoCampionamento);
 			} catch (InterruptedException e) {
@@ -65,8 +107,8 @@ public class WeatherStationController extends Thread{
 	
 	
 	
-	//Aggiorna i dati della weatherstation da un file 
-	public void campionamentoFromFile() {
+	//Aggiorna i dati della weatherstation da un file METODO TESTTTTT
+	public synchronized void campionamentoFromFile() {
 		File f= new File(Utilities.scriptWeatherPath+"test.txt");
 		//Leggiamo riga per riga il file e aggiungiamo solo quando troviamo un sensore di quelli di interesse
 		try {
@@ -76,6 +118,7 @@ public class WeatherStationController extends Thread{
 			while(sc.hasNext()) {
 				fileString=fileString+sc.nextLine()+"\n";
 			}
+			sc.close();
 			
 			//Letto tutto il file facciamo uno split
 			System.out.println("\nFILE:");
@@ -89,6 +132,8 @@ public class WeatherStationController extends Thread{
 				System.out.println(token[i]);
 			////////////
 			
+			//Generazione time stamp per il sample appena catturati
+			long timestamp= System.currentTimeMillis();
 			//Leggiamo per ogni canale il valore corrispondente
 			//Avanziamo di due posizioni alla volta ed ogni volta che leggiamo un channel che e' presente lo aggiungo
 			for(int j=0; j<token.length;j=j+1) {
@@ -96,11 +141,13 @@ public class WeatherStationController extends Thread{
 				if(this.channelsNames.contains(token[j])) {
 					try {
 						System.out.println("SI!");
-						this.channels.put(token[j], Float.valueOf(token[j+1]));
+						//this.channels.put(token[j], Float.valueOf(token[j+1]));
+						this.channelsSample.put(token[j], new Sample(timestamp,token[j],Float.valueOf(token[j+1])));
 					}
 					catch(NumberFormatException n) {
 						System.err.println("Errore conversione numero, sara' aggiunto null");
-						this.channels.put(token[j], null);
+						//this.channels.put(token[j], null);
+						this.channelsSample.put(token[j], null);
 					}	
 				}else
 					System.out.println("NO");
@@ -118,11 +165,11 @@ public class WeatherStationController extends Thread{
 		}
 	}
 	
-	//Aggiorna i dati della weatherstation da un processo
-	private void campionamentoFromProcess() throws IOException {
+	//Aggiorna i dati della weatherstation da un processo, l'aggiornamento dei dati deve avvenire in mutua esclusione
+	private synchronized void campionamentoFromProcess() throws IOException {
 		//Lanciamo il processo e leggiamo l'outputstream
 		Process processSt= Runtime.getRuntime().exec("./vproweather -x /dev/ttyUSB0\n >> sample.txt",null,new File(Utilities.scriptPath+"vproweather-1.1"+System.getProperty("file.separator")));
-		//Leggiamo l'output del processo e lo salviamo in una stringaAttendiamo la fine della segmentazione
+		//Leggiamo l'output del processo e lo salviamo in una stringa
 		InputStream is = processSt.getInputStream();
 		InputStreamReader isr = new InputStreamReader(is);
 		BufferedReader br = new BufferedReader(isr);
@@ -130,6 +177,10 @@ public class WeatherStationController extends Thread{
 		String line;
 		String[] token;
 		String reg="[ = \n]+";
+		
+		//Generazione time stamp per il sample appena catturati
+		long timestamp= System.currentTimeMillis();
+		
 		while ((line = br.readLine()) != null) {
 			//L'array generato dove essere di dimensione 2, canale[0] e valore[1]
 			token=line.split(reg);
@@ -137,22 +188,32 @@ public class WeatherStationController extends Thread{
 			if(this.channelsNames.contains(token[0])) {
 				try {
 					System.out.println("SI!");
-					this.channels.put(token[0], Float.valueOf(token[1]));
+					//this.channels.put(token[0], Float.valueOf(token[1]));
+					this.channelsSample.put(token[0], new Sample(timestamp,token[0],Float.valueOf(token[1])));
 				}
 				catch(NumberFormatException n) {
 					System.err.println("Errore conversione numero, sara' aggiunto null");
-					this.channels.put(token[0], null);
+					//this.channels.put(token[0], null);
+					this.channelsSample.put(token[0], null);
 				}	
 			}else
 				System.out.println("NO");
 		}
+		is.close();
+		isr.close();
+		br.close();
+		
+	}
 	
+	//invio dati dei canali tramite mqtt
+	private void mqttComunication() {
+		
 	}
 	
 	
-	public synchronized Float getDato(String channelName) throws Exception {
-		if(channels.containsKey(channelName))
-			return channels.get(channelName);
+	public synchronized Sample getDato(String channelName) throws Exception {
+		if(channelsSample.containsKey(channelName))
+			return channelsSample.get(channelName);
 		else 
 			throw new Exception("Il canale richiesto non esite");
 	}
@@ -160,4 +221,6 @@ public class WeatherStationController extends Thread{
 	public HashMap<String,Float> getMapValue(){
 		return this.channels;
 	}
+	
+	
 }
