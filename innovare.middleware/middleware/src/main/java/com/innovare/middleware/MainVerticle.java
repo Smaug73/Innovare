@@ -85,6 +85,7 @@ public class MainVerticle extends AbstractVerticle {
 	private LoggingController loggingController;
 	private MqttClient irrigationCommandClient;
 	private MqttClient irrigationLog;
+	private MqttClient clientWS;
 	
 	private String irrigationState=null;
 	
@@ -170,7 +171,7 @@ public class MainVerticle extends AbstractVerticle {
 					e.printStackTrace();
 				}
 	    	}
-		    //System.out.println(this.LOG+"Nessun modello selezionato.");
+		    //System.out.println(this.LOG+"Nessun modello selezionato.");mongoClient
 		    
 	    } else {
 	      res.cause().printStackTrace();
@@ -204,7 +205,8 @@ public class MainVerticle extends AbstractVerticle {
 	    			  System.out.println("Numero di channel: "+num);
 	    			  this.numberOfChannel= Integer.parseInt(num);
 	    			  //Avvio creazione client per la ricezione dei valori dei canali
-	    			  this.mqttClientCreation();
+	    			  //this.mqttClientCreation(); //DEBUGGGGG TEST NUOVO CLIENT
+	    			  this.setClientWeatherStation();
 	    		  }
 	    		  
 	    		  //Salviamo i configurationItem
@@ -1479,6 +1481,51 @@ public class MainVerticle extends AbstractVerticle {
 	    		  
 				})
 	    		  .subscribe(""+i, 2);	    
+	    });
+  }
+  
+  private void setClientWeatherStation() {
+	  
+	  //DEBUG
+	  System.out.println("MQTT WeatherStation Client creation...");
+	  this.clientWS= MqttClient.create(vertx);
+	  /*
+	   * Colleghiamo ed iscriviamo il client al canale del suo corrispondente channel
+	   */
+	  clientWS.connect(1883, "localhost", s -> {		 
+		clientWS.publishHandler(c -> {
+	    		//Ogni qual volta viene pubblicata una misura la stampiamo e la salviamo.
+				  System.out.println("There are new message in topic: " + c.topicName());
+	    		  System.out.println("Content(as string) of the message: " + c.payload().toString());
+	    		  System.out.println("QoS: " + c.qosLevel());	
+	    		  System.out.println("LOG-GATEWAY: "+c.payload().toString());
+	    		  	  
+	    		  /* 
+		    		  * Il contenuto deve essere salvato nel database e nella PriorityQueue
+		    		  */
+		    		  JsonArray newMisures= c.payload().toJsonArray();	//Le nuove misure sono fornite tramite un array di json	    		  
+		    		  /*
+		    		   * La misura che è arrivata è un array contenente le nuove misurazioni.
+		    		   */
+		    		  JsonObject singleMisure;
+		    		  //Salviamo le nuove misure.
+		    		  for(int i=0; i<Utilities.channelsNames.length; i++ ) {
+		    			  singleMisure= newMisures.getJsonObject(i);
+		    			  //Salviamo la misura nella priorityQueue
+		    			  //this.sampleChannelQueue.get(""+i).add(singleMisure);
+		    			  
+		    			  //Salviamo la misura nel DB
+		    			  mongoClient.insert("channel-"+i, singleMisure , res ->{
+			    			  if(res.succeeded())
+			    				  System.out.println("Misura salvata correttamente nel DB.");
+			    			  else
+			    				  System.err.println("ERRORE salvataggio misura");  
+			    		  });
+		    		 
+		    		  }	
+	    		  
+				})
+	    		  .subscribe("weatherStation", 2);	    
 	    });
   }
   

@@ -4,10 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import org.junit.jupiter.api.Test;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.control.WeatherStationController;
+import com.innovare.model.Sample;
 import com.innovare.utils.Utilities;
 import com.innovare.utils.UtilitiesLoad;
 
@@ -38,11 +42,14 @@ public class TestConfiguration {
 	
 	
 	@Test
-	public void testWeatherstation() {
-		int finalSize= Utilities.channelsNames.length;
-		WeatherStationController ws= new WeatherStationController(10000l);
-		ws.campionamentoFromFile();
-		assertTrue(finalSize == ws.getMapValue().size());
+	public void testWeatherstation() throws JsonProcessingException {
+		ArrayList<Sample> newSamples= new ArrayList<Sample>();
+		newSamples.add(new Sample());
+		newSamples.add(new Sample());
+		newSamples.add(new Sample());
+		newSamples.add(new Sample());
+		System.out.println(new ObjectMapper().writeValueAsString(newSamples));
+		
 	}
 	
 }

@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Scanner;
@@ -70,28 +71,56 @@ public class WeatherStationController extends Thread{
 			//Dopo il campionamento inviamo tramite mqtt i dati
 			this.mqttClient.connect(1883, Utilities.ipMiddleLayer, s -> {	
 					
+					ArrayList<Sample> newSamples= new ArrayList<Sample>();
+				
 					for(int i=0; i<Utilities.channelsNames.length; i++) {
-						
+						try {
+							if(this.getDato(Utilities.channelsNames[i])!=null)
+								newSamples.add(this.getDato(Utilities.channelsNames[i]));
+							else {
+								System.out.println("VOLERE DA INVIARE NULL, PROBLEMI AL CANALE:"+i);
+								newSamples.add(new Sample());
+							}
+							
+						} catch (Exception e) {
+							System.err.println(e.getMessage());
+							e.printStackTrace();
+						}
+						/*
 						//DEBUG
 						try {
 							System.out.println("Nuovo Sample: "+new ObjectMapper().writeValueAsString(this.getDato(Utilities.channelsNames[i])));
-							this.mqttClient.publish(""+i,
-									 //Invio dell'array contenente le misure
-									  Buffer.buffer(new ObjectMapper().writeValueAsString(this.getDato(Utilities.channelsNames[i]))),
-									  MqttQoS.AT_LEAST_ONCE,
-									  false,
-									  false);	
+							if(this.getDato(Utilities.channelsNames[i])!=null)
+								this.mqttClient.publish(""+i,
+										 //Invio dell'array contenente le misure
+										  Buffer.buffer(new ObjectMapper().writeValueAsString(this.getDato(Utilities.channelsNames[i]))),
+										  MqttQoS.AT_LEAST_ONCE,
+										  false,
+										  false);	
+							else
+								System.out.println("VOLERE DA INVIARE NULL, PROBLEMI AL CANALE:"+i);
 						} catch (Exception e) {
 							//errore non esiste il canale
 							System.err.println(e.getMessage());
 							e.printStackTrace();
-						}
-						
-									
+						}*/						
 					} 
+					
+					try {
+						this.mqttClient.publish("weatherStation",
+								 //Invio dell'array contenente le misure
+								  Buffer.buffer(new ObjectMapper().writeValueAsString(newSamples)),
+								  MqttQoS.AT_LEAST_ONCE,
+								  false,
+								  false);
+					} catch (JsonProcessingException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}	
 					
 					//Il client si disconnette dopo aver inviato il messaggio.-NECESSARIO PER EVITARE BUG SULLA RICONNESSIONE-
 					this.mqttClient.disconnect();
+					
 		    });
 			try {
 				this.sleep(tempoCampionamento);
@@ -121,15 +150,15 @@ public class WeatherStationController extends Thread{
 			sc.close();
 			
 			//Letto tutto il file facciamo uno split
-			System.out.println("\nFILE:");
-			System.out.println(fileString);
+			//System.out.println("\nFILE:");
+			//System.out.println(fileString);
 			String reg="[ = \n]+";
 			String[] token=fileString.split(reg);
 			
 			//debug
-			System.out.println("\nDEBUG SPLIT STRING");
-			for(int i=0;i<token.length;i++)
-				System.out.println(token[i]);
+			//System.out.println("\nDEBUG SPLIT STRING");
+			//for(int i=0;i<token.length;i++)
+			//	System.out.println(token[i]);
 			////////////
 			
 			//Generazione time stamp per il sample appena catturati
@@ -137,10 +166,10 @@ public class WeatherStationController extends Thread{
 			//Leggiamo per ogni canale il valore corrispondente
 			//Avanziamo di due posizioni alla volta ed ogni volta che leggiamo un channel che e' presente lo aggiungo
 			for(int j=0; j<token.length;j=j+1) {
-				System.out.println("Token: "+token[j]);
+				//System.out.println("Token: "+token[j]);
 				if(this.channelsNames.contains(token[j])) {
 					try {
-						System.out.println("SI!");
+						//System.out.println("SI!");
 						//this.channels.put(token[j], Float.valueOf(token[j+1]));
 						this.channelsSample.put(token[j], new Sample(timestamp,token[j],Float.valueOf(token[j+1])));
 					}
@@ -149,14 +178,15 @@ public class WeatherStationController extends Thread{
 						//this.channels.put(token[j], null);
 						this.channelsSample.put(token[j], null);
 					}	
-				}else
-					System.out.println("NO");
+				}
+				//else
+					//System.out.println("NO");
 			}
 			
 			//DEBUG
-			System.out.println("DEBUG:");
-			for(String s: this.channels.keySet())
-				System.out.println(this.channels.get(s));
+			//System.out.println("DEBUG:");
+			//for(String s: this.channels.keySet())
+				//System.out.println(this.channels.get(s));
 			////////
 			
 		} catch (FileNotFoundException e) {
