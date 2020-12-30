@@ -29,14 +29,25 @@ public class Sample implements Comparable<Sample>{
 	}
 	
 	public Sample(String channel) {
-		this.timestamp= System.currentTimeMillis();
+		this.timestamp= System.currentTimeMillis();;
 		this.channel=channel;
 		/*
 		 * Durante l'instanziamento del Sample, deve essere avviata la cattura delle informazioni 
 		 * dai sensori, in modo da riempirne i della misura. Questo può ritardare durante l'instanziamento.
 		 */
 		Random random = new Random();
-		this.misure=random.nextFloat()*45;//solo per il testing
+		this.misure=random.nextInt();//solo per il testing
+	}
+	
+	public Sample(long timestamp,String channel) {
+		this.timestamp= timestamp;
+		this.channel=channel;
+		/*
+		 * Durante l'instanziamento del Sample, deve essere avviata la cattura delle informazioni 
+		 * dai sensori, in modo da riempirne i della misura. Questo può ritardare durante l'instanziamento.
+		 */
+		//Random random = new Random();
+		this.misure=0;//solo per il testing
 	}
 	
 	

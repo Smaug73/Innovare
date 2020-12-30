@@ -34,6 +34,7 @@ public class WeatherStationController extends Thread{
 	private HashSet<String> channelsNames;
 	private String campionamento;
 	private MqttClient mqttClient;
+	private long timestamp;//Istante ultimo campionamento
 	
 	private long tempoCampionamento;
 	
@@ -75,12 +76,9 @@ public class WeatherStationController extends Thread{
 				
 					for(int i=0; i<Utilities.channelsNames.length; i++) {
 						try {
-							if(this.getDato(Utilities.channelsNames[i])!=null)
-								newSamples.add(this.getDato(Utilities.channelsNames[i]));
-							else {
-								System.out.println("VOLERE DA INVIARE NULL, PROBLEMI AL CANALE:"+i);
-								newSamples.add(new Sample());
-							}
+							
+							newSamples.add(this.getDato(Utilities.channelsNames[i]));
+							
 							
 						} catch (Exception e) {
 							System.err.println(e.getMessage());
@@ -105,7 +103,7 @@ public class WeatherStationController extends Thread{
 							e.printStackTrace();
 						}*/						
 					} 
-					
+					System.out.println("LOG-WEATHERSTATION-CHANNEL: invio");
 					try {
 						this.mqttClient.publish("weatherStation",
 								 //Invio dell'array contenente le misure
@@ -162,7 +160,7 @@ public class WeatherStationController extends Thread{
 			////////////
 			
 			//Generazione time stamp per il sample appena catturati
-			long timestamp= System.currentTimeMillis();
+			this.timestamp= System.currentTimeMillis();
 			//Leggiamo per ogni canale il valore corrispondente
 			//Avanziamo di due posizioni alla volta ed ogni volta che leggiamo un channel che e' presente lo aggiungo
 			for(int j=0; j<token.length;j=j+1) {
@@ -171,12 +169,13 @@ public class WeatherStationController extends Thread{
 					try {
 						//System.out.println("SI!");
 						//this.channels.put(token[j], Float.valueOf(token[j+1]));
-						this.channelsSample.put(token[j], new Sample(timestamp,token[j],Float.valueOf(token[j+1])));
+						this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(token[j+1])));
 					}
 					catch(NumberFormatException n) {
 						System.err.println("Errore conversione numero, sara' aggiunto null");
 						//this.channels.put(token[j], null);
-						this.channelsSample.put(token[j], null);
+						//Inseriamo un Sample con canale corretto e valore 0
+						this.channelsSample.put(token[j], new Sample(this.timestamp,token[j]));
 					}	
 				}
 				//else
@@ -224,7 +223,7 @@ public class WeatherStationController extends Thread{
 				catch(NumberFormatException n) {
 					System.err.println("Errore conversione numero, sara' aggiunto null");
 					//this.channels.put(token[0], null);
-					this.channelsSample.put(token[0], null);
+					this.channelsSample.put(token[0], new Sample(this.timestamp,token[1]));
 				}	
 			}else
 				System.out.println("NO");
