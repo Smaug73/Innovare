@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.control.Classificator;
 import com.innovare.control.LoggingController;
 import com.innovare.control.ModelController;
+import com.innovare.control.SampleCSVController;
 import com.innovare.model.ClassificationSint;
 import com.innovare.model.IrrigationState;
 import com.innovare.model.Model;
@@ -78,7 +79,7 @@ public class MainVerticle extends AbstractVerticle {
 	
 	private int numberOfChannel;
 	private HashMap<Integer,MqttClient> mqttClients;
-	private HashMap<String,ArrayList<JsonObject>> sampleChannelQueue;
+	private HashMap<String,JsonObject> sampleChannelQueue;
 	private MongoClient mongoClient;
 	//private Model selectedModel=null;
 	private ModelController modelController;
@@ -86,7 +87,7 @@ public class MainVerticle extends AbstractVerticle {
 	private MqttClient irrigationCommandClient;
 	private MqttClient irrigationLog;
 	private MqttClient clientWS;
-	
+	private SampleCSVController csvController;
 	private String irrigationState=null;
 	
 	/*
@@ -189,6 +190,12 @@ public class MainVerticle extends AbstractVerticle {
 	   * MQTT CLIENT 
 	   * 
 	   */	  
+	  /*
+	   * Colleghiamo ed iscriviamo il client al canale del suo corrispondente channel
+	   */
+	  System.out.println("Creazione struttura dati ultimi sample");
+	  this.sampleChannelQueue= new HashMap<String,JsonObject>();
+	  
 	  //Creazione client MQTT per cattura log dei gateway
 	  MqttClient clientLog= MqttClient.create(vertx);
 	  clientLog.connect(1883, "localhost", s -> {
@@ -248,6 +255,14 @@ public class MainVerticle extends AbstractVerticle {
 	    		})
 	    		  .subscribe(Utilities.irrigationLogMqttChannel, 2);	  
 	  });
+	  
+	  
+	  /*
+	   *CSV CONTROLLER ed avvio del thread
+	   */
+	  
+	  this.csvController= new SampleCSVController(this.mongoClient);
+	  csvController.start();
 	  
 	  
 	  
@@ -398,12 +413,12 @@ public class MainVerticle extends AbstractVerticle {
         	    	    		/*
         	    	    		 * Restituiamo l'ultimo Sample registrato ma non lo eliminiamo
         	    	    		 */
-        	    	    		ArrayList<JsonObject> samples= this.sampleChannelQueue.get(channel);
-        	    	    		if(!samples.isEmpty()) {
+        	    	    		JsonObject sample= this.sampleChannelQueue.get(channel);
+        	    	    		if(!sample.isEmpty()) {
                 	    	    	routingContext
             	    	    	 	.response()
             	    	    	 	.setStatusCode(200)
-            	    	    	 	.end(samples.get(samples.size()-1).toString());
+            	    	    	 	.end(sample.toString());
         	    	    		}else
         	    	    			/*
         	    	    			 * Caso nel quale non ci sono nuovi Sample
@@ -433,7 +448,7 @@ public class MainVerticle extends AbstractVerticle {
         	    	    	/*
         	    	    	 * Fallimento se non il parametro non è stato inserito o non esiste il canale selezionato
         	    	    	 */
-        	    	    	if(channel==null || !this.sampleChannelQueue.containsKey(channel))
+        	    	    	if(channel==null)
         	    	    		routingContext
     			    	   	      .response()
     				              .setStatusCode(400)
@@ -441,7 +456,7 @@ public class MainVerticle extends AbstractVerticle {
         	    	    	else {
         	    	    		/*
         	    	    		 * Restituiamo gli ultimi Sample e li eliminiamo
-        	    	    		 */
+        	    	    		 *
             	    	    	ArrayList<JsonObject> samples= this.sampleChannelQueue.get(channel);
             	    	    	
             	    	    	
@@ -452,15 +467,20 @@ public class MainVerticle extends AbstractVerticle {
         								.setStatusCode(200)
         								.end(samples.toString());
         								this.sampleChannelQueue.get(channel).clear();
-        	            	    	 
-        							
+        	            	    */	 
+        								System.out.println("NOT IN USE");
+                	    	    		routingContext
+        	    	    	    	 	.response()
+        	    	    	    	 	.setStatusCode(200)
+        	    	    	    	 	.end();
+        						/*	
             	    	    	}else {
             	    	    		System.out.println("No new Value");
             	    	    		routingContext
     	    	    	    	 	.response()
     	    	    	    	 	.setStatusCode(200)
     	    	    	    	 	.end();
-            	    	    	}
+            	    	    	}*/
             	    	    	
         	    	    	}
     	    	    	}
@@ -486,7 +506,7 @@ public class MainVerticle extends AbstractVerticle {
         	    	    	else {
         	    	    		/*
         	    	    		 * Restituiamo i Samples presenti nella queue ma non li eliminiamo.
-        	    	    		 */
+        	    	    		 
             	    	    	ArrayList<JsonObject> samples= this.sampleChannelQueue.get(channel);
             	    	    	
             	    	    	
@@ -504,7 +524,12 @@ public class MainVerticle extends AbstractVerticle {
     	    	    	    	 	.setStatusCode(200)
     	    	    	    	 	.end();
             	    	    	}
-            	    	    	
+            	    	    	*/
+            	    	    	System.out.println("NOT IN USE");
+        	    	    		routingContext
+	    	    	    	 	.response()
+	    	    	    	 	.setStatusCode(200)
+	    	    	    	 	.end();
         	    	    	}
     	    	    	}
     	    	    	else {
@@ -525,7 +550,7 @@ public class MainVerticle extends AbstractVerticle {
         	    	    	/*
         	    	    	 * Fallimento se il parametro non è stato inserito o non esiste il canale selezionato
         	    	    	 */
-        	    	    	if(channel==null || !this.sampleChannelQueue.containsKey(channel))
+        	    	    	if(channel==null)
         	    	    		routingContext
     			    	   	      .response()
     				              .setStatusCode(400)
@@ -534,7 +559,8 @@ public class MainVerticle extends AbstractVerticle {
         	    	    		/*
         	    	    		 * Restituiamo tutti i Sample di un determinato canale
         	    	    		 */
-        	    	    		JsonObject q= new JsonObject().put("channel", channel);
+        	    	    		JsonObject q= new JsonObject();
+        	    	    		System.out.println("DEBUG ALL SAMPLE CHANNEL: "+channel);
             	    	    	this.mongoClient.find("channel-"+channel,q, res-> {
             	    	    		/*
             	    	    		 * Successo nel trovare i sample nel db
@@ -544,6 +570,7 @@ public class MainVerticle extends AbstractVerticle {
         								.response()
         								.setStatusCode(200)
         								.end(res.result().toString());
+            	    	    			System.out.println("DEBUG ALL SAMPLE: "+res.result().toString());
             	    	    		}
             	    	    		/*
             	    	    		 * Caso di fallimento
@@ -1390,11 +1417,11 @@ public class MainVerticle extends AbstractVerticle {
   }
   
 
-  
+  /*
   private void mqttClientCreation() {
 	  /*
 	   * Creo l'hashmap contenente i client e quello delle priorityqueue
-	   */
+	   *
 	  this.mqttClients= new HashMap<Integer,MqttClient>();
 	  this.sampleChannelQueue= new HashMap<String,ArrayList<JsonObject>>();
 	  
@@ -1413,7 +1440,7 @@ public class MainVerticle extends AbstractVerticle {
 	  MqttClient client= this.mqttClients.get(i);
 	  /*
 	   * Colleghiamo ed iscriviamo il client al canale del suo corrispondente channel
-	   */
+	   *
 	  client.connect(1883, "localhost", s -> {		 
 		this.mqttClients.get(i).publishHandler(c -> {
 	    		//Ogni qual volta viene pubblicata una misura la stampiamo e la salviamo.
@@ -1424,11 +1451,11 @@ public class MainVerticle extends AbstractVerticle {
 	    		  
 	    		 /* 
 	    		  * Il contenuto deve essere salvato nel database e nella PriorityQueue
-	    		  */
+	    		  *
 	    		  JsonArray newMisures= c.payload().toJsonArray();	//Le nuove misure sono fornite tramite un array di json	    		  
 	    		  /*
 	    		   * La misura che è arrivata è un array contenente le nuove misurazioni.
-	    		   */
+	    		   *
 	    		  JsonObject singleMisure;
 	    		  //Salviamo le nuove misure.
 	    		  for(int j=0; j<newMisures.size(); j++ ) {
@@ -1455,7 +1482,7 @@ public class MainVerticle extends AbstractVerticle {
 	  MqttClient client= this.mqttClients.get(i);
 	  /*
 	   * Colleghiamo ed iscriviamo il client al canale del suo corrispondente channel
-	   */
+	   *
 	  client.connect(1883, "localhost", s -> {		 
 		this.mqttClients.get(i).publishHandler(c -> {
 	    		//Ogni qual volta viene pubblicata una misura la stampiamo e la salviamo.
@@ -1466,7 +1493,7 @@ public class MainVerticle extends AbstractVerticle {
 	    		  	  
 	    		  /*
 	    		   * La nuova misura viene convertita in jsonObject
-	    		   */
+	    		   *
 	    		  JsonObject newMisure=c.payload().toJsonObject();
 	    		  //Salviamo la misura nella priorityQueue
 	    		  this.sampleChannelQueue.get(""+i).add(newMisure);
@@ -1483,15 +1510,14 @@ public class MainVerticle extends AbstractVerticle {
 	    		  .subscribe(""+i, 2);	    
 	    });
   }
-  
+  */
   private void setClientWeatherStation() {
 	  
 	  //DEBUG
 	  System.out.println("MQTT WeatherStation Client creation...");
 	  this.clientWS= MqttClient.create(vertx);
-	  /*
-	   * Colleghiamo ed iscriviamo il client al canale del suo corrispondente channel
-	   */
+	  
+	  
 	  clientWS.connect(1883, "localhost", s -> {		 
 		clientWS.publishHandler(c -> {
 	    		//Ogni qual volta viene pubblicata una misura la stampiamo e la salviamo.
@@ -1512,7 +1538,7 @@ public class MainVerticle extends AbstractVerticle {
 		    		  for(int i=0; i<Utilities.channelsNames.length; i++ ) {
 		    			  singleMisure= newMisures.getJsonObject(i);
 		    			  //Salviamo la misura nella priorityQueue
-		    			  //this.sampleChannelQueue.get(""+i).add(singleMisure);
+		    			  this.sampleChannelQueue.put(""+i, singleMisure);
 		    			  
 		    			  //Salviamo la misura nel DB
 		    			  mongoClient.insert("channel-"+i, singleMisure , res ->{

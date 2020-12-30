@@ -133,12 +133,12 @@ public class TestClassificator {
 		ModelController mc= new ModelController();
 		mc.unZipModel("stubdsds.zip");
 	}
-	
+	*/
 	@Test
 	public void testCSVReader() throws IOException {
 		SampleCSVController sc = new SampleCSVController();
 		HashMap<String,ArrayList<Sample>> hsc=sc.readSampleFromCSV();
-	}*/
+	}
 	
 	@Test
 	public void testWeatherStation() throws IOException, InterruptedException {

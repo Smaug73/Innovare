@@ -8,16 +8,71 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.model.Sample;
 import com.innovare.utils.Utilities;
 import com.opencsv.CSVReader;
 
-public class SampleCSVController {
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.mongo.MongoClient;
 
-	
+public class SampleCSVController extends Thread{
+
+	MongoClient mongoClient=null;
 	
 	public SampleCSVController() {}
 	
+	public SampleCSVController(MongoClient mongoClient) {
+		this.mongoClient= mongoClient;
+	}
+	
+	public void run() {
+		
+		if(this.mongoClient==null) {
+			System.out.println("CSV CONTROLLER DEBUG: nessun client mongo e' stato assegnato.");
+			return;
+		}else
+			while(true) {
+				System.out.println("CSV CONTROLLER DEBUG: Leggo file csv e salvo le nuove misure..");
+				
+				try {
+					HashMap<String, ArrayList<Sample> > newSamples= this.readSampleFromCSV();
+					JsonObject jo;
+					//VERIFICARE CONCORRENZA SUL CLIENT MONGO
+					//Ogni nuovo sample viene aggiunto al database in base al canale
+					for(int i=0;i<10;i++) {
+						if(newSamples.containsKey(i)) {
+							ArrayList<Sample> samples= newSamples.get(i);
+							for(Sample s: samples) {
+								jo= new JsonObject(new ObjectMapper().writeValueAsString(s));
+								this.mongoClient.insert("channel-"+(i+16), jo, res ->{
+									if(res.succeeded())
+				    				  System.out.println("Misura salvata correttamente nel DB.");
+									else
+				    				  System.err.println("ERRORE salvataggio misura");  
+								});
+							}
+						}
+						
+						
+					}
+					
+				} catch (IOException e1) {
+					System.err.println(e1.getMessage());
+					e1.printStackTrace();
+				}
+				
+				//Mettiamo in sleep il thread
+				try {
+					this.sleep(15000);
+				} catch (InterruptedException e) {
+					System.err.println("Errore nella sleep del thread WeatherStationController");
+					e.printStackTrace();
+				}
+			}
+		
+		
+	}
 	
 	/*
 	 * Lettura dei Sample dal file csv, che andra' cancellato
@@ -80,7 +135,7 @@ public class SampleCSVController {
 				for (int j=1; j<allData.size(); j++) {
 					for(int i=0; i<sensorNumber; i++) {
 						//prendo l'arraylist di un certo sensore e aggiungo il nuovo sample prendendo i dati dalle posizioni del csv
-						samplesMaps.get(allData.get(0)[i+posizioneValor]).add(new Sample(allData.get(j)[0],Integer.valueOf(allData.get(j)[i+posizioneValor])));		
+						samplesMaps.get(allData.get(0)[i+posizioneValor]).add(new Sample(allData.get(j)[0],Float.valueOf(allData.get(j)[i+posizioneValor])));		
 					}		
 		        }
 				
