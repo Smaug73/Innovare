@@ -24,7 +24,7 @@ public class HttpHandler {
 	private final static String HOST = "localhost:8888";
 	private final static String ALL = "/allsample/";
 	private final static String LAST = "/lastsample/";
-	private final static String LAST_MULTI = "/lastsamples/";
+	//private final static String LAST_MULTI = "/lastsamples/";
 	private final static String MODELS = "/models";
 	private final static String CONFIGURATION = "/configurations";
 	private final static String ALL_CLASSIF = "/classifications";
@@ -38,6 +38,10 @@ public class HttpHandler {
 	private final static String LAST_IRR = "/lastIrrigation";
 	private final static String NEW_MODEL = "/newModel/";
 	private final static String NEW_CLASSIF = "/newClassification/";
+	
+	
+	
+
 
 	// Crea l'URIBuilder con l'uri a cui inviare la richiesta
 	private static URIBuilder createURIBuilder(String path) {
@@ -203,91 +207,23 @@ public class HttpHandler {
 		HttpResponse<String> response = sendRequest(path);
 		return getClassifications(response);
 	}
-
-	// Recupera lo storico delle umidità ambientali dal middleware
-	public static ArrayList<Sample> getAllHumAmb() {
-		String path = ALL + Channel.HUMIDITY_AMB.getValue();
+	
+	// Recupera dal middleware tutti i valori dal canale indicato
+	public static ArrayList<Sample> getAllSamples(Channel chan) {
+		String path = ALL + chan.getValue();
 		HttpResponse<String> response = sendRequest(path);
 		return getSamples(response);
 	}
 
-	// Recupera l'ultimo valore registrato dell'umidità ambientale dal middleware
-	public static Sample getLastHumAmb() {
-		String path = LAST + Channel.HUMIDITY_AMB.getValue();
+	
+	// Recupera dal middleware l'ultimo valore dal canale indicato
+	public static Sample getLastSample(Channel chan) {
+		String path = LAST + chan.getValue();
 		HttpResponse<String> response = sendRequest(path);
 		return getSample(response);
 	}
 
-	// Recupera lo storico delle temperature ambientali dal middleware
-	public static ArrayList<Sample> getAllTempAmb() {
-		String path = ALL + Channel.TEMPERATURE_AMB.getValue();
-		HttpResponse<String> response = sendRequest(path);
-		return getSamples(response);
-	}
-
-	// Recupera l'ultimo valore registrato della temperatura ambientale dal middleware
-	public static Sample getLastTempAmb() {
-		String path = LAST + Channel.TEMPERATURE_AMB.getValue();
-		HttpResponse<String> response = sendRequest(path);
-		return getSample(response);
-	}
-
-	// Recupera lo storico delle piogge dal middleware
-	public static ArrayList<Sample> getAllRainData() {
-		String path = ALL + Channel.RAIN.getValue();
-		HttpResponse<String> response = sendRequest(path);
-		return getSamples(response);
-	}
-
-	// Recupera l'ultimo valore registrato sulle piogge dal middleware
-	public static Sample getLastRainData() {
-		String path = LAST + Channel.RAIN.getValue();
-		HttpResponse<String> response = sendRequest(path);
-		return getSample(response);
-	}
-
-	// Recupera lo storico delle temperature del suolo dal middleware
-	public static ArrayList<Sample> getAllTempSuolo() {
-		String path = ALL + Channel.TEMPERATURE_SUOLO.getValue();
-		HttpResponse<String> response = sendRequest(path);
-		return getSamples(response);
-	}
-
-	// Recupera l'ultimo valore registrato della temperatura del suolo dal middleware
-	public static ArrayList<Sample> getLastTempSuolo() {
-		String path = LAST_MULTI + Channel.TEMPERATURE_SUOLO.getValue();
-		HttpResponse<String> response = sendRequest(path);
-		return getSamples(response);
-	}
-
-	// Recupera lo storico delle umidità del suolo dal middleware
-	public static ArrayList<Sample> getAllHumSuolo() {
-		String path = ALL + Channel.HUMIDITY_SUOLO.getValue();
-		HttpResponse<String> response = sendRequest(path);
-		return getSamples(response);
-	}
-
-	// Recupera l'ultimo valore registrato dell'umidità del suolo dal middleware
-	public static ArrayList<Sample> getLastHumSuolo() {
-		String path = LAST_MULTI + Channel.HUMIDITY_SUOLO.getValue();
-		HttpResponse<String> response = sendRequest(path);
-		return getSamples(response);
-	}
-
-	// Recupera lo storico dei venti dal middleware
-	public static ArrayList<Sample> getAllWindData() {
-		String path = ALL + Channel.WIND.getValue();
-		HttpResponse<String> response = sendRequest(path);
-		return getSamples(response);
-
-	}
-
-	// Recupera l'ultimo valore registrato del vento dal middleware
-	public static Sample getLastWindData() {
-		String path = LAST + Channel.WIND.getValue();
-		HttpResponse<String> response = sendRequest(path);
-		return getSample(response);
-	}
+	
 
 	// Recupera lo storico delle irrigazioni dal middleware
 	public static ArrayList<Irrigazione> getAllIrrigationStates() {

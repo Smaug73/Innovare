@@ -1,5 +1,6 @@
 package com.innovare.views.storico;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import com.innovare.model.Classification;
 import com.innovare.model.Classification.Status;
@@ -9,6 +10,7 @@ import com.innovare.ui.utils.IconSize;
 import com.innovare.ui.utils.Right;
 import com.innovare.ui.utils.TextColor;
 import com.innovare.ui.utils.UIUtils;
+import com.innovare.utils.Constants;
 import com.innovare.utils.HttpHandler;
 import com.innovare.views.main.ContentView;
 import com.vaadin.flow.component.Component;
@@ -40,31 +42,28 @@ public class ClassificazioniView extends StoricoView{
 	
 	@Override
 	protected void getData() {
-		/* Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+/*		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
 		classifications = new ArrayList<>();
-		classifications.add(new Classification(Classification.Status.CARENZA, timestamp, 73, 10, 8, 9, 4, "modello1"));
-		classifications.add(new Classification(Classification.Status.INFESTANTI, timestamp, 6, 20, 73, 1, 79, "modello2"));
-		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 3, 75, 20, 2, 4, "modello1"));
-		classifications.add(new Classification(Classification.Status.CARENZA, timestamp, 58, 29, 13, 7, 4, "modello1"));
-		classifications.add(new Classification(Classification.Status.ECCESSO, timestamp, 2, 88, 10, 7, 4, "modello1"));
-		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 8, 90, 2, 7, 4, "modello1"));
-		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 1, 93, 6, 7, 4, "modello1"));
-		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 4, 84, 12, 7, 4, "modello1"));
-		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello1"));
-		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello1"));
-		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
-		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
-		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
-		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
-		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
-		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
-		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
-		classifications.add(new Classification(Classification.Status.SCARTATE, timestamp, 0, 0, 0, 100, 4, "modello2"));
-		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 6, 4, "modello2"));
-		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 3, 4, "modello2"));
-		classifications.add(new Classification(Classification.Status.NORMALE, timestamp, 0, 100, 0, 9, 4, "modello2"));
-		*/
+		classifications.add(new Classification(null, Classification.Status.CARENZA, timestamp, 73, 10, 8, 9, 4, "modello1"));
+		classifications.add(new Classification(null, Classification.Status.INFESTANTI, timestamp, 6, 20, 73, 1, 79, "modello2"));
+		classifications.add(new Classification(null, Classification.Status.NORMALE, timestamp, 3, 75, 20, 2, 4, "modello1"));
+		classifications.add(new Classification(null, Classification.Status.CARENZA, timestamp, 58, 29, 13, 7, 4, "modello1"));
+		classifications.add(new Classification(null, Classification.Status.ECCESSO, timestamp, 2, 88, 10, 7, 4, "modello1"));
+		classifications.add(new Classification(null, Classification.Status.NORMALE, timestamp, 8, 90, 2, 7, 4, "modello1"));
+		classifications.add(new Classification(null, Classification.Status.NORMALE, timestamp, 1, 93, 6, 7, 4, "modello1"));
+		classifications.add(new Classification(null, Classification.Status.NORMALE, timestamp, 4, 84, 12, 7, 4, "modello1"));
+		classifications.add(new Classification(null, Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello1"));
+		classifications.add(new Classification(null, Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello1"));
+		classifications.add(new Classification(null, Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
+		classifications.add(new Classification(null, Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
+		classifications.add(new Classification(null, Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
+		classifications.add(new Classification(null, Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
+		classifications.add(new Classification(null, Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
+		classifications.add(new Classification(null, Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
+		classifications.add(new Classification(null, Classification.Status.NORMALE, timestamp, 0, 100, 0, 7, 4, "modello2"));
+		classifications.add(new Classification(null, Classification.Status.SCARTATE, timestamp, 0, 0, 0, 100, 4, "modello2"));
 		
+*/		
 		classifications = HttpHandler.getAllClassifications();
 		
 	}
@@ -158,7 +157,7 @@ public class ClassificazioniView extends StoricoView{
 	
 	// Crea gli item della colonna Data Volo
 	private Component createDateLabel(Classification classif) {
-		String dateString = classif.getDate().toString();
+		String dateString = Constants.DATE_FORMAT.format(classif.getDate());
 		return UIUtils.createLabel(FontSize.S, dateString);
 	}
 }

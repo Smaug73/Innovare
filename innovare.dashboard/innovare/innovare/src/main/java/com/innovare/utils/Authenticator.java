@@ -82,6 +82,6 @@ public class Authenticator {
 			} catch (URISyntaxException e) {
 				e.printStackTrace();
 				return false;
-			}
+			} 
 	}
 }

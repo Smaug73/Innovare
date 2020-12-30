@@ -1,12 +1,17 @@
 package com.innovare.views.storico;
 
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
+import com.innovare.model.Sample;
 import com.innovare.model.Wind;
 import com.innovare.ui.utils.FontSize;
 import com.innovare.ui.utils.UIUtils;
+import com.innovare.utils.Channel;
+import com.innovare.utils.Constants;
+import com.innovare.utils.Direction;
 import com.innovare.views.main.ContentView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.dependency.CssImport;
@@ -26,6 +31,8 @@ import com.vaadin.flow.router.Route;
 @JsModule("@vaadin/vaadin-lumo-styles/badge.js")
 public class WindView extends StoricoView{
 	
+	//private ArrayList<Sample> WIND_DIRECTIONS;
+	//private ArrayList<Sample> WIND_SPEEDS;
 	private ArrayList<Wind> WIND;
 	
 	public WindView() {
@@ -56,22 +63,25 @@ public class WindView extends StoricoView{
 				e.printStackTrace();
 			}*/
 
+		ArrayList<Sample> WIND_DIRECTIONS = new ArrayList<>();
+		WIND_DIRECTIONS.add(new Sample("0", System.currentTimeMillis() - 64587456, Channel.WIND_DIR.getName(), Direction.N.getNum()));
+		WIND_DIRECTIONS.add(new Sample("1", System.currentTimeMillis() - 67364731, Channel.WIND_DIR.getName(), Direction.N.getNum()));
+		WIND_DIRECTIONS.add(new Sample("2", System.currentTimeMillis() - 64252889, Channel.WIND_DIR.getName(), Direction.N.getNum()));
+		
+		ArrayList<Sample> WIND_SPEEDS = new ArrayList<>();
+		WIND_SPEEDS.add(new Sample("15", System.currentTimeMillis() - 64587456, Channel.WIND_SPEED.getName(), (float) 8.6));
+		WIND_SPEEDS.add(new Sample("16", System.currentTimeMillis() - 67364731, Channel.WIND_SPEED.getName(), (float) 8.6));
+		WIND_SPEEDS.add(new Sample("17", System.currentTimeMillis() - 64252889, Channel.WIND_SPEED.getName(), (float) 8.6));
+		
 		WIND = new ArrayList<>();
-		WIND.add(new Wind(Wind.Direction.N, LocalDate.now(), 5));
-		WIND.add(new Wind(Wind.Direction.NNE, LocalDate.now(), 2));
-		WIND.add(new Wind(Wind.Direction.S, LocalDate.now(), 1));
-		WIND.add(new Wind(Wind.Direction.W, LocalDate.now(), 1.7));
-		WIND.add(new Wind(Wind.Direction.WNW, LocalDate.now(), 2.3));
-		WIND.add(new Wind(Wind.Direction.E, LocalDate.now(), 8.4));
-		WIND.add(new Wind(Wind.Direction.E, LocalDate.now(), 8.4));
-		WIND.add(new Wind(Wind.Direction.E, LocalDate.now(), 8.4));
-		WIND.add(new Wind(Wind.Direction.E, LocalDate.now(), 8.4));
-		WIND.add(new Wind(Wind.Direction.E, LocalDate.now(), 8.4));
-		WIND.add(new Wind(Wind.Direction.E, LocalDate.now(), 8.4));
-		WIND.add(new Wind(Wind.Direction.E, LocalDate.now(), 8.4));
-		WIND.add(new Wind(Wind.Direction.E, LocalDate.now(), 8.4));
-		WIND.add(new Wind(Wind.Direction.E, LocalDate.now(), 8.4));
-		WIND.add(new Wind(Wind.Direction.E, LocalDate.now(), 8.4));
+		for(Sample dir : WIND_DIRECTIONS) {
+			for(Sample speed : WIND_SPEEDS) {
+				if(dir.getTimestamp() == speed.getTimestamp()) {
+					Wind wind = new Wind(Direction.getDirection((int) dir.getMisure()), new Timestamp(dir.getTimestamp()), speed.getMisure());
+					WIND.add(wind);
+				}
+			}
+		}
 		
 	}
 	
@@ -114,7 +124,7 @@ public class WindView extends StoricoView{
 	
 	// Crea gli item della colonna Data 
 		private Component createDateLabel(Wind wind) {
-			String dateString = wind.getDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+			String dateString = Constants.DATE_FORMAT.format(wind.getDate());
 			return UIUtils.createLabel(FontSize.S, dateString);
 		}
 

@@ -1,66 +1,44 @@
 package com.innovare.model;
 
-import java.time.LocalDate;
+import java.sql.Timestamp;
+
+import com.innovare.utils.Direction;
 
 public class Wind {
-
 	private Direction direction;
-	private LocalDate date;
-	private double speed;
+	private Timestamp date;
+	private float speed;
 	
-	
-	public enum Direction {
-		N("Nord"), 
-		NNE("Nord-Nord-Est"), 
-		NNW("Nord-Nord-Ovest"),
-		NW("Nord-Ovest"),
-		NE("Nord-Est"),
-		W("Ovest"),
-		WNW("Ovest-Nord-Ovest"),
-		WSW("Ovest-Sud-Ovest"),
-		E("Est"),
-		ENE("Est-Nord-Est"),
-		ESE("Est-Sud-Est"),
-		S("Sud"), 
-		SSE("Sud-Sud-Est"), 
-		SSW("Sud-Sud-Ovest"),
-		SW("Sud-Ovest"),
-		SE("Sud-Est");
-		
-
-		private String name;
-
-		Direction(String name) {
-			this.name = name;
-		}
-
-		public String getName() {
-			return name;
-		}
-	}
-
-
-	public Wind(Direction direction, LocalDate date, double d) {
-		super();
+	public Wind(Direction direction, Timestamp date, float speed) {
 		this.direction = direction;
 		this.date = date;
-		this.speed = d;
+		this.speed = speed;
 	}
-
 
 	public Direction getDirection() {
 		return direction;
 	}
 
+	public void setDirection(Direction direction) {
+		this.direction = direction;
+	}
 
-	public LocalDate getDate() {
+	public Timestamp getDate() {
 		return date;
 	}
 
+	public void setDate(Timestamp date) {
+		this.date = date;
+	}
 
-	public double getSpeed() {
+	public float getSpeed() {
 		return speed;
+	}
+
+	public void setSpeed(float speed) {
+		this.speed = speed;
 	}
 	
 	
+
 }
