@@ -64,7 +64,7 @@ public class SampleCSVController extends Thread{
 				
 				//Mettiamo in sleep il thread
 				try {
-					this.sleep(15000);
+					this.sleep(60000);
 				} catch (InterruptedException e) {
 					System.err.println("Errore nella sleep del thread WeatherStationController");
 					e.printStackTrace();

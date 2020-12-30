@@ -16,11 +16,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.model.Sample;
 import com.innovare.utils.Utilities;
 
-
+import io.netty.handler.codec.http2.Http2FrameLogger.Direction;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.mqtt.MqttClient;
+
 
 
 /*
@@ -175,7 +176,59 @@ public class WeatherStationController extends Thread{
 						System.err.println("Errore conversione numero, sara' aggiunto null");
 						//this.channels.put(token[j], null);
 						//Inseriamo un Sample con canale corretto e valore 0
-						this.channelsSample.put(token[j], new Sample(this.timestamp,token[j]));
+						if(token[j].equalsIgnoreCase("rtWindDirRose")) {
+							switch(token[j+1]) {
+								case "N": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.N.getNum())));
+									break;
+								case "NNW": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.NNW.getNum())));
+								  	break;
+								case "NNE": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.NNE.getNum())));
+								  	break;
+								case "NW": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.NW.getNum())));
+								  	break;
+								case "NE": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.NE.getNum())));
+								  	break;
+								case "WNW": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.WNW.getNum())));
+								  	break;
+								case "WSW": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.WSW.getNum())));
+								  	break;
+								case "E": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.E.getNum())));
+								  	break;
+								case "ENE": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.ENE.getNum())));
+								  	break;
+								case "ESE": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.ESE.getNum())));
+								  	break;
+								case "S": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.S.getNum())));
+								  	break;
+								case "SSE": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.SSE.getNum())));
+								  	break;
+								case "SSW": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.SSW.getNum())));
+								  	break;
+								case "SW": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.SW.getNum())));
+								  	break;
+								case "SE": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.SE.getNum())));
+								  	break;	
+								default: 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],0));
+								  	break;
+							}	
+						}
+						
 					}	
 				}
 				//else
