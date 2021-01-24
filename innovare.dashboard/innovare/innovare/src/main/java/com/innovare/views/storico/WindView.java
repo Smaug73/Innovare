@@ -12,6 +12,7 @@ import com.innovare.ui.utils.UIUtils;
 import com.innovare.utils.Channel;
 import com.innovare.utils.Constants;
 import com.innovare.utils.Direction;
+import com.innovare.utils.HttpHandler;
 import com.innovare.views.main.ContentView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.dependency.CssImport;
@@ -42,28 +43,7 @@ public class WindView extends StoricoView{
 
 	@Override
 	protected void getData() {
-		/*URIBuilder builder = new URIBuilder();
-		builder.setScheme("http").setHost("localhost:8888").setPath("/allsample/1");
-	        
-	    HttpClient client = HttpClient.newHttpClient();
-	        HttpRequest request;
-			try {
-				request = HttpRequest.newBuilder()
-				        .uri(builder.build())
-				        .build();
-				HttpResponse<String> response = client.send(request,
-				         HttpResponse.BodyHandlers.ofString());
-				
-				samples = new ObjectMapper().readValue(response.body(), new TypeReference<ArrayList<Sample>>(){});
-			} catch (IOException e) {
-				e.printStackTrace();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			} catch (URISyntaxException e) {
-				e.printStackTrace();
-			}*/
-
-		ArrayList<Sample> WIND_DIRECTIONS = new ArrayList<>();
+/*		ArrayList<Sample> WIND_DIRECTIONS = new ArrayList<>();
 		WIND_DIRECTIONS.add(new Sample("0", System.currentTimeMillis() - 64587456, Channel.WIND_DIR.getName(), Direction.N.getNum()));
 		WIND_DIRECTIONS.add(new Sample("1", System.currentTimeMillis() - 67364731, Channel.WIND_DIR.getName(), Direction.N.getNum()));
 		WIND_DIRECTIONS.add(new Sample("2", System.currentTimeMillis() - 64252889, Channel.WIND_DIR.getName(), Direction.N.getNum()));
@@ -72,6 +52,9 @@ public class WindView extends StoricoView{
 		WIND_SPEEDS.add(new Sample("15", System.currentTimeMillis() - 64587456, Channel.WIND_SPEED.getName(), (float) 8.6));
 		WIND_SPEEDS.add(new Sample("16", System.currentTimeMillis() - 67364731, Channel.WIND_SPEED.getName(), (float) 8.6));
 		WIND_SPEEDS.add(new Sample("17", System.currentTimeMillis() - 64252889, Channel.WIND_SPEED.getName(), (float) 8.6));
+*/
+		ArrayList<Sample> WIND_DIRECTIONS = HttpHandler.getAllSamples(Channel.WIND_DIR);
+		ArrayList<Sample> WIND_SPEEDS = HttpHandler.getAllSamples(Channel.WIND_SPEED);
 		
 		WIND = new ArrayList<>();
 		for(Sample dir : WIND_DIRECTIONS) {
@@ -123,9 +106,9 @@ public class WindView extends StoricoView{
 	}
 	
 	// Crea gli item della colonna Data 
-		private Component createDateLabel(Wind wind) {
-			String dateString = Constants.DATE_FORMAT.format(wind.getDate());
-			return UIUtils.createLabel(FontSize.S, dateString);
-		}
+	private Component createDateLabel(Wind wind) {
+		String dateString = Constants.DATE_FORMAT.format(wind.getDate());
+		return UIUtils.createLabel(FontSize.S, dateString);
+	}
 
 }

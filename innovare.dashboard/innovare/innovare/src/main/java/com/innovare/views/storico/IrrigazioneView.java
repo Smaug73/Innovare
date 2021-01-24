@@ -7,6 +7,7 @@ import com.innovare.model.Irrigazione;
 import com.innovare.ui.utils.FontSize;
 import com.innovare.ui.utils.UIUtils;
 import com.innovare.utils.Constants;
+import com.innovare.utils.HttpHandler;
 import com.innovare.views.main.ContentView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.dependency.CssImport;
@@ -35,12 +36,15 @@ private ArrayList<Irrigazione> IRRIGAZIONI;
 
 	@Override
 	protected void getData() {
-		Timestamp time = new Timestamp(System.currentTimeMillis());
+/*		Timestamp time = new Timestamp(System.currentTimeMillis());
 		IRRIGAZIONI = new ArrayList<>();
 		IRRIGAZIONI.add(new Irrigazione(time, time, 45.87));
 		IRRIGAZIONI.add(new Irrigazione(time, time, 60.22));
 		IRRIGAZIONI.add(new Irrigazione(time, time, 76.03));
 		IRRIGAZIONI.add(new Irrigazione(time, time, 43.99));
+*/
+		
+		IRRIGAZIONI = HttpHandler.getAllIrrigationStates();
 	}
 
 	@Override

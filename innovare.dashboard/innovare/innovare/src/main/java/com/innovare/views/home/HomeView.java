@@ -57,6 +57,7 @@ import com.innovare.ui.utils.TextColor;
 import com.innovare.ui.utils.Top;
 import com.innovare.ui.utils.UIUtils;
 import com.innovare.ui.utils.Uniform;
+import com.innovare.utils.Channel;
 import com.innovare.utils.Constants;
 import com.innovare.utils.HttpHandler;
 import com.innovare.views.main.ContentView;
@@ -73,14 +74,13 @@ public class HomeView extends Div {
 	private Irrigazione lastIrrigation;
 	private ArrayList<Classification> classifications;
 	private ArrayList<Sensor> sensors;
-	private ArrayList<Sample> samples;
 
-	private Date lastMeasureDate;
-	private int lastMeasureTemp;
-	private int lastMeasureUV;
-	private int lastMeasureRain;
-	private int lastMeasureHum;
-	private int lastMeasureHeat;
+	private long lastMeasureDate;
+	private float lastMeasureTemp;
+	private float lastMeasureUV;
+	private float lastMeasureRain;
+	private float lastMeasureHum;
+	private float lastMeasureHeat;
 	
     public HomeView() {
         setId("home-view");
@@ -92,20 +92,27 @@ public class HomeView extends Div {
     
     private void getData() {
     	isIrrigationOn = HttpHandler.getCurrentIrrigationState();
-	//lastIrrigation = HttpHandler.getLastIrrigation();
-    	lastIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 64872389),
-				new Timestamp(System.currentTimeMillis()), 58.34);
+    	lastIrrigation = HttpHandler.getLastIrrigation();
+    	//lastIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 64872389),
+		//		new Timestamp(System.currentTimeMillis()), 58.34);
 
     	classifications = HttpHandler.getLastClassifications();
     	//classifications = new ArrayList();
     	//isIrrigationOn = "OFF";
     	
-		lastMeasureDate = new Date();
-		lastMeasureTemp = 13;
-		lastMeasureUV = 15;
-		lastMeasureRain = 9;
-		lastMeasureHum = 32;
-		lastMeasureHeat = 550;
+		//lastMeasureDate = System.currentTimeMillis();
+		//lastMeasureTemp = 13;
+		//lastMeasureUV = 15;
+		//lastMeasureRain = 9;
+		//lastMeasureHum = 32;
+		//lastMeasureHeat = 550;
+		
+		lastMeasureDate = HttpHandler.getLastSample(Channel.OUTSIDE_TEMP).getTimestamp();
+		lastMeasureTemp = HttpHandler.getLastSample(Channel.OUTSIDE_TEMP).getMisure();
+		lastMeasureUV = HttpHandler.getLastSample(Channel.UV_LEVEL).getMisure();
+		lastMeasureRain = HttpHandler.getLastSample(Channel.DAY_RAIN).getMisure();
+		lastMeasureHum = HttpHandler.getLastSample(Channel.OUTSIDE_HUM).getMisure();
+		lastMeasureHeat = HttpHandler.getLastSample(Channel.SOLAR_RAD).getMisure();
 
     	sensors = new ArrayList<Sensor>();
     	Sensor sens1 = new Sensor("Sensor1", 20.56, 33, new Timestamp(System.currentTimeMillis()));
@@ -511,13 +518,7 @@ public class HomeView extends Div {
 		grid.addColumn(Sensor::getTemperature)
 				.setAutoWidth(true)
 				.setFlexGrow(1)
-				.setHeader("Temperatura [°C]")
-				.setTextAlign(ColumnTextAlign.CENTER)
-				.setSortable(true);
-		grid.addColumn(Sensor::getHumidity)
-				.setAutoWidth(true)
-				.setFlexGrow(1)
-				.setHeader("Umidità [%]")
+				.setHeader("Valore")
 				.setTextAlign(ColumnTextAlign.CENTER)
 				.setSortable(true);
 		

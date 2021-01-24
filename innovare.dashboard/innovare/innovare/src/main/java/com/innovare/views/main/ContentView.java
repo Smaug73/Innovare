@@ -20,9 +20,11 @@ import com.innovare.views.storico.ClassificazioniView;
 import com.innovare.views.storico.TempAmbView;
 import com.innovare.views.storico.HumAmbView;
 import com.innovare.views.storico.TempSuoloView;
+import com.innovare.views.storico.UVView;
 import com.innovare.views.storico.HumSuoloView;
 import com.innovare.views.storico.IrrigazioneView;
 import com.innovare.views.storico.RainView;
+import com.innovare.views.storico.SolarRadiationView;
 import com.innovare.views.storico.WindView;
 import com.innovare.model.Role;
 import com.innovare.views.configurazione.ConfigurazioneView;
@@ -41,14 +43,6 @@ public class ContentView extends MainView{
 		naviMenu = new NaviMenu();
 		initNaviItems();
 		addToDrawer(createDrawerContent());
-
-		/*Lang lang = new Lang();
-    	lang.setDrillUpText("< PROVA");
-        Optional<com.vaadin.flow.component.UI> ui = this.getUI();
-        if(ui != null) ChartOptions.get().setLang(lang);
-        else System.out.println("UI in content uguale a null");
-		 */
-
 	}
 
 	private Component createHeaderContent() {
@@ -93,6 +87,8 @@ public class ContentView extends MainView{
 		naviMenu.addNaviItem(storico, "Venti", WindView.class);
 		naviMenu.addNaviItem(storico, "Temperatura Del Suolo", TempSuoloView.class);
 		naviMenu.addNaviItem(storico, "Umidità Del Suolo", HumSuoloView.class);
+		naviMenu.addNaviItem(storico, "Livelli UV", UVView.class);
+		naviMenu.addNaviItem(storico, "Radiazione Solare", SolarRadiationView.class);
 
 		naviMenu.addNaviItem(VaadinIcon.QUESTION_CIRCLE_O, "About", InnovareView.class);
 

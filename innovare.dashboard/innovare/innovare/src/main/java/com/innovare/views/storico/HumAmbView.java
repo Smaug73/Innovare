@@ -3,6 +3,8 @@ package com.innovare.views.storico;
 import java.util.ArrayList;
 
 import com.innovare.model.Sample;
+import com.innovare.utils.Channel;
+import com.innovare.utils.HttpHandler;
 import com.innovare.views.main.ContentView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.charts.Chart;
@@ -32,27 +34,7 @@ public class HumAmbView extends StoricoView {
 
 	@Override
 	protected void getData() {
-		/*URIBuilder builder = new URIBuilder();
-		builder.setScheme("http").setHost("localhost:8888").setPath("/allsample/1");
-	        
-	    HttpClient client = HttpClient.newHttpClient();
-	        HttpRequest request;
-			try {
-				request = HttpRequest.newBuilder()
-				        .uri(builder.build())
-				        .build();
-				HttpResponse<String> response = client.send(request,
-				         HttpResponse.BodyHandlers.ofString());
-				
-				samples = new ObjectMapper().readValue(response.body(), new TypeReference<ArrayList<Sample>>(){});
-			} catch (IOException e) {
-				e.printStackTrace();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			} catch (URISyntaxException e) {
-				e.printStackTrace();
-			}*/
-		
+		samples = HttpHandler.getAllSamples(Channel.OUTSIDE_HUM);
 	}
 
 
