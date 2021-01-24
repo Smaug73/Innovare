@@ -29,6 +29,7 @@ import com.vaadin.flow.data.provider.DataProvider;
 import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
+import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexDirection;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import java.sql.Timestamp;
@@ -73,6 +74,13 @@ public class HomeView extends Div {
 	private ArrayList<Classification> classifications;
 	private ArrayList<Sensor> sensors;
 	private ArrayList<Sample> samples;
+
+	private Date lastMeasureDate;
+	private int lastMeasureTemp;
+	private int lastMeasureUV;
+	private int lastMeasureRain;
+	private int lastMeasureHum;
+	private int lastMeasureHeat;
 	
     public HomeView() {
         setId("home-view");
@@ -89,9 +97,16 @@ public class HomeView extends Div {
 				new Timestamp(System.currentTimeMillis()), 58.34);
 
     	classifications = HttpHandler.getLastClassifications();
-/*  classifications = new ArrayList();
-    	isIrrigationOn = "OFF";
-*/
+    	//classifications = new ArrayList();
+    	//isIrrigationOn = "OFF";
+    	
+		lastMeasureDate = new Date();
+		lastMeasureTemp = 13;
+		lastMeasureUV = 15;
+		lastMeasureRain = 9;
+		lastMeasureHum = 32;
+		lastMeasureHeat = 550;
+
     	sensors = new ArrayList<Sensor>();
     	Sensor sens1 = new Sensor("Sensor1", 20.56, 33, new Timestamp(System.currentTimeMillis()));
     	Sensor sens2 = new Sensor("Sensor2", 21.08, 37, new Timestamp(System.currentTimeMillis()));
@@ -239,8 +254,8 @@ public class HomeView extends Div {
 
 		return docs;
 	}
-    
-    private FlexBoxLayout createHeader(VaadinIcon icon, String title) {
+
+	private FlexBoxLayout createHeader(VaadinIcon icon, String title) {
 		FlexBoxLayout header = new FlexBoxLayout(
 				UIUtils.createIcon(IconSize.M, TextColor.TERTIARY.getValue(), icon),
 				UIUtils.createH3Label(title));
@@ -249,155 +264,159 @@ public class HomeView extends Div {
 		header.setSpacing(Right.L);
 		return header;
 	}
-    
-    
-    
- 	// Crea la chart delle ultime 4 classificazioni
- 	private Component createClassifications() {
- 		FlexBoxLayout header = createHeader(VaadinIcon.TAGS, "Ultime Classificazioni");
- 		
- 		Chart chart = new Chart();
- 		chart.setSizeFull();
 
-         Configuration configuration = chart.getConfiguration();
-         chart.getConfiguration().getChart().setType(ChartType.BAR);
-         
-         XAxis x = new XAxis();
-         
-         ListSeries carenza = new ListSeries(Classification.Status.CARENZA.getName());
-         ListSeries sane = new ListSeries(Classification.Status.NORMALE.getName());
-         ListSeries eccesso = new ListSeries(Classification.Status.ECCESSO.getName());
-         ListSeries scartate = new ListSeries(Classification.Status.SCARTATE.getName());
-         ListSeries infestanti = new ListSeries(Classification.Status.INFESTANTI.getName());
-         for(Classification classif : classifications) {
-        	 carenza.addData(classif.getPercCarenza());
-        	 sane.addData(classif.getPercSane());
-        	 eccesso.addData(classif.getPercEccesso());
-        	 scartate.addData(classif.getPercScartate());
-        	 infestanti.addData(classif.getPercInfestanti());
-        	 x.addCategory(classif.getDate().toString());
-         }
-         
-         PlotOptionsSeries posCarenza = new PlotOptionsSeries();
-         posCarenza.setColorIndex(8);
-         carenza.setPlotOptions(posCarenza);
-         configuration.addSeries(carenza);
-         
-         PlotOptionsSeries posSane = new PlotOptionsSeries();
-         posSane.setColorIndex(2);
-         sane.setPlotOptions(posSane);
-         configuration.addSeries(sane);
-         
-         PlotOptionsSeries posEccesso = new PlotOptionsSeries();
-         posEccesso.setColorIndex(4);
-         eccesso.setPlotOptions(posEccesso);
-         configuration.addSeries(eccesso);
-         
-         PlotOptionsSeries posScartate = new PlotOptionsSeries();
-         posScartate.setColorIndex(1);
-         scartate.setPlotOptions(posScartate);
-         configuration.addSeries(scartate);
-         
-         PlotOptionsSeries posInfestanti = new PlotOptionsSeries();
-         posInfestanti.setColorIndex(3);
-         infestanti.setPlotOptions(posInfestanti);
-         configuration.addSeries(infestanti);
-         
 
-         x.setCrosshair(new Crosshair());
-         configuration.addxAxis(x);
-     
 
-         YAxis y = new YAxis();
-         y.setMin(0);
-         AxisTitle yTitle = new AxisTitle();
-         yTitle.setText("Percentuale [%]");
-         yTitle.setAlign(VerticalAlign.HIGH);
-         y.setTitle(yTitle);
-         y.setMax(100);
-         
-         configuration.addyAxis(y);
+	// Crea la chart delle ultime 4 classificazioni
+	private Component createClassifications() {
+		FlexBoxLayout header = createHeader(VaadinIcon.TAGS, "Ultime Classificazioni");
 
-         Tooltip tooltip = new Tooltip();
-         tooltip.setShared(true);
-         tooltip.setValueSuffix("%");
-         configuration.setTooltip(tooltip);
-         
-         /*PlotOptionsSeries plot = new PlotOptionsSeries();
+		Chart chart = new Chart();
+		chart.setSizeFull();
+
+		Configuration configuration = chart.getConfiguration();
+		chart.getConfiguration().getChart().setType(ChartType.BAR);
+
+		XAxis x = new XAxis();
+
+		ListSeries carenza = new ListSeries(Classification.Status.CARENZA.getName());
+		ListSeries sane = new ListSeries(Classification.Status.NORMALE.getName());
+		ListSeries eccesso = new ListSeries(Classification.Status.ECCESSO.getName());
+		ListSeries scartate = new ListSeries(Classification.Status.SCARTATE.getName());
+		ListSeries infestanti = new ListSeries(Classification.Status.INFESTANTI.getName());
+		for(Classification classif : classifications) {
+			carenza.addData(classif.getPercCarenza());
+			sane.addData(classif.getPercSane());
+			eccesso.addData(classif.getPercEccesso());
+			scartate.addData(classif.getPercScartate());
+			infestanti.addData(classif.getPercInfestanti());
+			x.addCategory(Constants.DATE_FORMAT.format(classif.getDate()));
+		}
+
+		PlotOptionsSeries posCarenza = new PlotOptionsSeries();
+		posCarenza.setColorIndex(8);
+		carenza.setPlotOptions(posCarenza);
+		configuration.addSeries(carenza);
+
+		PlotOptionsSeries posSane = new PlotOptionsSeries();
+		posSane.setColorIndex(2);
+		sane.setPlotOptions(posSane);
+		configuration.addSeries(sane);
+
+		PlotOptionsSeries posEccesso = new PlotOptionsSeries();
+		posEccesso.setColorIndex(4);
+		eccesso.setPlotOptions(posEccesso);
+		configuration.addSeries(eccesso);
+
+		PlotOptionsSeries posScartate = new PlotOptionsSeries();
+		posScartate.setColorIndex(1);
+		scartate.setPlotOptions(posScartate);
+		configuration.addSeries(scartate);
+
+		PlotOptionsSeries posInfestanti = new PlotOptionsSeries();
+		posInfestanti.setColorIndex(3);
+		infestanti.setPlotOptions(posInfestanti);
+		configuration.addSeries(infestanti);
+
+
+		x.setCrosshair(new Crosshair());
+		configuration.addxAxis(x);
+
+
+		YAxis y = new YAxis();
+		y.setMin(0);
+		AxisTitle yTitle = new AxisTitle();
+		yTitle.setText("Percentuale [%]");
+		yTitle.setAlign(VerticalAlign.HIGH);
+		y.setTitle(yTitle);
+		y.setMax(100);
+
+		configuration.addyAxis(y);
+
+		Tooltip tooltip = new Tooltip();
+		tooltip.setShared(true);
+		tooltip.setValueSuffix("%");
+		configuration.setTooltip(tooltip);
+
+		/*PlotOptionsSeries plot = new PlotOptionsSeries();
          plot.setStacking(Stacking.NORMAL);
          configuration.setPlotOptions(plot);*/
-         
-         chart.setSizeFull();
-         FlexBoxLayout card = new FlexBoxLayout(chart);
-         
- 		card.setBackgroundColor(LumoStyles.Color.BASE_COLOR);
- 		card.setBorderRadius(BorderRadius.S);
- 		card.setBoxSizing(BoxSizing.BORDER_BOX);
- 		card.setHeight("404px");
- 		card.setPadding(Uniform.M);
- 		card.setShadow(Shadow.XS);
- 		card.setMargin(Bottom.XL);
+
+		chart.setSizeFull();
+		FlexBoxLayout card = new FlexBoxLayout(chart);
+
+		card.setBackgroundColor(LumoStyles.Color.BASE_COLOR);
+		card.setBorderRadius(BorderRadius.S);
+		card.setBoxSizing(BoxSizing.BORDER_BOX);
+		card.setHeight("404px");
+		card.setPadding(Uniform.M);
+		card.setShadow(Shadow.XS);
+		card.setMargin(Bottom.XL);
 
 		FlexBoxLayout reports = new FlexBoxLayout(header, card);
 		reports.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
 		reports.setPadding(Bottom.XL, Right.RESPONSIVE_L, Left.RESPONSIVE_L);
 		return reports;
- 	}
-   
- 	
- 	
+	}
+
+
+
 
 	private Component createAmbientData() {
 		FlexBoxLayout header = createHeader(VaadinIcon.SUN_O, "Ambiente");
-		
-		Date lastMeasureDate = new Date();
-		int lastMeasureTemp = 13;
-		int maxTempToday = 15;
-		int minTempToday = 9;
-		int lastMeasureHum = 32;
-		int lastMeasureHeat = 50;
-		
-		VaadinIcon weathIcon;
-		String color;
-		if(lastMeasureHeat < 50) {
-			weathIcon = VaadinIcon.CLOUD_O;
-			color = "#308DDF";
-		}
-		else {
-			weathIcon = VaadinIcon.SUN_O;
-			color = " #F5F219 ";
-		}
-	
-			
+
+
+
 		FlexBoxLayout dateLabel = new FlexBoxLayout(
 				UIUtils.createLabel(FontSize.XS, Constants.DATE_FORMAT.format(lastMeasureDate) 
-				+ " " + Constants.TIME_FORMAT.format(lastMeasureDate)));
+						+ " " + Constants.TIME_FORMAT.format(lastMeasureDate)));
 		dateLabel.setMargin(Bottom.M);
-		
-		
+
 		FlexBoxLayout tempLabel = new FlexBoxLayout(
-				UIUtils.createIcon(IconSize.L, color, weathIcon),
-				UIUtils.createH1Label(lastMeasureTemp + "°C"));
+				UIUtils.createIcon(IconSize.S, TextColor.TERTIARY.getValue(), VaadinIcon.CLOUD_O),
+				UIUtils.createLabel(FontSize.S, "Temperatura: " + lastMeasureTemp + "°C"));
 		tempLabel.setAlignItems(Alignment.CENTER);
-		tempLabel.setSpacing(Right.M);
-		tempLabel.setMargin(Bottom.M);
+		tempLabel.setSpacing(Right.S, Left.S);
+		tempLabel.setMargin(Bottom.S);
 		
-		FlexBoxLayout maxTempLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.XS, "Max: " + maxTempToday + "°C"));
-		FlexBoxLayout minTempLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.XS, "Min: " + minTempToday + "°C"));
-		minTempLabel.setMargin(Bottom.M);
+		FlexBoxLayout uvLabel = new FlexBoxLayout(
+				UIUtils.createIcon(IconSize.S, TextColor.TERTIARY.getValue(), VaadinIcon.SUN_O),
+				UIUtils.createLabel(FontSize.S, "Indice UV: " + lastMeasureUV));
+		uvLabel.setAlignItems(Alignment.CENTER);
+		uvLabel.setSpacing(Right.S, Left.S);
+		uvLabel.setMargin(Bottom.S);
+		
+		FlexBoxLayout radiationLabel = new FlexBoxLayout(
+				UIUtils.createIcon(IconSize.S, TextColor.TERTIARY.getValue(), VaadinIcon.SUN_O),
+				UIUtils.createLabel(FontSize.S, "Irraggiamento: " + lastMeasureHeat + " W/m^2"));
+		radiationLabel.setAlignItems(Alignment.CENTER);
+		radiationLabel.setSpacing(Right.S, Left.S);
+		radiationLabel.setMargin(Bottom.S);
+		
+		FlexBoxLayout rainLabel = new FlexBoxLayout(
+				UIUtils.createIcon(IconSize.S, TextColor.TERTIARY.getValue(), VaadinIcon.DROP),
+				UIUtils.createLabel(FontSize.S, "Pioggia: " + lastMeasureRain + " mm"));
+		rainLabel.setAlignItems(Alignment.CENTER);
+		rainLabel.setSpacing(Right.S, Left.S);
+		rainLabel.setMargin(Bottom.S);
+		
 		
 		FlexBoxLayout humLabel = new FlexBoxLayout(
 				UIUtils.createIcon(IconSize.S, TextColor.TERTIARY.getValue() , VaadinIcon.DROP),
 				UIUtils.createLabel(FontSize.S, "Umidità: " + lastMeasureHum + "%"));
-		humLabel.setSpacing(Right.XS);
-		humLabel.setMargin(Bottom.M);
+		humLabel.setSpacing(Right.S, Left.S);
+		humLabel.setMargin(Bottom.S);
 		
-		FlexBoxLayout tempHumCard = new FlexBoxLayout(dateLabel, tempLabel, maxTempLabel, minTempLabel, humLabel);
+		FlexBoxLayout ambData = new FlexBoxLayout(tempLabel, humLabel, uvLabel, radiationLabel, rainLabel);
+		ambData.setAlignItems(FlexComponent.Alignment.START);
+		ambData.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
+		
+		FlexBoxLayout tempHumCard = new FlexBoxLayout(dateLabel, ambData);
 		tempHumCard.setAlignItems(FlexComponent.Alignment.CENTER);
 		tempHumCard.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
 		tempHumCard.setMinHeight("200px");
 		tempHumCard.setMargin(Bottom.XS);
-		tempHumCard.setMaxWidth("215px");
+		//tempHumCard.setMaxWidth("250px");
 		UIUtils.setBackgroundColor(LumoStyles.Color.BASE_COLOR, tempHumCard);
 		UIUtils.setBorderRadius(BorderRadius.S, tempHumCard);
 		UIUtils.setShadow(Shadow.XS, tempHumCard);
@@ -405,7 +424,7 @@ public class HomeView extends Div {
 		FlexBoxLayout windCard = new FlexBoxLayout(createWindChart());
 		windCard.setAlignItems(FlexComponent.Alignment.CENTER);
 		windCard.setHeight("200px");
-		windCard.setMaxWidth("215px");
+		//windCard.setMaxWidth("250px");
 		UIUtils.setBackgroundColor(LumoStyles.Color.BASE_COLOR, windCard);
 		UIUtils.setBorderRadius(BorderRadius.S, windCard);
 		UIUtils.setShadow(Shadow.XS, windCard);
@@ -519,7 +538,7 @@ public class HomeView extends Div {
     
 	// Crea gli item della colonna Data 
 		private Component createDateLabel(Sensor sensor) {
-			String dateString = sensor.getDate().toString();
+			String dateString = Constants.DATE_FORMAT.format(sensor.getDate()) + " " + Constants.TIME_FORMAT.format(sensor.getDate());
 			return UIUtils.createLabel(FontSize.S, dateString);
 		}
 
