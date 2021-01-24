@@ -1202,7 +1202,10 @@ public class MainVerticle extends AbstractVerticle {
     	  								  false,
     	  								  false);
     	    	    			this.irrigationCommandClient.disconnect();
-            	    	    	
+            	    	    	//ATTENZIONE AGGIUNGERE CREAZIONE IRRIGAZIONE NEL DATABASE
+    	    	    			/*
+    	    	    			 * Irrigazione ir= new Irrigazione..
+    	    	    			 */
             	    	    	routingContext
     							.response()
     							.setStatusCode(200)
@@ -1298,7 +1301,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	     */
     	    	    routerFactory.addHandlerByOperationId("irrigationStorico", routingContext ->{	
     	    	    	if(this.loggingController.isUserLogged()) {
-    	    	    		//Caso nel quale non è stata creata nessuna irrigazione	    
+    	    	    		 
     	    	    		System.out.println("Invio irrigazioni...");
     	    	    		JsonObject irrigazioniQuery= new JsonObject();
     	    	    		this.mongoClient.find("Irrigazioni",irrigazioniQuery , res -> {
@@ -1331,6 +1334,54 @@ public class MainVerticle extends AbstractVerticle {
     			              .end("Non autorizzato: non sei loggato.");
     	    	    	}	    	    	 	    	
     	    	    }); 
+    	    	    
+    	    	    /*
+    	    	     * LAST-IRRIGATION
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("lastIrrigation", routingContext ->{	
+    	    	    	if(this.loggingController.isUserLogged()) {	    	    		
+    	    	    
+    	    	    		System.out.println("Invio ultima irrigazione...");
+    	    	    		JsonObject irrigazioniQuery= new JsonObject();
+    	    	    		this.mongoClient.find("Irrigazioni",irrigazioniQuery , res -> {
+    	    	    		    if (res.succeeded()) {
+    	    	    		    	
+    	    	    		    	//cerchiamo l'ultima irrigazione effettuata
+    	    	    		    	  long max=0;
+    	    	    		    	  JsonObject lastIrrigation=new JsonObject();
+    	    	    			      for (JsonObject json : res.result()) {
+    	    	    			    	if(json.containsKey("inizioIrrig") && (json.getLong("inizioIrrig")>max)) {
+    	    	    			    		lastIrrigation=json;
+    	    	    			    	}
+    	    	    			        System.out.println("Last irrigation: "+lastIrrigation.encodePrettily());
+    	    	    			        System.out.println("Connessione effettuata con successo al db!");
+    	    	    			      }
+    	    	    			      
+    	    	    			      routingContext
+    	    		    	   	      .response()
+    	    			              .setStatusCode(200)
+    	    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    	    			              .end(lastIrrigation.toString());
+    	    	    			    } else {
+    	    	    			      res.cause().printStackTrace();
+    	    	    			      routingContext
+    	    		    	   	      .response()
+    	    			              .setStatusCode(400)
+    	    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    	    			              .end("No last irrigation.");
+    	    	    			    }
+    	    	    			  });
+    	    	    			    		
+    	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}	    	    	 	    	
+    	    	    }); 
+    	    	    
     	    	    
     	    	    /*
     	    	     * GET CONFIGURATIONS
