@@ -53,8 +53,8 @@ public class WindView extends StoricoView{
 		WIND_SPEEDS.add(new Sample("16", System.currentTimeMillis() - 67364731, Channel.WIND_SPEED.getName(), (float) 8.6));
 		WIND_SPEEDS.add(new Sample("17", System.currentTimeMillis() - 64252889, Channel.WIND_SPEED.getName(), (float) 8.6));
 */
-		ArrayList<Sample> WIND_DIRECTIONS = HttpHandler.getAllSamples(Channel.WIND_DIR);
-		ArrayList<Sample> WIND_SPEEDS = HttpHandler.getAllSamples(Channel.WIND_SPEED);
+		ArrayList<Sample> WIND_DIRECTIONS = HttpHandler.getAllSamples(Channel.WIND_DIR.getValue());
+		ArrayList<Sample> WIND_SPEEDS = HttpHandler.getAllSamples(Channel.WIND_SPEED.getValue());
 		
 		WIND = new ArrayList<>();
 		for(Sample dir : WIND_DIRECTIONS) {

@@ -35,6 +35,8 @@ import com.vaadin.flow.router.Route;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+
 import com.innovare.ui.utils.Left;
 import com.innovare.ui.utils.ListItem;
 import com.innovare.model.Classification;
@@ -73,7 +75,7 @@ public class HomeView extends Div {
 	private String isIrrigationOn;
 	private Irrigazione lastIrrigation;
 	private ArrayList<Classification> classifications;
-	private ArrayList<Sensor> sensors;
+	private ArrayList<Integer> channels;
 
 	private long lastMeasureDate;
 	private float lastMeasureTemp;
@@ -81,6 +83,7 @@ public class HomeView extends Div {
 	private float lastMeasureRain;
 	private float lastMeasureHum;
 	private float lastMeasureHeat;
+	private HashMap<Integer, Sensor> sensors;
 	
     public HomeView() {
         setId("home-view");
@@ -91,36 +94,39 @@ public class HomeView extends Div {
     }
     
     private void getData() {
-    	isIrrigationOn = HttpHandler.getCurrentIrrigationState();
-    	lastIrrigation = HttpHandler.getLastIrrigation();
-    	//lastIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 64872389),
-		//		new Timestamp(System.currentTimeMillis()), 58.34);
-
-    	classifications = HttpHandler.getLastClassifications();
-    	//classifications = new ArrayList();
-    	//isIrrigationOn = "OFF";
+/*
+    	lastIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 64872389),
+				new Timestamp(System.currentTimeMillis()), 58.34);
+    	classifications = new ArrayList();
+    	isIrrigationOn = "ON";
     	
-		//lastMeasureDate = System.currentTimeMillis();
-		//lastMeasureTemp = 13;
-		//lastMeasureUV = 15;
-		//lastMeasureRain = 9;
-		//lastMeasureHum = 32;
-		//lastMeasureHeat = 550;
+		lastMeasureDate = System.currentTimeMillis();
+		lastMeasureTemp = 13;
+		lastMeasureUV = 15;
+		lastMeasureRain = 9;
+		lastMeasureHum = 32;
+		lastMeasureHeat = 550;
+*/		
 		
-		lastMeasureDate = HttpHandler.getLastSample(Channel.OUTSIDE_TEMP).getTimestamp();
-		lastMeasureTemp = HttpHandler.getLastSample(Channel.OUTSIDE_TEMP).getMisure();
-		lastMeasureUV = HttpHandler.getLastSample(Channel.UV_LEVEL).getMisure();
-		lastMeasureRain = HttpHandler.getLastSample(Channel.DAY_RAIN).getMisure();
-		lastMeasureHum = HttpHandler.getLastSample(Channel.OUTSIDE_HUM).getMisure();
-		lastMeasureHeat = HttpHandler.getLastSample(Channel.SOLAR_RAD).getMisure();
+		isIrrigationOn = HttpHandler.getCurrentIrrigationState();
+    	lastIrrigation = HttpHandler.getLastIrrigation();
+    	
+		classifications = HttpHandler.getLastClassifications();
+		
+		lastMeasureDate = HttpHandler.getLastSample(Channel.OUTSIDE_TEMP.getValue()).getTimestamp();
+		lastMeasureTemp = HttpHandler.getLastSample(Channel.OUTSIDE_TEMP.getValue()).getMisure();
+		lastMeasureUV = HttpHandler.getLastSample(Channel.UV_LEVEL.getValue()).getMisure();
+		lastMeasureRain = HttpHandler.getLastSample(Channel.DAY_RAIN.getValue()).getMisure();
+		lastMeasureHum = HttpHandler.getLastSample(Channel.OUTSIDE_HUM.getValue()).getMisure();
+		lastMeasureHeat = HttpHandler.getLastSample(Channel.SOLAR_RAD.getValue()).getMisure();
 
-    	sensors = new ArrayList<Sensor>();
-    	Sensor sens1 = new Sensor("Sensor1", 20.56, 33, new Timestamp(System.currentTimeMillis()));
-    	Sensor sens2 = new Sensor("Sensor2", 21.08, 37, new Timestamp(System.currentTimeMillis()));
-    	Sensor sens3 = new Sensor("Sensor3", 19.88, 32, new Timestamp(System.currentTimeMillis()));
-    	sensors.add(sens1);
-    	sensors.add(sens2);
-    	sensors.add(sens3);
+		sensors = new HashMap<Integer, Sensor>();
+		channels = HttpHandler.getActiveChannels();
+		for(Integer channel : channels) {
+			Sample sample = HttpHandler.getLastSample(channel);
+			Sensor sensor = new Sensor("Sensore Canale " + channel, sample);
+			sensors.put(channel, sensor);
+		}
 	}
 
 	private Component createContent() {
@@ -165,13 +171,15 @@ public class HomeView extends Div {
 		toLabel.setWidth("200px");
 
 		FlexBoxLayout toDate;
-		if(lastIrrigation.getFineIrrig() != null) {
+		if(isIrrigationOn.equalsIgnoreCase("OFF")) {
 			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, 
 					Constants.TIME_FORMAT.format(lastIrrigation.getFineIrrig())
 					+ " " + Constants.DATE_FORMAT.format(lastIrrigation.getInizioIrrig())));
 		}
 		else {
-			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "In corso"));
+			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "In corso - Fine prevista: " +
+					Constants.TIME_FORMAT.format(lastIrrigation.getFineIrrig())
+					+ " " + Constants.DATE_FORMAT.format(lastIrrigation.getInizioIrrig())));
 		}
 
 		FlexBoxLayout to = new FlexBoxLayout(toLabel, toDate);
@@ -499,7 +507,7 @@ public class HomeView extends Div {
 		grid.setSelectionMode(SelectionMode.SINGLE);
 
 		
-		ListDataProvider<Sensor> dataProvider = DataProvider.ofCollection(sensors);
+		ListDataProvider<Sensor> dataProvider = DataProvider.ofCollection(sensors.values());
 		
 		grid.setDataProvider(dataProvider);
 		grid.setSizeFull();
@@ -515,7 +523,7 @@ public class HomeView extends Div {
 				.setFrozen(true)
 				.setHeader("Data")
 				.setTextAlign(ColumnTextAlign.CENTER);
-		grid.addColumn(Sensor::getTemperature)
+		grid.addColumn(new ComponentRenderer<>(this::createValueLabel))
 				.setAutoWidth(true)
 				.setFlexGrow(1)
 				.setHeader("Valore")
@@ -536,11 +544,16 @@ public class HomeView extends Div {
 		card.setMargin(Bottom.XL);
 		return card;
 	}
-    
+
 	// Crea gli item della colonna Data 
-		private Component createDateLabel(Sensor sensor) {
-			String dateString = Constants.DATE_FORMAT.format(sensor.getDate()) + " " + Constants.TIME_FORMAT.format(sensor.getDate());
-			return UIUtils.createLabel(FontSize.S, dateString);
-		}
+	private Component createDateLabel(Sensor sensor) {
+		String dateString = Constants.DATE_FORMAT.format(sensor.getSample().getTimestamp()) + " " + Constants.TIME_FORMAT.format(sensor.getSample().getTimestamp());
+		return UIUtils.createLabel(FontSize.S, dateString);
+	}
+
+	// Crea gli item della colonna Valore 
+	private Component createValueLabel(Sensor sensor) {
+		return UIUtils.createLabel(FontSize.S, "" + sensor.getSample().getMisure());
+	}
 
 }

@@ -34,7 +34,7 @@ public class HumAmbView extends StoricoView {
 
 	@Override
 	protected void getData() {
-		samples = HttpHandler.getAllSamples(Channel.OUTSIDE_HUM);
+		samples = HttpHandler.getAllSamples(Channel.OUTSIDE_HUM.getValue());
 	}
 
 

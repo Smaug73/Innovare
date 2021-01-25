@@ -6,6 +6,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.sql.Timestamp;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 import org.apache.http.client.utils.URIBuilder;
@@ -38,8 +40,9 @@ public class HttpHandler {
 	private final static String LAST_IRR = "/lastIrrigation";
 	private final static String NEW_MODEL = "/newModel/";
 	private final static String NEW_CLASSIF = "/newClassification/";
-	
-	
+	private final static String ACTIVE_CHANNELS = "/channelsNumber";
+	private final static String IRRIG_TIME = "/irrigationTime";
+	private final static String SET_IRRIG_TIME = "/setIrrigationTime/";
 	
 
 
@@ -193,6 +196,33 @@ public class HttpHandler {
 		}
 		return null;
 	}
+	
+	// Ricostruisce l'ArrayList dei canali attivi (sensori suolo) facendo il parsing del json nel body della risposta
+	private static ArrayList<Integer> getActiveChannels(HttpResponse<String> response){
+		ArrayList<Integer> items;
+		try {
+			items = new ObjectMapper().readValue(response.body(), new TypeReference<ArrayList<Integer>>(){});
+			return items;
+		} catch (JsonMappingException e) {
+			e.printStackTrace();
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	private static LocalTime getIrrigTime(HttpResponse<String> response) {
+		String time;
+		try {
+			time = new ObjectMapper().readValue(response.body(), new TypeReference<String>(){});
+			return LocalTime.parse(time, DateTimeFormatter.ISO_LOCAL_TIME);
+		} catch (JsonMappingException e) {
+			e.printStackTrace();
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
 
 	// Recupera lo storico delle classificazioni dal middleware
 	public static ArrayList<Classification> getAllClassifications() {
@@ -209,16 +239,16 @@ public class HttpHandler {
 	}
 	
 	// Recupera dal middleware tutti i valori dal canale indicato
-	public static ArrayList<Sample> getAllSamples(Channel chan) {
-		String path = ALL + chan.getValue();
+	public static ArrayList<Sample> getAllSamples(int chan) {
+		String path = ALL + chan;
 		HttpResponse<String> response = sendRequest(path);
 		return getSamples(response);
 	}
 
 	
 	// Recupera dal middleware l'ultimo valore dal canale indicato
-	public static Sample getLastSample(Channel chan) {
-		String path = LAST + chan.getValue();
+	public static Sample getLastSample(int chan) {
+		String path = LAST + chan;
 		HttpResponse<String> response = sendRequest(path);
 		return getSample(response);
 	}
@@ -304,5 +334,28 @@ public class HttpHandler {
 		HttpResponse<String> response = sendRequest(path);
 		ArrayList<ConfigurationItem> items = getConfigItems(response);
 		return items;
+	}
+	
+	// Richiede quali canali sono attivi per il recupero dei dati riguardanti il suolo
+	public static ArrayList<Integer> getActiveChannels() {
+		String path = ACTIVE_CHANNELS;
+		HttpResponse<String> response = sendRequest(path);
+		ArrayList<Integer> items = getActiveChannels(response);
+		return items;
+	}
+	
+	// Recupera l'orario in cui viene fatta partire l'irrigazione
+	public static LocalTime getIrrigTime() {
+		String path = IRRIG_TIME;
+		HttpResponse<String> response = sendRequest(path);
+		LocalTime time = getIrrigTime(response);
+		return time;
+	}
+	
+	// Recupera l'orario in cui viene fatta partire l'irrigazione
+	public static int setIrrigTime(String time) {
+		String path = SET_IRRIG_TIME + time;
+		HttpResponse<String> response = sendRequest(path);
+		return response.statusCode();
 	}
 }

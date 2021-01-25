@@ -34,7 +34,7 @@ public class TempAmbView extends StoricoView{
 
 	@Override
 	protected void getData() {
-		samples = HttpHandler.getAllSamples(Channel.OUTSIDE_TEMP);
+		samples = HttpHandler.getAllSamples(Channel.OUTSIDE_TEMP.getValue());
 	}
 
 

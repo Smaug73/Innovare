@@ -39,7 +39,7 @@ public class RainView extends StoricoView{
 	
 	@Override
 	protected void getData() {
-		samples = HttpHandler.getAllSamples(Channel.DAY_RAIN);
+		samples = HttpHandler.getAllSamples(Channel.DAY_RAIN.getValue());
 	}
 
 	@Override

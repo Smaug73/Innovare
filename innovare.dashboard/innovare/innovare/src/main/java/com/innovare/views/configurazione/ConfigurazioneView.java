@@ -117,7 +117,8 @@ public class ConfigurazioneView extends Div {
 	// Recupera i dati da mostrare: i configuration item, i modelli disponibili per la classificazione, 
 	// lo stato dell'irrigazione e le info sull'ultima irrigazione (quella attuale se l'irrigazione è in corso)
 	private void getData() {
-/* 		configurationItems = new ArrayList<ConfigurationItem>();
+/*
+ 		configurationItems = new ArrayList<ConfigurationItem>();
     	ConfigurationItem item = new ConfigurationItem();
     	item.setId("Gateway");
     	Property prop1 = new Property();
@@ -141,18 +142,18 @@ public class ConfigurazioneView extends Div {
     	models = new ArrayList<Model>();
     	Model model = new Model("modello 1");
     	models.add(model);
-*/
-		irrigationTime = LocalTime.now();
 
+		irrigationTime = LocalTime.now();
+*/
+		
 		configurationItems = HttpHandler.getAllConfigurationItems();
 		isIrrigationOn = HttpHandler.getCurrentIrrigationState();
 		lastIrrigation = HttpHandler.getLastIrrigation();
 		selectedModel = HttpHandler.getSelectedModel();
 		models = HttpHandler.getAllModels();
-		lastIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 64872389),
-				new Timestamp(System.currentTimeMillis()), 58.34);
+		lastIrrigation = HttpHandler.getLastIrrigation();
+		irrigationTime = HttpHandler.getIrrigTime();
 
-		
 
 	}
 
@@ -220,13 +221,15 @@ public class ConfigurazioneView extends Div {
 		toLabel.setWidth("200px");
 
 		FlexBoxLayout toDate;
-		if(lastIrrigation.getFineIrrig() != null) {
+		if(lastIrrigation.getFineIrrig().before(new Timestamp(System.currentTimeMillis()))) {
 			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, 
 					Constants.TIME_FORMAT.format(lastIrrigation.getFineIrrig())
 					+ " " + Constants.DATE_FORMAT.format(lastIrrigation.getInizioIrrig())));
 		}
 		else {
-			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "In corso"));
+			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "In corso - Fine prevista: " + 
+					Constants.TIME_FORMAT.format(System.currentTimeMillis())
+					+ " " + Constants.DATE_FORMAT.format(System.currentTimeMillis())));
 		}
 
 		FlexBoxLayout to = new FlexBoxLayout(toLabel, toDate);
@@ -335,6 +338,9 @@ public class ConfigurazioneView extends Div {
 
 			private void change(ValueChangeEvent event, IrrigationState irrState) {
 				Irrigazione newIrrigation = HttpHandler.startIrrigation();
+				//Irrigazione newIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 64872389),
+		    	//		new Timestamp(System.currentTimeMillis()), 58.34);
+				
 				// Se la richiesta va a buon fine, è necessario cambiare
 				// le informazioni riguardanti lo stato attuale e l'ultima irrigazione
 				if(newIrrigation != null) {
@@ -385,7 +391,10 @@ public class ConfigurazioneView extends Div {
 		
 		timePicker.addValueChangeListener(event -> {
 			// Deve essere fatta una chiamata http per settare il nuovo orario
-			System.out.print("Nuovo orario: " + event.getValue().getHour() + ":" + event.getValue().getMinute());
+			if(HttpHandler.setIrrigTime(event.getValue().getHour() + ":" + event.getValue().getMinute()) != 200) {
+				irrigationTime = event.getOldValue();
+				timePicker.setValue(irrigationTime);
+			}
 		});
 		
 		
