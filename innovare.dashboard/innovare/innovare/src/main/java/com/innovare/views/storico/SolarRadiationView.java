@@ -37,7 +37,7 @@ public class SolarRadiationView extends StoricoView{
 
 	@Override
 	protected void getData() {
-		solarRadiations = HttpHandler.getAllSamples(Channel.SOLAR_RAD);
+		solarRadiations = HttpHandler.getAllSamples(Channel.SOLAR_RAD.getValue());
 		
 	}
 

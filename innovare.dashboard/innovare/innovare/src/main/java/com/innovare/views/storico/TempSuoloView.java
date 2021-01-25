@@ -1,9 +1,11 @@
 package com.innovare.views.storico;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import com.innovare.model.Sample;
 import com.innovare.ui.utils.FlexBoxLayout;
+import com.innovare.utils.HttpHandler;
 import com.innovare.views.main.ContentView;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.charts.Chart;
@@ -25,11 +27,7 @@ import com.vaadin.flow.router.Route;
 @JsModule("@vaadin/vaadin-lumo-styles/badge.js")
 public class TempSuoloView extends StoricoView{
 	
-	private ArrayList<Sample> samples1;
-	private ArrayList<Sample> samples2;
-	private ArrayList<Sample> samples3;
-	private ArrayList<Sample> samples4;
-	private ArrayList<Sample> samples5;
+	private HashMap<Integer, ArrayList<Sample>> sensors;
 
 	public TempSuoloView() {
 		super();
@@ -38,19 +36,22 @@ public class TempSuoloView extends StoricoView{
 
 	@Override
 	protected void getData() {
-		
+		sensors = new HashMap<Integer, ArrayList<Sample>>();
+		ArrayList<Integer> channels = HttpHandler.getActiveChannels();
+		for(Integer channel : channels) {
+			ArrayList<Sample> samples = HttpHandler.getAllSamples(channel);
+			sensors.put(channel, samples);
+		}
 	}
 
 
 	@Override
 	protected Component createChart() {
-		Component chart1 = createChart(samples1, "Sensore1");
-		Component chart2 = createChart(samples2, "Sensore2");
-		Component chart3 = createChart(samples3, "Sensore3");
-		Component chart4 = createChart(samples4, "Sensore4");
-		Component chart5 = createChart(samples5, "Sensore5");
+		FlexBoxLayout content = new FlexBoxLayout();
+		for(Integer channel : sensors.keySet()) {
+			content.add(createChart(sensors.get(channel), "Sensore Canale " + channel));
+		}
 		
-		FlexBoxLayout content = new FlexBoxLayout(chart1, chart2, chart3, chart4, chart5);
 		content.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
         
         return content;
