@@ -77,7 +77,7 @@ public class MainVerticle extends AbstractVerticle {
 	 */
 	private HttpServer server;
 	
-	private int numberOfChannel;
+	private int numberOfChannel=0;
 	private HashMap<Integer,MqttClient> mqttClients;
 	private HashMap<String,JsonObject> sampleChannelQueue;
 	private MongoClient mongoClient;
@@ -1382,6 +1382,57 @@ public class MainVerticle extends AbstractVerticle {
     	    	    	}	    	    	 	    	
     	    	    }); 
     	    	    
+    	    	    /*
+    	    	     * IRRIGATION TIME
+    	    	     */
+    	    	    
+    	    	    
+    	    	    /*
+    	    	     * SET IRRIGATION TIME
+    	    	     */
+    	    	    
+    	    	    
+    	    	    
+    	    	    /*
+    	    	     * CHANNELS-NUMBER
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("channelsNum", routingContext ->{	
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		//Caso nel quale non è stata creata nessuna irrigazione	    
+    	    	    		System.out.println("Invio numero canali... ");
+    	    	    		//Calcolo numero canali presenti
+    	    	    		ArrayList<Integer> listIdChannel= new ArrayList<Integer>();
+    	    	    		for(int i=0;i<this.numberOfChannel;i++) {
+    	    	    			listIdChannel.add(i);
+    	    	    		}
+    	    	    		listIdChannel.addAll(this.csvController.getChannelNumberCSV());
+    	    	    		
+    	    	    		JsonArray ja= new JsonArray();
+	    	    			JsonObject jo;
+	    	    	    	for(int m: listIdChannel) {
+	    	    	    		try {
+									jo= new JsonObject(new ObjectMapper().writeValueAsString(m));
+									ja.add(jo);
+								} catch (JsonProcessingException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+	    	    	    	}
+    	    	    		
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(200)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end(ja.toString());	    		
+    	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}	    	    	 	    	
+    	    	    }); 
     	    	    
     	    	    /*
     	    	     * GET CONFIGURATIONS

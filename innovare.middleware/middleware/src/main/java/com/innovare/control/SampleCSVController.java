@@ -20,6 +20,9 @@ public class SampleCSVController extends Thread{
 
 	MongoClient mongoClient=null;
 	
+	private ArrayList<Integer> channelNumberCSV= new ArrayList<Integer>();
+	public int startingChannel=16;
+	
 	public SampleCSVController() {}
 	
 	public SampleCSVController(MongoClient mongoClient) {
@@ -45,7 +48,7 @@ public class SampleCSVController extends Thread{
 							ArrayList<Sample> samples= newSamples.get(i);
 							for(Sample s: samples) {
 								jo= new JsonObject(new ObjectMapper().writeValueAsString(s));
-								this.mongoClient.insert("channel-"+(i+16), jo, res ->{
+								this.mongoClient.insert("channel-"+(i+this.startingChannel), jo, res ->{
 									if(res.succeeded())
 				    				  System.out.println("Misura salvata correttamente nel DB.");
 									else
@@ -78,6 +81,9 @@ public class SampleCSVController extends Thread{
 	 * Lettura dei Sample dal file csv, che andra' cancellato
 	 */
 	public HashMap<String, ArrayList<Sample> > readSampleFromCSV() throws IOException {
+		//La lista dei sensori attivi deve essere resettata
+		this.channelNumberCSV= new ArrayList<Integer>();
+		
 		//Cerchiamo il file csv all'interno del path
 		File dirCSV= new File(Utilities.sensorDocumentPath);
 		File csvFile;
@@ -112,7 +118,8 @@ public class SampleCSVController extends Thread{
 				
 				
 				int sensorNumber=0;	
-				int posizioneValor=-1;		
+				int channelIdInt=0;
+				int posizioneValor=-1;
 				//Inizio prendendo i valori di mio interessa
 				for(int j=0; j<allData.get(0).length; j++) {
 					//Vedo quanti sono i sensori attivi
@@ -120,8 +127,11 @@ public class SampleCSVController extends Thread{
 						//controllo se ha un valore 0 oppure 1 per vedere se e' attivo e aggiungiamo il sensore
 						if(allData.get(1)[j].contains("1")) {
 							samplesMaps.put(allData.get(0)[j], new ArrayList<Sample>());
+							//Aggiungiamo alla lista dei sensori
+							this.channelNumberCSV.add(this.startingChannel+channelIdInt);
 							sensorNumber++;
 						}	
+						channelIdInt++;//Incrementiamo l'id int del canale che stiamo leggendo
 					}
 					
 					if(allData.get(0)[j].contains("m") && (posizioneValor==-1)) {
@@ -169,6 +179,12 @@ public class SampleCSVController extends Thread{
 				f.delete();
 		}
 	}
+
+	public ArrayList<Integer> getChannelNumberCSV() {
+		return channelNumberCSV;
+	}
+
+
 	
 	
 }

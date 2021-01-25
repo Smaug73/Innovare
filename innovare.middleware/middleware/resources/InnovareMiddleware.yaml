@@ -99,7 +99,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Classification'
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClassificationSint'
           description: Json of last classification.
       operationId: lastclassificazion
       summary: Return the last classification
@@ -304,6 +306,38 @@ paths:
       description: In millisencond dal timestamp
       in: path
       required: true
+  /lastIrrigation:
+    get:
+      responses:
+        "200":
+          description: Ultima irrigazione
+      operationId: lastIrrigation
+      summary: Ultima irrigazione
+  /irrigationTime:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: "Recupero dell'orario in cui, ogni giorno, ha inizio l'irrigazione"
+      operationId: irrigationTime
+      summary: "Recupero dell'orario in cui, ogni giorno, ha inizio l'irrigazione"
+  /setIrrigationTime:
+    get:
+      responses:
+        "200":
+          description: Se l'impostazione e' andata a buon fine.
+      operationId: setIrrigationTIme
+      summary: Imposta l'ora di irrigazione
+  /channelsNumber:
+    get:
+      responses:
+        "200":
+          description: Restituisce array con il numero dei canali attivi
+      operationId: channelsNum
+      summary: Richiesta numero di canali attivi
 components:
   schemas:
     ConfigurationItem:
@@ -400,6 +434,8 @@ components:
     Irrigation:
       description: ""
       type: object
+      example: "{\n    \"inizioIrrig\":231241114,\n    \"fineIrrig\":431241114,\n\t\
+        \"quantita\":20.0,\n}"
     ClassificationSint:
       title: Root Type for ClassificationSint
       description: Classificazione sintetica di una dataset di piante.

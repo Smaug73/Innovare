@@ -20,5 +20,6 @@ public final class Utilities {
 	public static final String classeInfestanti="Infestanti";
 	public static final String classeCarenza="Carenza di acqua";
 	public static final String[] channelsNames= {"rtBaroCurr","rtInsideTemp","rtInsideHum","rtOutsideTemp","rtWindSpeed","rtWindAvgSpeed","rtWindDir","rtOutsideHum","rtRainRate","rtUVLevel","rtSolarRad","rtDayRain","rtMonthRain","rtYearRain"};
-
+	public static final int hourStartIrrigation=9;
+	public static final int minuteStartIrrigation=30;
 }

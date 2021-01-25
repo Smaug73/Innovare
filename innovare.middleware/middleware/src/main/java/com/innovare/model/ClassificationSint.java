@@ -7,7 +7,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
-
+import com.innovare.model.Status;
 import com.innovare.utils.Utilities;
 
 public class ClassificationSint implements Comparable<ClassificationSint>{
@@ -28,7 +28,7 @@ public class ClassificationSint implements Comparable<ClassificationSint>{
 
 
 
-	public enum Status {
+	/*public enum Status {
 		CARENZA("CARENZA",
 				"Piante con carenza di acqua"), 
 		NORMALE("NORMALE", "Piante sane"), 
@@ -50,7 +50,7 @@ public class ClassificationSint implements Comparable<ClassificationSint>{
 		public String getDesc() {
 			return desc;
 		}
-	}
+	}*/
 
 	public ClassificationSint() {}
 
@@ -294,7 +294,36 @@ public class ClassificationSint implements Comparable<ClassificationSint>{
 		return max;
 	}
 
-
+	public Status getMaxPercForIrrigation() {
+		/*
+		 * Verificare se infestanti e percentuali scartate sono di interesse per l'irrigazione
+		 */
+		int[] perc= {this.percCarenza,this.percEccesso,this.percInfestanti,this.percSane,this.percScartate};
+		int max=0;
+		
+		for(int i=1;i<perc.length;i++) {
+			if(perc[i]>perc[max])
+				max=i;
+		}
+		
+		switch(max) {
+		case 0:
+			return Status.CARENZA;
+		case 1:
+			return Status.ECCESSO;
+		case 2:
+			return Status.INFESTANTI;
+		case 3:
+			return Status.NORMALE;
+		case 4:
+			return Status.SCARTATE;
+		default:
+			System.err.println("Errore valutazione percentuale classificazione, sara' considerato lo status del campo come normale.");
+			return Status.NORMALE;
+		}
+		
+		
+	}
 
 
 	@Override
