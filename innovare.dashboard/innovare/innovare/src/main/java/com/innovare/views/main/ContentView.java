@@ -21,7 +21,6 @@ import com.innovare.views.storico.TempAmbView;
 import com.innovare.views.storico.HumAmbView;
 import com.innovare.views.storico.TempSuoloView;
 import com.innovare.views.storico.UVView;
-import com.innovare.views.storico.HumSuoloView;
 import com.innovare.views.storico.IrrigazioneView;
 import com.innovare.views.storico.RainView;
 import com.innovare.views.storico.SolarRadiationView;
@@ -86,7 +85,6 @@ public class ContentView extends MainView{
 		naviMenu.addNaviItem(storico, "Piogge", RainView.class);
 		naviMenu.addNaviItem(storico, "Venti", WindView.class);
 		naviMenu.addNaviItem(storico, "Temperatura Del Suolo", TempSuoloView.class);
-		naviMenu.addNaviItem(storico, "Umidità Del Suolo", HumSuoloView.class);
 		naviMenu.addNaviItem(storico, "Livelli UV", UVView.class);
 		naviMenu.addNaviItem(storico, "Radiazione Solare", SolarRadiationView.class);
 

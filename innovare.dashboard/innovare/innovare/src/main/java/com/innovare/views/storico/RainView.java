@@ -45,7 +45,7 @@ public class RainView extends StoricoView{
 	@Override
 	protected Component createChart() {
 		
-		final Chart chart = new Chart(ChartType.AREASPLINERANGE);
+		final Chart chart = new Chart(ChartType.AREASPLINE);
 
         Configuration configuration = chart.getConfiguration();
         

@@ -72,7 +72,7 @@ private ArrayList<Irrigazione> IRRIGAZIONI;
 		grid.addColumn(Irrigazione::getQuantita)
 				.setAutoWidth(true)
 				.setFlexGrow(1)
-				.setHeader("Quantità di Acqua Usata [L]")
+				.setHeader("Quantità di Acqua Erogata [L]")
 				.setTextAlign(ColumnTextAlign.CENTER)
 				.setSortable(true);
 		

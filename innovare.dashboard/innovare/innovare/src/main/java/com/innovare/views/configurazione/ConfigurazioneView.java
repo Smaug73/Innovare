@@ -10,6 +10,10 @@ import java.time.Duration;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import com.innovare.model.ConfigurationItem;
@@ -57,6 +61,7 @@ import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.UploadI18N;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.Command;
 
 import org.json.simple.parser.ParseException;
 
@@ -75,6 +80,12 @@ public class ConfigurazioneView extends Div {
 	private Collection<String> modelsNames;
 	private ComboBox<String> modelSelection;
 	private LocalTime irrigationTime;
+	
+	private float quantitaAttuale;
+	private FlexBoxLayout quantitaL;
+
+	private FlexBoxLayout cardLastIrrigation;
+	private FlexBoxLayout cardIrrigationState;
 
 	public ConfigurazioneView() throws IOException, InterruptedException, URISyntaxException, ParseException {
 		setId("config-view");
@@ -136,8 +147,8 @@ public class ConfigurazioneView extends Div {
     	item2.setProperties(properties);
     	configurationItems.add(item);
     	configurationItems.add(item2);
-    	lastIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 64872389),
-    			new Timestamp(System.currentTimeMillis()), 58.34);
+    	lastIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 54657),
+				new Timestamp(System.currentTimeMillis() + 40000), 58.34);
     	isIrrigationOn = "OFF";
     	models = new ArrayList<Model>();
     	Model model = new Model("modello 1");
@@ -164,8 +175,11 @@ public class ConfigurazioneView extends Div {
 	// il componente di upload dello zip con le immagini da classificare e la scelta del modello da usare per la classificazione,
 	// il componente di upload di un nuovo modello di classificazione
 	private Component createContent() {
-		Component irrigationView = createIrrigationState();
+		cardLastIrrigation = new FlexBoxLayout();
+		cardIrrigationState = new FlexBoxLayout();
 		
+		Component irrigationView = createIrrigationState();
+		Component lastIrrigation = createLastIrrigation();
 		Component settingStartIrrigationTime = createSettingStartIrrTime();
 
 		// Per ogni configuration item viene creata una card che ne mostra le proprietà
@@ -181,31 +195,26 @@ public class ConfigurazioneView extends Div {
 		//zip con immagini da classificare e zip con nuovo modello di classificazione
 		Component uploads = createUploadsView();
 
-		FlexBoxLayout content = new FlexBoxLayout(irrigationView, settingStartIrrigationTime, confItemsCards, uploads);
+		FlexBoxLayout content = new FlexBoxLayout(irrigationView, lastIrrigation, settingStartIrrigationTime, confItemsCards, uploads);
 		content.setAlignItems(FlexComponent.Alignment.CENTER);
 		content.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
 		return content;
 	}
-
-
-	// Crea header della card relativa all'ultima irrigazione e chiama il metodo per la creazione della card stessa
+	
 	private Component createLastIrrigation() {
-		FlexBoxLayout lastIrr = new FlexBoxLayout(
-				createHeader(VaadinIcon.DROP, "Ultima Irrigazione"),
-				createLastIrrigationCard());
-		lastIrr.setBoxSizing(BoxSizing.BORDER_BOX);
-		lastIrr.setDisplay(Display.BLOCK);
-		lastIrr.setMargin(Top.L);
-		lastIrr.setMaxWidth(Constants.MAX_WIDTH);
-		lastIrr.setSizeFull();
-		return lastIrr;
+    	FlexBoxLayout lastIrr = new FlexBoxLayout(
+  				createHeader(VaadinIcon.DROP, "Ultima Irrigazione"),
+  				createLastIrrigationCard());
+    	lastIrr.setBoxSizing(BoxSizing.BORDER_BOX);
+    	lastIrr.setDisplay(Display.BLOCK);
+    	lastIrr.setMargin(Top.L);
+    	lastIrr.setMaxWidth(Constants.MAX_WIDTH);
+    	lastIrr.setPadding(Horizontal.RESPONSIVE_L);
+    	lastIrr.setWidthFull();
+  		return lastIrr;
 	}
-	
-	
 
-	// Crea la card in cui si forniscono le info sull'ultima irrigazione (quella in corso se l'irrigazione è attiva)
 	private Component createLastIrrigationCard() {
-
 		FlexBoxLayout fromLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Dalle:"));
 		fromLabel.setWidth("200px");
 		FlexBoxLayout fromDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, 
@@ -221,15 +230,15 @@ public class ConfigurazioneView extends Div {
 		toLabel.setWidth("200px");
 
 		FlexBoxLayout toDate;
-		if(lastIrrigation.getFineIrrig().before(new Timestamp(System.currentTimeMillis()))) {
+		if(isIrrigationOn.equalsIgnoreCase("OFF")) {
 			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, 
 					Constants.TIME_FORMAT.format(lastIrrigation.getFineIrrig())
 					+ " " + Constants.DATE_FORMAT.format(lastIrrigation.getInizioIrrig())));
 		}
 		else {
-			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "In corso - Fine prevista: " + 
-					Constants.TIME_FORMAT.format(System.currentTimeMillis())
-					+ " " + Constants.DATE_FORMAT.format(System.currentTimeMillis())));
+			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "In corso - Fine prevista: " +
+					Constants.TIME_FORMAT.format(lastIrrigation.getFineIrrig())
+					+ " " + Constants.DATE_FORMAT.format(lastIrrigation.getInizioIrrig())));
 		}
 
 		FlexBoxLayout to = new FlexBoxLayout(toLabel, toDate);
@@ -238,64 +247,112 @@ public class ConfigurazioneView extends Div {
 
 		FlexBoxLayout quantitaLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Quantità:"));
 		quantitaLabel.setWidth("200px");
-		FlexBoxLayout quantitaL = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "" + lastIrrigation.getQuantita()));
+		
+		if(isIrrigationOn.equalsIgnoreCase("OFF")) {
+			quantitaL = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "" + lastIrrigation.getQuantita()));
+		}
+		else {
+			
+			long durata = (lastIrrigation.getFineIrrig().getTime() - lastIrrigation.getInizioIrrig().getTime());
+			int intervallo = (int) (durata/10);
+			double portata = lastIrrigation.getQuantita()/durata;
+			double aggiornamentoQuantita = Math.round(portata * intervallo * 100.0) / 100.0;
+			
+			//System.out.println("Durata: " + durata/1000 + "s\nIntervallo: " + intervallo/1000 + "s\nPortata: " + portata*1000 + " L/s\nAggiornamento: " + aggiornamentoQuantita);
+			
+			quantitaL = new FlexBoxLayout();
+			quantitaAttuale = (float) ((System.currentTimeMillis() - lastIrrigation.getInizioIrrig().getTime()) * portata);
+			quantitaAttuale = (float) (Math.round(quantitaAttuale * 100.0) / 100.0);
+			quantitaL.add(UIUtils.createLabel(FontSize.L, quantitaAttuale + "/" + lastIrrigation.getQuantita()));
+			
+			runWhileAttached(quantitaL, () -> {
+            	quantitaAttuale += aggiornamentoQuantita;
+            	quantitaAttuale = (float) (Math.round(quantitaAttuale * 100.0) / 100.0);
+				if(quantitaAttuale < lastIrrigation.getQuantita()) {
+                	quantitaL.removeAll();
+                	
+                	// Se la quantità attualmente erogata è uguale a quella da erogare a meno dell'1%, le due quantità si considerano uguali.
+                	// In pratica si riconduce quella differenza a un errore dovuto all'approssimazione che viene fatta.
+					if((lastIrrigation.getQuantita() - quantitaAttuale) < (lastIrrigation.getQuantita() / 100)) {
+						quantitaL.add(UIUtils.createLabel(FontSize.L, lastIrrigation.getQuantita() + "/" + lastIrrigation.getQuantita()));
+						do {
+							//isIrrigationOn = "OFF";
+							isIrrigationOn = HttpHandler.getCurrentIrrigationState();
+						} while(!isIrrigationOn.equalsIgnoreCase("OFF"));
+						cardLastIrrigation.removeAll();
+						cardLastIrrigation = (FlexBoxLayout) createLastIrrigationCard();
+						cardIrrigationState.removeAll();
+						cardIrrigationState = (FlexBoxLayout) createIrrigationStateCard();
+					}
+					else {
+						quantitaL.add(UIUtils.createLabel(FontSize.L, quantitaAttuale + "/" + lastIrrigation.getQuantita()));
+					}
+				}
+				else {
+					quantitaL.add(UIUtils.createLabel(FontSize.L, lastIrrigation.getQuantita() + "/" + lastIrrigation.getQuantita()));
+					do {
+						//isIrrigationOn = "OFF";
+						isIrrigationOn = HttpHandler.getCurrentIrrigationState();
+					} while(!isIrrigationOn.equalsIgnoreCase("OFF"));
+					cardLastIrrigation.removeAll();
+					cardLastIrrigation = (FlexBoxLayout) createLastIrrigationCard();
+					cardIrrigationState.removeAll();
+					cardIrrigationState = (FlexBoxLayout) createIrrigationStateCard();
+				}
+                
+			}, intervallo, intervallo);
+		}
 
 
 		FlexBoxLayout quantita = new FlexBoxLayout(quantitaLabel, quantitaL);
 		to.setFlexDirection(FlexLayout.FlexDirection.ROW);
 		to.setFlexGrow(2, quantitaLabel, quantitaL);
 
-		FlexBoxLayout card = new FlexBoxLayout(from, to, quantita);
-		card.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
-		card.setBackgroundColor(LumoStyles.Color.BASE_COLOR);
-		card.setBorderRadius(BorderRadius.S);
-		card.setBoxSizing(BoxSizing.BORDER_BOX);
-		card.setPadding(Uniform.M);
-		card.setShadow(Shadow.XS);
-		card.setHeightFull();
-		card.setMargin(Bottom.L);
-		return card;
+		cardLastIrrigation.add(from, to, quantita);
+		cardLastIrrigation.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
+		cardLastIrrigation.setBackgroundColor(LumoStyles.Color.BASE_COLOR);
+		cardLastIrrigation.setBorderRadius(BorderRadius.S);
+		cardLastIrrigation.setBoxSizing(BoxSizing.BORDER_BOX);
+		cardLastIrrigation.setPadding(Uniform.M);
+		cardLastIrrigation.setShadow(Shadow.XS);
+		cardLastIrrigation.setHeightFull();
+		cardLastIrrigation.setMargin(Bottom.L);
+		return cardLastIrrigation;
 	}
+	
+	
 
-	// Crea header della card relativa allo stato dell'irrigazione e chiama il metodo per la creazione della card stessa
 	private Component createIrrigationState() {
-		FlexBoxLayout irrState = new FlexBoxLayout(
-				createHeader(VaadinIcon.SLIDER, "Stato Irrigazione"),
-				createIrrigationStateCard());
-		irrState.setBoxSizing(BoxSizing.BORDER_BOX);
-		irrState.setDisplay(Display.BLOCK);
-		irrState.setMargin(Top.L);
-		irrState.setMaxWidth(Constants.MAX_WIDTH);
-		irrState.setPadding(Horizontal.RESPONSIVE_L);
-		irrState.setWidthFull();
-		return irrState;
+    	FlexBoxLayout irrState = new FlexBoxLayout(
+  				createHeader(VaadinIcon.SLIDER, "Stato Irrigazione"),
+  				createIrrigationStateCard());
+    	irrState.setBoxSizing(BoxSizing.BORDER_BOX);
+  		irrState.setDisplay(Display.BLOCK);
+  		irrState.setMargin(Top.L);
+  		irrState.setMaxWidth(Constants.MAX_WIDTH);
+  		irrState.setPadding(Horizontal.RESPONSIVE_L);
+  		irrState.setWidthFull();
+  		return irrState;
 	}
 
-
-	// Crea la card in cui si fornisce lo stato dell'irrigazione (Attiva o Spenta);
-	// inoltre è presente la possibilità di accendere o spegnere l'irrigazione
 	private Component createIrrigationStateCard() {
-
-		String accendi = "ON";
-		String spegni = "OFF";
 		String state;
 		String colorState;
 		RadioButtonGroup<String> on_off = new RadioButtonGroup<>();
 		on_off.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
-		on_off.setItems(accendi, spegni);
+		on_off.setItems("ON", "OFF");
 
-		if(isIrrigationOn.equalsIgnoreCase(accendi)) {
+		if(isIrrigationOn.equals("ON")) {
 			state = IrrigationState.ACCESO.getName();
 			colorState = IrrigationState.ACCESO.getColor();
-			on_off.setValue(accendi);
+			on_off.setValue("ON");
 		}
 		else {
 			state = IrrigationState.SPENTO.getName();
 			colorState = IrrigationState.SPENTO.getColor();
-			on_off.setValue(spegni);
+			on_off.setValue("OFF");
 		}
-
-
+		
 		FlexBoxLayout descLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Stato dell'impianto irriguo:"));
 		descLabel.setWidth("200px");
 		descLabel.setAlignItems(Alignment.CENTER);
@@ -305,29 +362,14 @@ public class ConfigurazioneView extends Div {
 		FlexBoxLayout status = new FlexBoxLayout(icon, label);
 		status.setSpacing(Right.S);
 		status.setAlignItems(Alignment.CENTER);
-
-		FlexBoxLayout card = new FlexBoxLayout(descLabel, status, on_off);
-		card.setFlexDirection(FlexLayout.FlexDirection.ROW);
-		card.setFlexGrow(1, descLabel, status);
-		card.setBackgroundColor(LumoStyles.Color.BASE_COLOR);
-		card.setBorderRadius(BorderRadius.S);
-		card.setBoxSizing(BoxSizing.BORDER_BOX);
-		card.setPadding(Uniform.M);
-		card.setShadow(Shadow.XS);
-		card.setHeightFull();
-		card.setMargin(Bottom.L);
-
-		FlexBoxLayout lastIrrigationView = new FlexBoxLayout(createLastIrrigation());
-
-		FlexBoxLayout cards = new FlexBoxLayout(card, lastIrrigationView);
-		cards.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
-
+		
+		
+		
+		
 		on_off.addValueChangeListener(new ValueChangeListener<ValueChangeEvent>() {
-
-
 			@Override
 			public void valueChanged(ValueChangeEvent event) {
-				if(event.getValue().equals(accendi)) {
+				if(event.getValue().equals("ON")) {
 					change(event, IrrigationState.ACCESO);
 				}
 				else {
@@ -337,13 +379,24 @@ public class ConfigurazioneView extends Div {
 			}
 
 			private void change(ValueChangeEvent event, IrrigationState irrState) {
-				Irrigazione newIrrigation = HttpHandler.startIrrigation();
-				//Irrigazione newIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 64872389),
-		    	//		new Timestamp(System.currentTimeMillis()), 58.34);
+				Irrigazione newIrrigation;
+				if(irrState.equals(IrrigationState.ACCESO)) {
+					newIrrigation = HttpHandler.startIrrigation();
+					//newIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis()),
+					//		new Timestamp(System.currentTimeMillis() + 40000), 58.34);
+					
+				}
+				else {
+					newIrrigation = HttpHandler.stopIrrigation();
+					//ewIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 40000),
+					//		new Timestamp(System.currentTimeMillis()), 58.34);
+					
+				}
 				
 				// Se la richiesta va a buon fine, è necessario cambiare
 				// le informazioni riguardanti lo stato attuale e l'ultima irrigazione
 				if(newIrrigation != null) {
+					isIrrigationOn = irrState.getShortName();
 					lastIrrigation = newIrrigation;
 					icon.setColor(irrState.getColor());
 					label.setText(irrState.getName());
@@ -353,19 +406,32 @@ public class ConfigurazioneView extends Div {
 				// Se la richiesta non va a buon fine, è necessario settare
 				// il valore della ComboBox al valore precedente al cambio
 				else {
-
 					on_off.setValue((String)event.getOldValue());
 				}
 			}
 
 			private void changeLastIrrigationView() {
-				cards.remove(cards.getComponentAt(1));
-				cards.add(createLastIrrigation());
+				cardLastIrrigation.removeAll();
+				cardLastIrrigation = (FlexBoxLayout) createLastIrrigationCard();
 			}
 
 		});
 
-		return cards;
+		
+		
+		
+		
+		cardIrrigationState.add(descLabel, status, on_off);
+		cardIrrigationState.setFlexDirection(FlexLayout.FlexDirection.ROW);
+		cardIrrigationState.setFlexGrow(1, descLabel, status);
+		cardIrrigationState.setBackgroundColor(LumoStyles.Color.BASE_COLOR);
+		cardIrrigationState.setBorderRadius(BorderRadius.S);
+		cardIrrigationState.setBoxSizing(BoxSizing.BORDER_BOX);
+		cardIrrigationState.setPadding(Uniform.M);
+		cardIrrigationState.setShadow(Shadow.XS);
+		cardIrrigationState.setHeightFull();
+		cardIrrigationState.setMargin(Bottom.L);
+		return cardIrrigationState;
 	}
 	
 	private Component createSettingStartIrrTime() {
@@ -621,6 +687,26 @@ public class ConfigurazioneView extends Div {
 		header.setSpacing(Right.L);
 		header.setMargin(Bottom.L);
 		return header;
+	}
+	
+	public static void runWhileAttached(Component component, Command task,
+			final int interval, final int initialPause) {
+		component.addAttachListener(event -> {
+			ScheduledExecutorService executor = Executors
+					.newScheduledThreadPool(1);
+
+			component.getUI().ifPresent(ui -> ui.setPollInterval(interval));
+
+			final ScheduledFuture<?> scheduledFuture = executor
+					.scheduleAtFixedRate(() -> {
+						component.getUI().ifPresent(ui -> ui.access(task));
+					}, initialPause, interval, TimeUnit.MILLISECONDS);
+
+			component.addDetachListener(detach -> {
+				scheduledFuture.cancel(true);
+				detach.getUI().setPollInterval(-1);
+			});
+		});
 	}
 
 }

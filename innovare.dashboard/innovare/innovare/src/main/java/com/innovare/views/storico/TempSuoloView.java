@@ -36,10 +36,24 @@ public class TempSuoloView extends StoricoView{
 
 	@Override
 	protected void getData() {
-		sensors = new HashMap<Integer, ArrayList<Sample>>();
+/*		sensors = new HashMap<Integer, ArrayList<Sample>>();
 		ArrayList<Integer> channels = HttpHandler.getActiveChannels();
 		for(Integer channel : channels) {
 			ArrayList<Sample> samples = HttpHandler.getAllSamples(channel);
+			sensors.put(channel, samples);
+		}
+*/		
+		sensors = new HashMap<Integer, ArrayList<Sample>>();
+		ArrayList<Integer> channels = new ArrayList<Integer>();
+		channels.add(16);
+		channels.add(17);
+		channels.add(20);
+		for(Integer channel : channels) {
+			ArrayList<Sample> samples = new ArrayList<Sample>();
+			Sample sample1 = new Sample("id1", System.currentTimeMillis() - 36000, "" + channel, (float)channel);
+			Sample sample2 = new Sample("id2", System.currentTimeMillis(), "" + channel, (float)channel - 2);
+			samples.add(sample1);
+			samples.add(sample2);
 			sensors.put(channel, samples);
 		}
 	}
@@ -59,14 +73,14 @@ public class TempSuoloView extends StoricoView{
 	
 	private Component createChart(ArrayList<Sample> samples, String nameSensor) {
 		
-		final Chart chart = new Chart(ChartType.AREASPLINERANGE);
+		final Chart chart = new Chart(ChartType.AREASPLINE);
 
         Configuration configuration = chart.getConfiguration();
         
         Tooltip tooltip = configuration.getTooltip();
-        tooltip.setValueSuffix("%");
+        tooltip.setValueSuffix("°C");
         
-        DataSeries dataSeries = new DataSeries("Variazione Umidità");
+        DataSeries dataSeries = new DataSeries("Temperatura");
         if(samples == null) samples = new ArrayList<Sample>();
         for (Sample sample : samples) {
             dataSeries.add(new DataSeriesItem(sample.getTimestamp(), sample.getMisure(), sample.getMisure()));

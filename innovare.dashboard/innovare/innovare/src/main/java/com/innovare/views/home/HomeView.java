@@ -36,9 +36,12 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import com.innovare.ui.utils.Left;
-import com.innovare.ui.utils.ListItem;
 import com.innovare.model.Classification;
 import com.innovare.model.IrrigationState;
 import com.innovare.model.Irrigazione;
@@ -64,6 +67,7 @@ import com.innovare.utils.Constants;
 import com.innovare.utils.HttpHandler;
 import com.innovare.views.main.ContentView;
 import com.vaadin.flow.router.RouteAlias;
+import com.vaadin.flow.server.Command;
 
 
 @CssImport("./styles/views/main/main-view.css")
@@ -85,6 +89,11 @@ public class HomeView extends Div {
 	private float lastMeasureHeat;
 	private HashMap<Integer, Sensor> sensors;
 	
+	private float quantitaAttuale;
+	private FlexBoxLayout quantitaL;
+	private FlexBoxLayout cardLastIrrigation;
+	private FlexBoxLayout cardIrrigationState;
+	
     public HomeView() {
         setId("home-view");
         getData();
@@ -95,8 +104,8 @@ public class HomeView extends Div {
     
     private void getData() {
 /*
-    	lastIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 64872389),
-				new Timestamp(System.currentTimeMillis()), 58.34);
+    	lastIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 54657),
+				new Timestamp(System.currentTimeMillis() + 40000), 58.34);
     	classifications = new ArrayList();
     	isIrrigationOn = "ON";
     	
@@ -106,8 +115,19 @@ public class HomeView extends Div {
 		lastMeasureRain = 9;
 		lastMeasureHum = 32;
 		lastMeasureHeat = 550;
-*/		
 		
+		sensors = new HashMap<Integer, Sensor>();
+		ArrayList<Integer> channels = new ArrayList<Integer>();
+		channels.add(16);
+		channels.add(17);
+		channels.add(20);
+		for(Integer channel : channels) {
+			Sample sample1 = new Sample("id1", System.currentTimeMillis() - 36000, "" + channel, (float)channel);
+			Sensor sensor1 = new Sensor("Sensore Canale " + channel, sample1);
+			sensors.put(channel, sensor1);
+		}
+*/		
+   	
 		isIrrigationOn = HttpHandler.getCurrentIrrigationState();
     	lastIrrigation = HttpHandler.getLastIrrigation();
     	
@@ -127,9 +147,14 @@ public class HomeView extends Div {
 			Sensor sensor = new Sensor("Sensore Canale " + channel, sample);
 			sensors.put(channel, sensor);
 		}
+
 	}
 
 	private Component createContent() {
+
+		cardLastIrrigation = new FlexBoxLayout();
+		cardIrrigationState = new FlexBoxLayout();
+		
 		Component data = createData();
 		Component irrigation = createIrrigationState();
 		Component lastIrrigation = createLastIrrigation();
@@ -155,7 +180,6 @@ public class HomeView extends Div {
 	}
 
 	private Component createLastIrrigationCard() {
-		
 		FlexBoxLayout fromLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Dalle:"));
 		fromLabel.setWidth("200px");
 		FlexBoxLayout fromDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, 
@@ -188,24 +212,80 @@ public class HomeView extends Div {
 
 		FlexBoxLayout quantitaLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Quantità:"));
 		quantitaLabel.setWidth("200px");
-		FlexBoxLayout quantitaL = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "" + lastIrrigation.getQuantita()));
+		
+		if(isIrrigationOn.equalsIgnoreCase("OFF")) {
+			quantitaL = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "" + lastIrrigation.getQuantita()));
+		}
+		else {
+			
+			long durata = (lastIrrigation.getFineIrrig().getTime() - lastIrrigation.getInizioIrrig().getTime());
+			int intervallo = (int) (durata/10);
+			double portata = lastIrrigation.getQuantita()/durata;
+			double aggiornamentoQuantita = Math.round(portata * intervallo * 100.0) / 100.0;
+			
+			//System.out.println("Durata: " + durata/1000 + "s\nIntervallo: " + intervallo/1000 + "s\nPortata: " + portata*1000 + " L/s\nAggiornamento: " + aggiornamentoQuantita);
+			
+			quantitaL = new FlexBoxLayout();
+			quantitaAttuale = (float) ((System.currentTimeMillis() - lastIrrigation.getInizioIrrig().getTime()) * portata);
+			quantitaAttuale = (float) (Math.round(quantitaAttuale * 100.0) / 100.0);
+			quantitaL.add(UIUtils.createLabel(FontSize.L, quantitaAttuale + "/" + lastIrrigation.getQuantita()));
+			
+			runWhileAttached(quantitaL, () -> {
+            	quantitaAttuale += aggiornamentoQuantita;
+            	quantitaAttuale = (float) (Math.round(quantitaAttuale * 100.0) / 100.0);
+				if(quantitaAttuale < lastIrrigation.getQuantita()) {
+                	quantitaL.removeAll();
+                	
+                	// Se la quantità attualmente erogata è uguale a quella da erogare a meno dell'1%, le due quantità si considerano uguali.
+                	// In pratica si riconduce quella differenza a un errore dovuto all'approssimazione che viene fatta.
+					if((lastIrrigation.getQuantita() - quantitaAttuale) < (lastIrrigation.getQuantita() / 100)) {
+						quantitaL.add(UIUtils.createLabel(FontSize.L, lastIrrigation.getQuantita() + "/" + lastIrrigation.getQuantita()));
+						do {
+							//isIrrigationOn = "OFF";
+							isIrrigationOn = HttpHandler.getCurrentIrrigationState();
+						} while(!isIrrigationOn.equalsIgnoreCase("OFF"));
+						cardLastIrrigation.removeAll();
+						cardLastIrrigation = (FlexBoxLayout) createLastIrrigationCard();
+						cardIrrigationState.removeAll();
+						cardIrrigationState = (FlexBoxLayout) createIrrigationStateCard();
+					}
+					else {
+						quantitaL.add(UIUtils.createLabel(FontSize.L, quantitaAttuale + "/" + lastIrrigation.getQuantita()));
+					}
+				}
+				else {
+					quantitaL.add(UIUtils.createLabel(FontSize.L, lastIrrigation.getQuantita() + "/" + lastIrrigation.getQuantita()));
+					do {
+						//isIrrigationOn = "OFF";
+						isIrrigationOn = HttpHandler.getCurrentIrrigationState();
+					} while(!isIrrigationOn.equalsIgnoreCase("OFF"));
+					cardLastIrrigation.removeAll();
+					cardLastIrrigation = (FlexBoxLayout) createLastIrrigationCard();
+					cardIrrigationState.removeAll();
+					cardIrrigationState = (FlexBoxLayout) createIrrigationStateCard();
+				}
+                
+			}, intervallo, intervallo);
+		}
 
 
 		FlexBoxLayout quantita = new FlexBoxLayout(quantitaLabel, quantitaL);
 		to.setFlexDirection(FlexLayout.FlexDirection.ROW);
 		to.setFlexGrow(2, quantitaLabel, quantitaL);
 
-		FlexBoxLayout card = new FlexBoxLayout(from, to, quantita);
-		card.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
-		card.setBackgroundColor(LumoStyles.Color.BASE_COLOR);
-		card.setBorderRadius(BorderRadius.S);
-		card.setBoxSizing(BoxSizing.BORDER_BOX);
-		card.setPadding(Uniform.M);
-		card.setShadow(Shadow.XS);
-		card.setHeightFull();
-		card.setMargin(Bottom.L);
-		return card;
+		cardLastIrrigation.add(from, to, quantita);
+		cardLastIrrigation.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
+		cardLastIrrigation.setBackgroundColor(LumoStyles.Color.BASE_COLOR);
+		cardLastIrrigation.setBorderRadius(BorderRadius.S);
+		cardLastIrrigation.setBoxSizing(BoxSizing.BORDER_BOX);
+		cardLastIrrigation.setPadding(Uniform.M);
+		cardLastIrrigation.setShadow(Shadow.XS);
+		cardLastIrrigation.setHeightFull();
+		cardLastIrrigation.setMargin(Bottom.L);
+		return cardLastIrrigation;
 	}
+	
+	
 
 	private Component createIrrigationState() {
     	FlexBoxLayout irrState = new FlexBoxLayout(
@@ -244,17 +324,17 @@ public class HomeView extends Div {
 		status.setSpacing(Right.S);
 		status.setAlignItems(Alignment.CENTER);
 
-		FlexBoxLayout card = new FlexBoxLayout(descLabel, status);
-		card.setFlexDirection(FlexLayout.FlexDirection.ROW);
-		card.setFlexGrow(1, descLabel, status);
-		card.setBackgroundColor(LumoStyles.Color.BASE_COLOR);
-		card.setBorderRadius(BorderRadius.S);
-		card.setBoxSizing(BoxSizing.BORDER_BOX);
-		card.setPadding(Uniform.M);
-		card.setShadow(Shadow.XS);
-		card.setHeightFull();
-		card.setMargin(Bottom.L);
-		return card;
+		cardIrrigationState.add(descLabel, status);
+		cardIrrigationState.setFlexDirection(FlexLayout.FlexDirection.ROW);
+		cardIrrigationState.setFlexGrow(1, descLabel, status);
+		cardIrrigationState.setBackgroundColor(LumoStyles.Color.BASE_COLOR);
+		cardIrrigationState.setBorderRadius(BorderRadius.S);
+		cardIrrigationState.setBoxSizing(BoxSizing.BORDER_BOX);
+		cardIrrigationState.setPadding(Uniform.M);
+		cardIrrigationState.setShadow(Shadow.XS);
+		cardIrrigationState.setHeightFull();
+		cardIrrigationState.setMargin(Bottom.L);
+		return cardIrrigationState;
 	}
 
 	private Component createData() {
@@ -554,6 +634,26 @@ public class HomeView extends Div {
 	// Crea gli item della colonna Valore 
 	private Component createValueLabel(Sensor sensor) {
 		return UIUtils.createLabel(FontSize.S, "" + sensor.getSample().getMisure());
+	}
+	
+	public static void runWhileAttached(Component component, Command task,
+			final int interval, final int initialPause) {
+		component.addAttachListener(event -> {
+			ScheduledExecutorService executor = Executors
+					.newScheduledThreadPool(1);
+
+			component.getUI().ifPresent(ui -> ui.setPollInterval(interval));
+
+			final ScheduledFuture<?> scheduledFuture = executor
+					.scheduleAtFixedRate(() -> {
+						component.getUI().ifPresent(ui -> ui.access(task));
+					}, initialPause, interval, TimeUnit.MILLISECONDS);
+
+			component.addDetachListener(detach -> {
+				scheduledFuture.cancel(true);
+				detach.getUI().setPollInterval(-1);
+			});
+		});
 	}
 
 }

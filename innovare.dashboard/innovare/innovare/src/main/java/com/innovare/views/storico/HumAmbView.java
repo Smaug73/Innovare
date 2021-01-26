@@ -40,14 +40,14 @@ public class HumAmbView extends StoricoView {
 
 	@Override
 	protected Component createChart() {
-		final Chart chart = new Chart(ChartType.AREASPLINERANGE);
+		final Chart chart = new Chart(ChartType.AREASPLINE);
 
         Configuration configuration = chart.getConfiguration();
         
         Tooltip tooltip = configuration.getTooltip();
         tooltip.setValueSuffix("%");
         
-        DataSeries dataSeries = new DataSeries("Variazione Umidità");
+        DataSeries dataSeries = new DataSeries("Umidità");
         if(samples == null) samples = new ArrayList<Sample>();
         for (Sample sample : samples) {
             dataSeries.add(new DataSeriesItem(sample.getTimestamp(), sample.getMisure(), sample.getMisure()));

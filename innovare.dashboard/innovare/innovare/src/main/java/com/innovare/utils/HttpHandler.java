@@ -5,7 +5,6 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.sql.Timestamp;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -184,7 +183,7 @@ public class HttpHandler {
 	}
 
 	// Ricostruisce lo stato dell'irrigazione facendo il parsing del json nel body della risposta
-	private static Irrigazione getLastIrrigation(HttpResponse<String> response){
+	private static Irrigazione getIrrigation(HttpResponse<String> response){
 		Irrigazione irr;
 		try {
 			irr = new ObjectMapper().readValue(response.body(), new TypeReference<Irrigazione>(){});
@@ -265,16 +264,15 @@ public class HttpHandler {
 	// Manda il commando di avvio/stop dell'irrigazione al middleware
 	public static Irrigazione startIrrigation() {
 		String path = START_IRR;
-		//HttpResponse<String> response = sendRequest(path);
-		return new Irrigazione(new Timestamp(System.currentTimeMillis()), null, 76.98);
+		HttpResponse<String> response = sendRequest(path);
+		return getIrrigation(response);
 	}
 	
 	// Manda il commando di avvio/stop dell'irrigazione al middleware
 	public static Irrigazione stopIrrigation() {
 		String path = STOP_IRR;
-		//HttpResponse<String> response = sendRequest(path);
-		return new Irrigazione(new Timestamp(System.currentTimeMillis()), 
-				new Timestamp(System.currentTimeMillis() + 34375467), 76.98);
+		HttpResponse<String> response = sendRequest(path);
+		return getIrrigation(response);
 	}
 
 
@@ -289,7 +287,7 @@ public class HttpHandler {
 	public static Irrigazione getLastIrrigation() {
 		String path = LAST_IRR;
 		HttpResponse<String> response = sendRequest(path);
-		return getLastIrrigation(response);
+		return getIrrigation(response);
 	}
 
 
