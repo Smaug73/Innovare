@@ -83,7 +83,7 @@ public class WeatherStationController extends Thread{
 							
 						} catch (Exception e) {
 							System.err.println(e.getMessage());
-							e.printStackTrace();
+							//e.printStackTrace();
 						}
 						/*
 						//DEBUG
@@ -105,7 +105,9 @@ public class WeatherStationController extends Thread{
 						}*/						
 					} 
 					System.out.println("LOG-WEATHERSTATION-CHANNEL: invio");
+					
 					try {
+						System.out.println(new ObjectMapper().writeValueAsString(newSamples));
 						this.mqttClient.publish("weatherStation",
 								 //Invio dell'array contenente le misure
 								  Buffer.buffer(new ObjectMapper().writeValueAsString(newSamples)),
@@ -165,10 +167,10 @@ public class WeatherStationController extends Thread{
 			//Leggiamo per ogni canale il valore corrispondente
 			//Avanziamo di due posizioni alla volta ed ogni volta che leggiamo un channel che e' presente lo aggiungo
 			for(int j=0; j<token.length;j=j+1) {
-				//System.out.println("Token: "+token[j]);
+				System.out.println("Token: "+token[j]);
 				if(this.channelsNames.contains(token[j])) {
 					try {
-						//System.out.println("SI!");
+						System.out.println("SI!");
 						//this.channels.put(token[j], Float.valueOf(token[j+1]));
 						this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(token[j+1])));
 					}
@@ -297,7 +299,7 @@ public class WeatherStationController extends Thread{
 		if(channelsSample.containsKey(channelName))
 			return channelsSample.get(channelName);
 		else 
-			throw new Exception("Il canale richiesto non esite");
+			throw new Exception("Il canale "+channelName+" richiesto non esite");
 	}
 	
 	public HashMap<String,Float> getMapValue(){

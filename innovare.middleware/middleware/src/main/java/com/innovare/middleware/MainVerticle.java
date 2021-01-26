@@ -1673,20 +1673,44 @@ public class MainVerticle extends AbstractVerticle {
 		    		  /*
 		    		   * La misura che è arrivata è un array contenente le nuove misurazioni.
 		    		   */
+		    		  if(newMisures.size()<Utilities.channelsNames.length)
+		    			  System.out.println("--DEBUG-----Sono arrivate meno misure di quelle previste------");
+		    		  else if(newMisures.size()==Utilities.channelsNames.length)
+		    			  System.out.println("--DEBUG-----Misure uguali in numero------");
+		    		  
+		    		  
 		    		  JsonObject singleMisure;
 		    		  //Salviamo le nuove misure.
-		    		  for(int i=0; i<Utilities.channelsNames.length; i++ ) {
+		    		  for(int i=0; i<newMisures.size(); i++ ) {
 		    			  singleMisure= newMisures.getJsonObject(i);
-		    			  //Salviamo la misura nella priorityQueue
-		    			  this.sampleChannelQueue.put(""+i, singleMisure);
+		    			  String channelName;
+		    			  int channelId=-1;
+		    			  if(singleMisure.containsKey("channel")){
+		    				  System.out.println("--DEBUG-----Canale trovato-----");
+		    				  channelName=singleMisure.getString("channel");
+		    				  for(int k=0;k<Utilities.channelsNames.length;k++) {
+		    					  if(channelName.equalsIgnoreCase(Utilities.channelsNames[k]))
+		    						  channelId=k;				  
+		    				  }
+		    				  if(channelId!=-1) {   				  
+			    				//Salviamo la misura nella priorityQueue
+				    			  this.sampleChannelQueue.put(""+channelId, singleMisure);
+				    			  
+				    			//Salviamo la misura nel DB
+				    			  mongoClient.insert("channel-"+channelId, singleMisure , res ->{
+					    			  if(res.succeeded())
+					    				  System.out.println("Misura salvata correttamente nel DB.");
+					    			  else
+					    				  System.err.println("ERRORE salvataggio misura");  
+					    		  });
+		    				  }	  
+		    				
+			    			  
+			    			  channelId=-1; 
+		    			  }
 		    			  
-		    			  //Salviamo la misura nel DB
-		    			  mongoClient.insert("channel-"+i, singleMisure , res ->{
-			    			  if(res.succeeded())
-			    				  System.out.println("Misura salvata correttamente nel DB.");
-			    			  else
-			    				  System.err.println("ERRORE salvataggio misura");  
-			    		  });
+		    			  
+		    			  
 		    		 
 		    		  }	
 	    		  
