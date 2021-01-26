@@ -301,8 +301,8 @@ public class MainVerticle extends AbstractVerticle {
 	    // Schedule to run every Sunday in midnight
 	    timer.schedule(
 	      new IrrigationController(MongoClient.createShared(vertx, mongoconfig),this.irrigationCommandClient),
-	      10000,
-	      60000 
+	      60000,
+	      60000*5
 	     );
 	  
 	    //////////////////////////////////////////////
@@ -443,77 +443,75 @@ public class MainVerticle extends AbstractVerticle {
         	    	    	/*
         	    	    	 * Fallimento se il parametro non è stato inserito o non esiste il canale selezionato
         	    	    	 */
-        	    	    	if(channel==null || !this.sampleChannelQueue.containsKey(channel))
+        	    	    	if(channel==null || !this.sampleChannelQueue.containsKey(channel)){
         	    	    		/*
-        	    	    		 * Cerchiamo nel db l'ultimo sample
+        	    	    		 * Cerchiamo nel db l'ultimo sample se non fa parte degli ultimi sample che sono stati 
+        	    	    		 * raccolti a runtime.
+        	    	    		 * 
         	    	    		 */
-        	    	    	{
+        	    	    	
         	    	    		JsonObject q= new JsonObject();
-        	    	    		System.out.println("DEBUG ALL SAMPLE CHANNEL: "+channel);
+        	    	    		System.out.println("DEBUG LASTSAMPLE CHANNEL: "+channel);
         	    	    		this.mongoClient.find("channel-"+channel,q, res-> {
-        	    	      		/*
-        	    	      		 * Successo nel trovare i sample nel db
-        	    	      		 */
-        	    	      		if(res.succeeded()) {
-        	    	      			/*
-        	    	      			 * Prendiamo solo le ultime 4 massimo
-        	    	      			 */
-        	    	      			ArrayList<ClassificationSint> csa= new ArrayList<ClassificationSint>();
-        	    	      			ClassificationSint csObj;
-        	    	      			for(JsonObject jo: res.result()) {
-        	    	      				try {
-        	    	    						csObj= new ObjectMapper().readValue(jo.toString(), ClassificationSint.class);
-        	    	    						csa.add(csObj);
-        	    	    						
-        	    	    					} catch (JsonProcessingException e) {
-        	    	    						System.err.println("Errore conversione json.");
-        	    	    						e.printStackTrace();
-        	    	    					}		
-        	    	      			}
-        	    	      			
-        	    	      			Collections.sort((List<ClassificationSint>) csa);
-        	    	      			ArrayList<ClassificationSint> arrayResp= new ArrayList<ClassificationSint>();
-        	    	      			System.out.println(csa.toString());
-        	    	      			for(int i=0; i<4; i++) {
-        	    	      				if((csa.size()-i)!=0)
-        	    	      					arrayResp.add(csa.get(i));
-        	    	      				else
-        	    	      					i=4;
-        	    	      			}
-        	    	    	  
-        	    	    			
-        	    	    		}else
-	        	    	    		routingContext
-	    			    	   	      .response()
-	    				              .setStatusCode(400)
-	    				              .end("Nessun sample ricevuto di recente");
-        	    	    	else {
-        	    	    		/*
-        	    	    		 * Restituiamo l'ultimo Sample registrato ma non lo eliminiamo
-        	    	    		 */
-        	    	    		JsonObject sample= this.sampleChannelQueue.get(channel);
-        	    	    		if(!sample.isEmpty()) {
-                	    	    	routingContext
-            	    	    	 	.response()
-            	    	    	 	.setStatusCode(200)
-            	    	    	 	.end(sample.toString());
-        	    	    		}else
-        	    	    			/*
-        	    	    			 * Caso nel quale non ci sono nuovi Sample
-        	    	    			 */
-    	        	    	    	routingContext
-    	    	    	    	 	.response()
-    	    	    	    	 	.setStatusCode(200)
-    	    	    	    	 	.end("NO-NEW-SAMPLE");
-        	    	    	}
-    	    	    	}
-    	    	    	else {
-    	    	    		routingContext
-    		    	   	      .response()
-    			              .setStatusCode(401)
-    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-    			              .end("Non autorizzato: non sei loggato.");
-    	    	    	}
+	        	    	      		/*
+	        	    	      		 * Successo nel trovare i sample nel db
+	        	    	      		 */
+	        	    	      		if(res.succeeded()) {
+	        	    	      			/*
+	        	    	      			 * Prendiamo solo l'ultimo
+	        	    	      			 */
+	    	    	    		    	  long max=0;
+	    	    	    		    	  JsonObject lastSample=new JsonObject();
+	    	    	    			      for (JsonObject json : res.result()) {
+	    	    	    			    	if(json.containsKey("timestamp") && (json.getLong("timestamp")>max)) {
+	    	    	    			    		lastSample=json;
+	    	    	    			    	}   
+	    	    	    			      }
+	    	    	    			      System.out.println("Canale: "+channel+" --- Last sample  "+lastSample.encodePrettily());
+	    	    	    			      /*
+	    	    	    			       * Invio dell'ultimo sample registrato
+	    	    	    			       * ATTENZIONE: eventualita' che il sample inviato sia un oggetto json 
+	    	    	    			       * 			 vuoto, poiche' potrebbe non esserci nessun sample nel 
+	    	    	    			       * 			 db per un dato canale
+	    	    	    			       */
+	    	    	    			      routingContext
+		            	    	    	 	.response()
+		            	    	    	 	.setStatusCode(200)
+		            	    	    	 	.end(lastSample.toString());
+	        	    	    		}else
+		        	    	    		routingContext
+		    			    	   	      .response()
+		    				              .setStatusCode(400)
+		    				              .end();
+        	    	    		});
+        	    	    		
+        	    	    	}else {
+	        	    	    		/*
+	        	    	    		 * Restituiamo l'ultimo Sample registrato ma non lo eliminiamo
+	        	    	    		 */
+	        	    	    		JsonObject sample= this.sampleChannelQueue.get(channel);
+	        	    	    		if(!sample.isEmpty()) {
+	                	    	    	routingContext
+	            	    	    	 	.response()
+	            	    	    	 	.setStatusCode(200)
+	            	    	    	 	.end(sample.toString());
+	        	    	    		}else
+	        	    	    			/*
+	        	    	    			 * Caso nel quale non ci sono nuovi Sample
+	        	    	    			 */
+	    	        	    	    	routingContext
+	    	    	    	    	 	.response()
+	    	    	    	    	 	.setStatusCode(200)
+	    	    	    	    	 	.end();
+	        	    	    	}
+        	    	    	
+	    	    	    }else{
+	    	    	    	routingContext
+	    		    	   	   .response()
+	    			           .setStatusCode(401)
+	    			           .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+	    			           .end("Non autorizzato: non sei loggato.");
+	    	    	    }
     	   
     	    	    });  	
     	    		
@@ -1694,12 +1692,7 @@ public class MainVerticle extends AbstractVerticle {
   */
   
   
-  private Sample lastSample(String channelId) {
-	  
-	  
-	  
-	  return s;
-  }
+  
   
   
   private void setClientWeatherStation() {

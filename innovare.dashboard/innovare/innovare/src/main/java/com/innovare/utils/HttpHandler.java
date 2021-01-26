@@ -261,7 +261,7 @@ public class HttpHandler {
 		String path = LAST + chan.getValue();
 		HttpResponse<String> response = sendRequest(path);
 		Sample sample;
-		if(response == null) {
+		if((response == null) || (response.body().isEmpty()) || (response.statusCode()!=200)) {
 			sample = new Sample();
 			sample.setChannel("" + chan.getValue());
 			sample.setMisure(chan.getInvalidValue());
