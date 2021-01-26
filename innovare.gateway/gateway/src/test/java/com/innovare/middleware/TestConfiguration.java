@@ -29,7 +29,7 @@ public class TestConfiguration {
 		Process processSeg= Runtime.getRuntime().exec(Utilities.scriptPath+" ./vproweather -m /dev/ttyUSB0");
 		
 	}
-	*/
+	
 	//@Test
 	public void provaLetturaStringa() {
 		String pro= "prova = 1\nprova = 2\nprova = 3\nprova = 4\n";
@@ -51,5 +51,5 @@ public class TestConfiguration {
 		System.out.println(new ObjectMapper().writeValueAsString(newSamples));
 		
 	}
-	
+	*/
 }
