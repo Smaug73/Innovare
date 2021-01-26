@@ -129,19 +129,25 @@ public class HomeView extends Div {
 */		
    	
 		isIrrigationOn = HttpHandler.getCurrentIrrigationState();
+		if(isIrrigationOn == null) {
+			isIrrigationOn = "UNKNOWN";
+		}
     	lastIrrigation = HttpHandler.getLastIrrigation();
     	
 		classifications = HttpHandler.getLastClassifications();
 		
-		lastMeasureDate = HttpHandler.getLastSample(Channel.OUTSIDE_TEMP.getValue()).getTimestamp();
-		lastMeasureTemp = HttpHandler.getLastSample(Channel.OUTSIDE_TEMP.getValue()).getMisure();
-		lastMeasureUV = HttpHandler.getLastSample(Channel.UV_LEVEL.getValue()).getMisure();
-		lastMeasureRain = HttpHandler.getLastSample(Channel.DAY_RAIN.getValue()).getMisure();
-		lastMeasureHum = HttpHandler.getLastSample(Channel.OUTSIDE_HUM.getValue()).getMisure();
-		lastMeasureHeat = HttpHandler.getLastSample(Channel.SOLAR_RAD.getValue()).getMisure();
+		lastMeasureDate = HttpHandler.getLastSample(Channel.OUTSIDE_TEMP).getTimestamp();
+		lastMeasureTemp = HttpHandler.getLastSample(Channel.OUTSIDE_TEMP).getMisure();
+		lastMeasureUV = HttpHandler.getLastSample(Channel.UV_LEVEL).getMisure();
+		lastMeasureRain = HttpHandler.getLastSample(Channel.DAY_RAIN).getMisure();
+		lastMeasureHum = HttpHandler.getLastSample(Channel.OUTSIDE_HUM).getMisure();
+		lastMeasureHeat = HttpHandler.getLastSample(Channel.SOLAR_RAD).getMisure();
 
 		sensors = new HashMap<Integer, Sensor>();
 		channels = HttpHandler.getActiveChannels();
+		if(channels == null) {
+			channels = new ArrayList<Integer>();
+		}
 		for(Integer channel : channels) {
 			Sample sample = HttpHandler.getLastSample(channel);
 			Sensor sensor = new Sensor("Sensore Canale " + channel, sample);
@@ -180,11 +186,23 @@ public class HomeView extends Div {
 	}
 
 	private Component createLastIrrigationCard() {
+		String fromString;
+		String toString;
+		if(lastIrrigation != null) {
+			fromString = Constants.TIME_FORMAT.format(lastIrrigation.getInizioIrrig())
+					+ " " + Constants.DATE_FORMAT.format(lastIrrigation.getInizioIrrig());
+			toString = Constants.TIME_FORMAT.format(lastIrrigation.getFineIrrig())
+					+ " " + Constants.DATE_FORMAT.format(lastIrrigation.getInizioIrrig());
+		}
+		else {
+			fromString = "Impossibile recuperare i dati. Controlla la tua connessione";
+			toString = "Impossibile recuperare i dati. Controlla la tua connessione";
+		}
+		
 		FlexBoxLayout fromLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Dalle:"));
 		fromLabel.setWidth("200px");
-		FlexBoxLayout fromDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, 
-				Constants.TIME_FORMAT.format(lastIrrigation.getInizioIrrig())
-				+ " " + Constants.DATE_FORMAT.format(lastIrrigation.getInizioIrrig())));
+		
+		FlexBoxLayout fromDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, fromString));
 
 
 		FlexBoxLayout from = new FlexBoxLayout(fromLabel, fromDate);
@@ -193,17 +211,13 @@ public class HomeView extends Div {
 
 		FlexBoxLayout toLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Alle:"));
 		toLabel.setWidth("200px");
-
+		
 		FlexBoxLayout toDate;
-		if(isIrrigationOn.equalsIgnoreCase("OFF")) {
-			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, 
-					Constants.TIME_FORMAT.format(lastIrrigation.getFineIrrig())
-					+ " " + Constants.DATE_FORMAT.format(lastIrrigation.getInizioIrrig())));
+		if(!isIrrigationOn.equalsIgnoreCase("ON")) {
+			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, toString));
 		}
 		else {
-			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "In corso - Fine prevista: " +
-					Constants.TIME_FORMAT.format(lastIrrigation.getFineIrrig())
-					+ " " + Constants.DATE_FORMAT.format(lastIrrigation.getInizioIrrig())));
+			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "In corso - Fine prevista: " + toString));
 		}
 
 		FlexBoxLayout to = new FlexBoxLayout(toLabel, toDate);
@@ -213,61 +227,76 @@ public class HomeView extends Div {
 		FlexBoxLayout quantitaLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Quantità:"));
 		quantitaLabel.setWidth("200px");
 		
-		if(isIrrigationOn.equalsIgnoreCase("OFF")) {
-			quantitaL = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "" + lastIrrigation.getQuantita()));
+		if(!isIrrigationOn.equalsIgnoreCase("ON")) {
+			if(lastIrrigation != null) {
+				quantitaL = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "" + lastIrrigation.getQuantita()));
+			}
+			else {
+				quantitaL = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Impossibile recuperare i dati. Controlla la tua connessione"));
+			}
 		}
 		else {
-			
-			long durata = (lastIrrigation.getFineIrrig().getTime() - lastIrrigation.getInizioIrrig().getTime());
-			int intervallo = (int) (durata/10);
-			double portata = lastIrrigation.getQuantita()/durata;
-			double aggiornamentoQuantita = Math.round(portata * intervallo * 100.0) / 100.0;
-			
-			//System.out.println("Durata: " + durata/1000 + "s\nIntervallo: " + intervallo/1000 + "s\nPortata: " + portata*1000 + " L/s\nAggiornamento: " + aggiornamentoQuantita);
-			
-			quantitaL = new FlexBoxLayout();
-			quantitaAttuale = (float) ((System.currentTimeMillis() - lastIrrigation.getInizioIrrig().getTime()) * portata);
-			quantitaAttuale = (float) (Math.round(quantitaAttuale * 100.0) / 100.0);
-			quantitaL.add(UIUtils.createLabel(FontSize.L, quantitaAttuale + "/" + lastIrrigation.getQuantita()));
-			
-			runWhileAttached(quantitaL, () -> {
-            	quantitaAttuale += aggiornamentoQuantita;
-            	quantitaAttuale = (float) (Math.round(quantitaAttuale * 100.0) / 100.0);
-				if(quantitaAttuale < lastIrrigation.getQuantita()) {
-                	quantitaL.removeAll();
-                	
-                	// Se la quantità attualmente erogata è uguale a quella da erogare a meno dell'1%, le due quantità si considerano uguali.
-                	// In pratica si riconduce quella differenza a un errore dovuto all'approssimazione che viene fatta.
-					if((lastIrrigation.getQuantita() - quantitaAttuale) < (lastIrrigation.getQuantita() / 100)) {
+			if(lastIrrigation != null) {
+				long durata = (lastIrrigation.getFineIrrig().getTime() - lastIrrigation.getInizioIrrig().getTime());
+				int intervallo = (int) (durata/10);
+				double portata = lastIrrigation.getQuantita()/durata;
+				double aggiornamentoQuantita = Math.round(portata * intervallo * 100.0) / 100.0;
+				
+				//System.out.println("Durata: " + durata/1000 + "s\nIntervallo: " + intervallo/1000 + "s\nPortata: " + portata*1000 + " L/s\nAggiornamento: " + aggiornamentoQuantita);
+				
+				quantitaL = new FlexBoxLayout();
+				quantitaAttuale = (float) ((System.currentTimeMillis() - lastIrrigation.getInizioIrrig().getTime()) * portata);
+				quantitaAttuale = (float) (Math.round(quantitaAttuale * 100.0) / 100.0);
+				quantitaL.add(UIUtils.createLabel(FontSize.L, quantitaAttuale + "/" + lastIrrigation.getQuantita()));
+				
+				runWhileAttached(quantitaL, () -> {
+	            	quantitaAttuale += aggiornamentoQuantita;
+	            	quantitaAttuale = (float) (Math.round(quantitaAttuale * 100.0) / 100.0);
+					if(quantitaAttuale < lastIrrigation.getQuantita()) {
+	                	quantitaL.removeAll();
+	                	
+	                	// Se la quantità attualmente erogata è uguale a quella da erogare a meno dell'1%, le due quantità si considerano uguali.
+	                	// In pratica si riconduce quella differenza a un errore dovuto all'approssimazione che viene fatta.
+						if((lastIrrigation.getQuantita() - quantitaAttuale) < (lastIrrigation.getQuantita() / 100)) {
+							quantitaL.add(UIUtils.createLabel(FontSize.L, lastIrrigation.getQuantita() + "/" + lastIrrigation.getQuantita()));
+							do {
+								//isIrrigationOn = "OFF";
+								isIrrigationOn = HttpHandler.getCurrentIrrigationState();
+								if(isIrrigationOn == null) {
+									isIrrigationOn = "UNKNOWN";
+								}
+							} while(isIrrigationOn.equalsIgnoreCase("ON"));
+							cardLastIrrigation.removeAll();
+							cardLastIrrigation = (FlexBoxLayout) createLastIrrigationCard();
+							cardIrrigationState.removeAll();
+							cardIrrigationState = (FlexBoxLayout) createIrrigationStateCard();
+						}
+						else {
+							quantitaL.add(UIUtils.createLabel(FontSize.L, quantitaAttuale + "/" + lastIrrigation.getQuantita()));
+						}
+					}
+					else {
+						// Codice clone a porzione di codice da 258 a 269
 						quantitaL.add(UIUtils.createLabel(FontSize.L, lastIrrigation.getQuantita() + "/" + lastIrrigation.getQuantita()));
 						do {
 							//isIrrigationOn = "OFF";
 							isIrrigationOn = HttpHandler.getCurrentIrrigationState();
-						} while(!isIrrigationOn.equalsIgnoreCase("OFF"));
+							if(isIrrigationOn == null) {
+								isIrrigationOn = "UNKNOWN";
+							}
+						} while(isIrrigationOn.equalsIgnoreCase("ON"));
 						cardLastIrrigation.removeAll();
 						cardLastIrrigation = (FlexBoxLayout) createLastIrrigationCard();
 						cardIrrigationState.removeAll();
 						cardIrrigationState = (FlexBoxLayout) createIrrigationStateCard();
 					}
-					else {
-						quantitaL.add(UIUtils.createLabel(FontSize.L, quantitaAttuale + "/" + lastIrrigation.getQuantita()));
-					}
-				}
-				else {
-					quantitaL.add(UIUtils.createLabel(FontSize.L, lastIrrigation.getQuantita() + "/" + lastIrrigation.getQuantita()));
-					do {
-						//isIrrigationOn = "OFF";
-						isIrrigationOn = HttpHandler.getCurrentIrrigationState();
-					} while(!isIrrigationOn.equalsIgnoreCase("OFF"));
-					cardLastIrrigation.removeAll();
-					cardLastIrrigation = (FlexBoxLayout) createLastIrrigationCard();
-					cardIrrigationState.removeAll();
-					cardIrrigationState = (FlexBoxLayout) createIrrigationStateCard();
-				}
-                
-			}, intervallo, intervallo);
+	                
+				}, intervallo, intervallo);
+			}
+			else {
+				quantitaL = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Impossibile recuperare i dati. Controlla la tua connessione"));
+			}
 		}
-
 
 		FlexBoxLayout quantita = new FlexBoxLayout(quantitaLabel, quantitaL);
 		to.setFlexDirection(FlexLayout.FlexDirection.ROW);
@@ -308,9 +337,13 @@ public class HomeView extends Div {
 			state = IrrigationState.ACCESO.getName();
 			colorState = IrrigationState.ACCESO.getColor();
 		}
-		else {
+		else if(isIrrigationOn.equals("OFF")) {
 			state = IrrigationState.SPENTO.getName();
 			colorState = IrrigationState.SPENTO.getColor();
+		}
+		else {
+			state = "Impossibile recuperare i dati. Controlla la tua connessione";
+			colorState = TextColor.DISABLED.getValue();
 		}
 
 
@@ -379,6 +412,12 @@ public class HomeView extends Div {
 		ListSeries eccesso = new ListSeries(Classification.Status.ECCESSO.getName());
 		ListSeries scartate = new ListSeries(Classification.Status.SCARTATE.getName());
 		ListSeries infestanti = new ListSeries(Classification.Status.INFESTANTI.getName());
+		
+		if(classifications == null) {
+			classifications = new ArrayList<Classification>();
+			configuration.setSubTitle("Impossibile recuperare i dati. Controlla la tua connessione");
+		}
+		
 		for(Classification classif : classifications) {
 			carenza.addData(classif.getPercCarenza());
 			sane.addData(classif.getPercSane());
@@ -460,37 +499,82 @@ public class HomeView extends Div {
 	private Component createAmbientData() {
 		FlexBoxLayout header = createHeader(VaadinIcon.SUN_O, "Ambiente");
 
-
+		String dateString;
+		if(lastMeasureDate == 0) {
+			dateString = "Impossibile recuperare i dati";
+		}
+		else {
+			dateString = Constants.DATE_FORMAT.format(lastMeasureDate) + " " + Constants.TIME_FORMAT.format(lastMeasureDate);
+		}
+		
+		String tempString;
+		if(lastMeasureTemp == Channel.OUTSIDE_TEMP.getInvalidValue()) {
+			tempString = "Impossibile recuperare i dati";
+		}
+		else {
+			tempString = "Temperatura: " + lastMeasureTemp + "°C";
+		}
+		
+		String uvString;
+		if(lastMeasureUV == Channel.UV_LEVEL.getInvalidValue()) {
+			uvString = "Impossibile recuperare i dati";
+		}
+		else {
+			uvString = "Indice UV: " + lastMeasureUV;
+		}
+		
+		String radiationString;
+		if(lastMeasureUV == Channel.UV_LEVEL.getInvalidValue()) {
+			radiationString = "Impossibile recuperare i dati";
+		}
+		else {
+			radiationString = "Irraggiamento: " + lastMeasureHeat + " W/m^2";
+		}
+		
+		String rainString;
+		if(lastMeasureUV == Channel.UV_LEVEL.getInvalidValue()) {
+			rainString = "Impossibile recuperare i dati";
+		}
+		else {
+			rainString = "Pioggia: " + lastMeasureRain + " mm";
+		}
+		
+		String humString;
+		if(lastMeasureUV == Channel.UV_LEVEL.getInvalidValue()) {
+			humString = "Impossibile recuperare i dati";
+		}
+		else {
+			humString = "Umidità: " + lastMeasureHum + "%";
+		}
 
 		FlexBoxLayout dateLabel = new FlexBoxLayout(
-				UIUtils.createLabel(FontSize.XS, Constants.DATE_FORMAT.format(lastMeasureDate) 
-						+ " " + Constants.TIME_FORMAT.format(lastMeasureDate)));
+				UIUtils.createLabel(FontSize.XS, dateString));
 		dateLabel.setMargin(Bottom.M);
 
 		FlexBoxLayout tempLabel = new FlexBoxLayout(
 				UIUtils.createIcon(IconSize.S, TextColor.TERTIARY.getValue(), VaadinIcon.CLOUD_O),
-				UIUtils.createLabel(FontSize.S, "Temperatura: " + lastMeasureTemp + "°C"));
+				UIUtils.createLabel(FontSize.S, tempString));
 		tempLabel.setAlignItems(Alignment.CENTER);
 		tempLabel.setSpacing(Right.S, Left.S);
 		tempLabel.setMargin(Bottom.S);
 		
 		FlexBoxLayout uvLabel = new FlexBoxLayout(
 				UIUtils.createIcon(IconSize.S, TextColor.TERTIARY.getValue(), VaadinIcon.SUN_O),
-				UIUtils.createLabel(FontSize.S, "Indice UV: " + lastMeasureUV));
+				UIUtils.createLabel(FontSize.S, uvString));
 		uvLabel.setAlignItems(Alignment.CENTER);
 		uvLabel.setSpacing(Right.S, Left.S);
 		uvLabel.setMargin(Bottom.S);
 		
 		FlexBoxLayout radiationLabel = new FlexBoxLayout(
 				UIUtils.createIcon(IconSize.S, TextColor.TERTIARY.getValue(), VaadinIcon.SUN_O),
-				UIUtils.createLabel(FontSize.S, "Irraggiamento: " + lastMeasureHeat + " W/m^2"));
+				UIUtils.createLabel(FontSize.S, radiationString));
 		radiationLabel.setAlignItems(Alignment.CENTER);
 		radiationLabel.setSpacing(Right.S, Left.S);
 		radiationLabel.setMargin(Bottom.S);
 		
 		FlexBoxLayout rainLabel = new FlexBoxLayout(
 				UIUtils.createIcon(IconSize.S, TextColor.TERTIARY.getValue(), VaadinIcon.DROP),
-				UIUtils.createLabel(FontSize.S, "Pioggia: " + lastMeasureRain + " mm"));
+				UIUtils.createLabel(FontSize.S, rainString));
 		rainLabel.setAlignItems(Alignment.CENTER);
 		rainLabel.setSpacing(Right.S, Left.S);
 		rainLabel.setMargin(Bottom.S);
@@ -498,7 +582,7 @@ public class HomeView extends Div {
 		
 		FlexBoxLayout humLabel = new FlexBoxLayout(
 				UIUtils.createIcon(IconSize.S, TextColor.TERTIARY.getValue() , VaadinIcon.DROP),
-				UIUtils.createLabel(FontSize.S, "Umidità: " + lastMeasureHum + "%"));
+				UIUtils.createLabel(FontSize.S, humString));
 		humLabel.setSpacing(Right.S, Left.S);
 		humLabel.setMargin(Bottom.S);
 		
@@ -596,7 +680,8 @@ public class HomeView extends Div {
 		grid.addColumn(Sensor::getName)
 				.setAutoWidth(true)
 				.setFlexGrow(1)
-				.setFrozen(true);
+				.setFrozen(true)
+				.setHeader("Sensore");
 		grid.addColumn(new ComponentRenderer<>(this::createDateLabel))
 				.setAutoWidth(true)
 				.setFlexGrow(1)

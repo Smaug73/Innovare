@@ -7,27 +7,29 @@ public enum Channel {
 			"rtDayRain","rtMonthRain","rtYearRain"};
 	*/
 	
-	BARO_CURR(0, "rtBaroCurr"),
-	INSIDE_TEMP(1, "rtInsideTemp"),
-	INSIDE_HUM(2, "rtInsideHum"),
-	OUTSIDE_TEMP(3, "rtOutsideTemp"),
-	WIND_SPEED(4, "rtWindSpeed"),
-	AVG_WIND_SPEED(5, "rtWindAvgSpeed"),
-	WIND_DIR(6, "rtWindDir"),
-	OUTSIDE_HUM(7, "rtOutsideHum"),
-	RAIN_RATE(8, "rtRainRate"),
-	UV_LEVEL(9, "rtUVLevel"),
-	SOLAR_RAD(10, "rtSolarRad"),
-	DAY_RAIN(11, "rtDayRain"),
-	MONTH_RAIN(12, "rtMonthRain"),
-	YEAR_RAIN(13, "rtYearRain");
+	BARO_CURR(0, "rtBaroCurr", -1),
+	INSIDE_TEMP(1, "rtInsideTemp", (float) -273.15),
+	INSIDE_HUM(2, "rtInsideHum", -1),
+	OUTSIDE_TEMP(3, "rtOutsideTemp", (float) -273.15),
+	WIND_SPEED(4, "rtWindSpeed", -1),
+	AVG_WIND_SPEED(5, "rtWindAvgSpeed", -1),
+	WIND_DIR(6, "rtWindDir", -1),
+	OUTSIDE_HUM(7, "rtOutsideHum", -1),
+	RAIN_RATE(8, "rtRainRate", -1),
+	UV_LEVEL(9, "rtUVLevel", -1),
+	SOLAR_RAD(10, "rtSolarRad", -1),
+	DAY_RAIN(11, "rtDayRain", -1),
+	MONTH_RAIN(12, "rtMonthRain", -1),
+	YEAR_RAIN(13, "rtYearRain", -1);
 
 	private int value;
 	private String name;
+	private float invalidValue;
 
-	Channel(int value, String name) {
+	Channel(int value, String name, float invalidValue) {
 		this.value = value;
 		this.name = name;
+		this.invalidValue = invalidValue;
 	}
 
 	public int getValue() {
@@ -37,4 +39,9 @@ public enum Channel {
 	public String getName() {
 		return name;
 	}
+
+	public float getInvalidValue() {
+		return invalidValue;
+	}
+	
 }

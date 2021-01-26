@@ -20,7 +20,7 @@ public class Authenticator {
 	public static boolean authenticate ( String username , String password )
     {
 		VaadinSession vaadinSession = getCurrent();
-		
+/*		
 		URIBuilder builder = new URIBuilder();
 		builder.setScheme("http").setHost("localhost:8888").setPath("/login") 
 		.setParameter("username", username)
@@ -35,13 +35,13 @@ public class Authenticator {
 				HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 				
 				String body = response.body();
-				if(body.trim().equals(Role.ADMIN))  vaadinSession.setAttribute(ATTRIBUTE_ROLE , Role.ADMIN);
-				else if (body.trim().equals(Role.USER)) vaadinSession.setAttribute(ATTRIBUTE_ROLE , Role.USER);
-				else return false; 
+				if(body.trim().equals(Role.ADMIN)) */ vaadinSession.setAttribute(ATTRIBUTE_ROLE , Role.ADMIN);
+/*				else if (body.trim().equals(Role.USER)) vaadinSession.setAttribute(ATTRIBUTE_ROLE , Role.USER);
+				else return false; */
 				vaadinSession.setAttribute(ATTRIBUTE_USERNAME , username);
 				vaadinSession.setAttribute(ATTRIBUTE_IS_AUTH , true);
 				return true;
-					} catch (IOException e) {
+/*					} catch (IOException e) {
 				e.printStackTrace();
 				return false;
 			} catch (InterruptedException e) {
@@ -50,7 +50,7 @@ public class Authenticator {
 			} catch (URISyntaxException e) {
 				e.printStackTrace();
 				return false;
-			}
+			}*/
     }
 
 	public static boolean logout() {

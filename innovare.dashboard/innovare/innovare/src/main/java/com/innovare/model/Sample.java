@@ -17,7 +17,7 @@ public class Sample implements Comparable<Sample>{
 	private float misure;	//per ora solo questo
 	
 	public Sample() {
-		this.timestamp= System.currentTimeMillis();
+		this.timestamp= 0;
 		/*
 		 * Durante l'instanziamento del Sample, deve essere avviata la cattura delle informazioni 
 		 * dai sensori, in modo da riempirne i della misura. Questo può ritardare durante l'instanziamento.
