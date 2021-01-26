@@ -39,7 +39,7 @@ public class SampleCSVController extends Thread{
 				
 				//Mettiamo in sleep il thread
 				try {
-					this.sleep(20000);
+					this.sleep(10000);
 				} catch (InterruptedException e) {
 					System.err.println("Errore nella sleep del thread WeatherStationController");
 					e.printStackTrace();
@@ -79,7 +79,7 @@ public class SampleCSVController extends Thread{
 				
 				//Mettiamo in sleep il thread
 				try {
-					this.sleep(20000);
+					this.sleep(600000);
 				} catch (InterruptedException e) {
 					System.err.println("Errore nella sleep del thread WeatherStationController");
 					e.printStackTrace();
@@ -181,6 +181,8 @@ public class SampleCSVController extends Thread{
 						samplesMaps.get(samplesMaps.keySet().toArray()[i]).add(new Sample(allData.get(j)[0],Float.valueOf(allData.get(j)[i+posizioneValor])));		
 					}		
 		        }
+				
+				//AGGIUNGERE RIMOZIONE DEL FILE
 				
 				return samplesMaps;
 				

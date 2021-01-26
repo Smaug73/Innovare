@@ -4,12 +4,23 @@ import java.io.FileNotFoundException;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.Timer;
 import java.util.concurrent.TimeUnit;
+
+import org.quartz.CronScheduleBuilder;
+import org.quartz.JobBuilder;
+import org.quartz.JobDetail;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
+import org.quartz.impl.StdSchedulerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,6 +31,7 @@ import com.innovare.control.ModelController;
 import com.innovare.control.SampleCSVController;
 import com.innovare.model.ClassificationSint;
 import com.innovare.model.IrrigationState;
+import com.innovare.model.Irrigazione;
 import com.innovare.model.Model;
 import com.innovare.model.PlantClassification;
 import com.innovare.model.User;
@@ -90,7 +102,12 @@ public class MainVerticle extends AbstractVerticle {
 	private MqttClient clientWS;
 	private SampleCSVController csvController;
 	private String irrigationState=null;
+	
 	private IrrigationController irrigationController;
+	private JobDetail job;
+	private Trigger trigger;
+	private Scheduler sch;
+	private Irrigazione irr=null;
 	/*
 	 * AGGIUNGERE PRIORITY QUEUE DELLE CLASSIFICAZIONI, DEVE CONTENERE LE ULTIME 4 CLASSIFICAZIONI EFFETTUATE
 	 */
@@ -262,15 +279,30 @@ public class MainVerticle extends AbstractVerticle {
 	   *CSV CONTROLLER ed avvio del thread
 	   */
 	  
-	  this.csvController= new SampleCSVController(this.mongoClient);
+	  this.csvController= new SampleCSVController(MongoClient.createShared(vertx, mongoconfig));
 	  csvController.start();
 	  
 	  
 	  /*
 	   * IRRIGATION-CONTROLLER avvio
 	   */
-	  this.irrigationController=new IrrigationController(this.mongoClient,this.irrigationCommandClient);
-	  this.irrigationController.startSchedulingIrrigation();
+	  //this.irrigationController =new IrrigationController(MongoClient.createShared(vertx, mongoconfig),this.irrigationCommandClient);
+	    Timer timer = new Timer();
+	    Calendar dateC = Calendar.getInstance();
+	    dateC.set(
+	      Calendar.DAY_OF_WEEK,
+	      Calendar.SUNDAY
+	    );
+	    dateC.set(Calendar.HOUR, 0);
+	    dateC.set(Calendar.MINUTE, 0);
+	    dateC.set(Calendar.SECOND, 0);
+	    dateC.set(Calendar.MILLISECOND, 0);
+	    // Schedule to run every Sunday in midnight
+	    timer.schedule(
+	      new IrrigationController(MongoClient.createShared(vertx, mongoconfig),this.irrigationCommandClient),
+	      10000,
+	      60000 
+	     );
 	  
 	    //////////////////////////////////////////////
 	    
@@ -1641,20 +1673,44 @@ public class MainVerticle extends AbstractVerticle {
 		    		  /*
 		    		   * La misura che è arrivata è un array contenente le nuove misurazioni.
 		    		   */
+		    		  if(newMisures.size()<Utilities.channelsNames.length)
+		    			  System.out.println("--DEBUG-----Sono arrivate meno misure di quelle previste------");
+		    		  else if(newMisures.size()==Utilities.channelsNames.length)
+		    			  System.out.println("--DEBUG-----Misure uguali in numero------");
+		    		  
+		    		  
 		    		  JsonObject singleMisure;
 		    		  //Salviamo le nuove misure.
-		    		  for(int i=0; i<Utilities.channelsNames.length; i++ ) {
+		    		  for(int i=0; i<newMisures.size(); i++ ) {
 		    			  singleMisure= newMisures.getJsonObject(i);
-		    			  //Salviamo la misura nella priorityQueue
-		    			  this.sampleChannelQueue.put(""+i, singleMisure);
+		    			  String channelName;
+		    			  int channelId=-1;
+		    			  if(singleMisure.containsKey("channel")){
+		    				  System.out.println("--DEBUG-----Canale trovato-----");
+		    				  channelName=singleMisure.getString("channel");
+		    				  for(int k=0;k<Utilities.channelsNames.length;k++) {
+		    					  if(channelName.equalsIgnoreCase(Utilities.channelsNames[k]))
+		    						  channelId=k;				  
+		    				  }
+		    				  if(channelId!=-1) {   				  
+			    				//Salviamo la misura nella priorityQueue
+				    			  this.sampleChannelQueue.put(""+channelId, singleMisure);
+				    			  
+				    			//Salviamo la misura nel DB
+				    			  mongoClient.insert("channel-"+channelId, singleMisure , res ->{
+					    			  if(res.succeeded())
+					    				  System.out.println("Misura salvata correttamente nel DB.");
+					    			  else
+					    				  System.err.println("ERRORE salvataggio misura");  
+					    		  });
+		    				  }	  
+		    				
+			    			  
+			    			  channelId=-1; 
+		    			  }
 		    			  
-		    			  //Salviamo la misura nel DB
-		    			  mongoClient.insert("channel-"+i, singleMisure , res ->{
-			    			  if(res.succeeded())
-			    				  System.out.println("Misura salvata correttamente nel DB.");
-			    			  else
-			    				  System.err.println("ERRORE salvataggio misura");  
-			    		  });
+		    			  
+		    			  
 		    		 
 		    		  }	
 	    		  

@@ -11,7 +11,7 @@ import com.innovare.gateway.GatewayVerticle;
 
 @ExtendWith(VertxExtension.class)
 public class TestMainVerticle {
-
+	/*
   @BeforeEach
   void deploy_verticle(Vertx vertx, VertxTestContext testContext) {
     vertx.deployVerticle(new GatewayVerticle(), testContext.succeeding(id -> testContext.completeNow()));
@@ -24,6 +24,6 @@ public class TestMainVerticle {
   
   
   
-  
+  */
   
 }
