@@ -5,7 +5,9 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.TimerTask;
 
+import org.quartz.CronScheduleBuilder;
 import org.quartz.Job;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
@@ -35,7 +37,7 @@ import io.vertx.mqtt.MqttClient;
 /*
  * Si occupa del controllo dell'innaffiamento
  */
-public class IrrigationController implements Job{
+public class IrrigationController extends TimerTask implements Job{
 
 	private static final String LOGIRR="LOG-IRRIGATION-CONTROLLER: ";
 	//Orario di start dell'irrigazione giornaliera
@@ -59,18 +61,22 @@ public class IrrigationController implements Job{
 		try {
 			System.out.println(LOGIRR+System.currentTimeMillis()+"  Avvio SCHEDULING job di Irrigazione...");
 			this.job= JobBuilder.newJob(IrrigationController.class)
-					.withIdentity("IrrigationJob")
+					.withIdentity("IrrigationJob","group1")
 					.build();
 			this.trigger= TriggerBuilder.newTrigger()
-										.withSchedule(SimpleScheduleBuilder.simpleSchedule()
-																			.withIntervalInSeconds(20)
-																			.repeatForever())
-										.build();
-			SchedulerFactory schFactory = new StdSchedulerFactory();
-			this.sch= schFactory.getScheduler();
-			this.sch.start();
+					.withIdentity("IrrigationJob","group1")
+					.forJob(this.job)
+					.withSchedule(CronScheduleBuilder.cronSchedule("0/5 * * * * ?"))
+					.build();
+			
+			this.sch= new StdSchedulerFactory().getScheduler();
 			this.sch.scheduleJob(this.job,this.trigger);
+			this.sch.start();
+			
+			System.out.println(LOGIRR+System.currentTimeMillis()+"  Avvio SCHEDULING start...");
+			
 		} catch (SchedulerException e) {
+			System.err.println(LOGIRR+System.currentTimeMillis()+"ERRORE SCHEDULING..");
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -87,6 +93,7 @@ public class IrrigationController implements Job{
     		/*
     		 * Successo nel trovare i sample nel db
     		 */
+			System.out.println(LOGIRR+System.currentTimeMillis()+" Ricerca ultima classificazione effettuata...");
 			Irrigazione newIrr;
     		if(res.succeeded()) {
     			/*
@@ -179,25 +186,25 @@ public class IrrigationController implements Job{
 	
 	/*
 	 * Thread per la gestione dell'irrigazione giornaliera
-	 *
+	 */
 	public void run(){
 		/*
 		 * Il thread deve verificare l'ultima classificazione generata e deve basarsi su quella
 		 * generare la nuova irrigazione
-		 *
-		while(true) {
+		 */
+		
 				
 			JsonObject q= new JsonObject();
 			//Controlliamo l'ultima classificazione effettuata
 			this.mongoClient.find("ClassificazioniSintetiche",q, res-> {
 	    		/*
 	    		 * Successo nel trovare i sample nel db
-	    		 *
+	    		 */
 				Irrigazione newIrr;
 	    		if(res.succeeded()) {
 	    			/*
 	    			 * Prendiamo solo l'ultima
-	    			 *
+	    			 */
 	    			ClassificationSint lastClassification;
 	    			ArrayList<ClassificationSint> csa= new ArrayList<ClassificationSint>();
 	    			ClassificationSint csObj;
@@ -234,7 +241,7 @@ public class IrrigationController implements Job{
 	    			else {
 	    				/*
 	    				 * Nessuna classificazione acquisita precedentemente, irrigazione normale
-	    				 *
+	    				 */
 	    				System.out.println(LOGIRR+"Nessuna classificazione precedente.");
 	    				newIrr= new Irrigazione(Status.NORMALE);
 	    				
@@ -249,7 +256,7 @@ public class IrrigationController implements Job{
 	    		}
 	    		/*
 	    		 * Caso di fallimento
-	    		 *
+	    		 */
 	    		else {
 	    			System.out.println(LOGIRR+"Nessun db mongo di classificazioni trovato...");
 	    			System.out.println(LOGIRR+"Creazione irrigazione NORMALE.");
@@ -258,7 +265,7 @@ public class IrrigationController implements Job{
 	    		
 	    		/*
 	    		 * Avvio irrigazione
-	    		 *
+	    		 */
 	    		startIrrigation();
 	    		
 	    		
@@ -266,7 +273,7 @@ public class IrrigationController implements Job{
 	    		//Mettiamo in sleep il thread
 	    		timeWaitIrrigation=newIrr.getFineIrrig()-newIrr.getInizioIrrig();
 				try {
-					this.sleep(newIrr.getFineIrrig()-newIrr.getInizioIrrig());
+					Thread.sleep(newIrr.getFineIrrig()-newIrr.getInizioIrrig());
 				} catch (InterruptedException e) {
 					System.err.println("Errore nella sleep del thread IrrigationController");
 					e.printStackTrace();
@@ -274,23 +281,24 @@ public class IrrigationController implements Job{
 	    		
 	    		/*
 	    		 * Stop-Irrigazione
-	    		 *
+	    		 */
 	    		stopIrrigation();
 	    		
 	    		//Attendiamo il tempo per riattivare il thread per l'irrigazione
 	    	});		
 			//Attesa irrigazione
     		//Mettiamo in sleep il thread fino alla prossima irrigazione
-			try {
-				this.sleep(60*60*24*7*1000-timeWaitIrrigation); //una settimana dopo meno il tempo perso ad irrigare
-			} catch (InterruptedException e) {
-				System.err.println("Errore nella sleep del thread IrrigationController");
-				e.printStackTrace();
-			}
+			//try {
+				
+				//Thread.sleep(60*60*24*7*1000-timeWaitIrrigation); //una settimana dopo meno il tempo perso ad irrigare
+			//} catch (InterruptedException e) {
+			//	System.err.println("Errore nella sleep del thread IrrigationController");
+			//	e.printStackTrace();
+			//}
 			
-		}	
+			
 	}
-	*/
+	
 	
 	
 	

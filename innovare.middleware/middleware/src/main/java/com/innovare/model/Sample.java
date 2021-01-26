@@ -13,7 +13,7 @@ public class Sample implements Comparable<Sample>{
 	
 	private String timestamp;
 	private float misure;	//per ora solo questo
-	private String _id;
+	//private String _id;
 	
 	public Sample() {
 		this.timestamp= (new Timestamp(System.currentTimeMillis())).toString();
@@ -30,11 +30,11 @@ public class Sample implements Comparable<Sample>{
 		super();
 		this.timestamp = timestamp;
 		this.misure = misure;
-		this._id= "generic";
+		//this._id= "generic";
 	}
 
 
-
+/*
 	public String get_id() {
 		return _id;
 	}
@@ -45,7 +45,7 @@ public class Sample implements Comparable<Sample>{
 		this._id = _id;
 	}
 
-
+*/
 
 	public void setMisure(float misure) {
 		this.misure = misure;
