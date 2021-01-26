@@ -227,6 +227,7 @@ public class HttpHandler {
 	public static ArrayList<Classification> getAllClassifications() {
 		String path = ALL_CLASSIF;
 		HttpResponse<String> response = sendRequest(path);
+		if(response == null) return null;
 		return getClassifications(response);
 	}
 
@@ -234,6 +235,7 @@ public class HttpHandler {
 	public static ArrayList<Classification> getLastClassifications() {
 		String path = LAST_CLASSIF;
 		HttpResponse<String> response = sendRequest(path);
+		if(response == null) return null;
 		return getClassifications(response);
 	}
 	
@@ -241,6 +243,7 @@ public class HttpHandler {
 	public static ArrayList<Sample> getAllSamples(int chan) {
 		String path = ALL + chan;
 		HttpResponse<String> response = sendRequest(path);
+		if(response == null) return null;
 		return getSamples(response);
 	}
 
@@ -249,15 +252,32 @@ public class HttpHandler {
 	public static Sample getLastSample(int chan) {
 		String path = LAST + chan;
 		HttpResponse<String> response = sendRequest(path);
+		if(response == null) return null;
 		return getSample(response);
 	}
 
+	// Recupera dal middleware l'ultimo valore dal canale indicato
+	public static Sample getLastSample(Channel chan) {
+		String path = LAST + chan.getValue();
+		HttpResponse<String> response = sendRequest(path);
+		Sample sample;
+		if(response == null) {
+			sample = new Sample();
+			sample.setChannel("" + chan.getValue());
+			sample.setMisure(chan.getInvalidValue());
+		}
+		else {
+			sample = getSample(response);
+		}
+		return sample;
+	}
 	
 
 	// Recupera lo storico delle irrigazioni dal middleware
 	public static ArrayList<Irrigazione> getAllIrrigationStates() {
 		String path = ALL_IRR_STATES;
 		HttpResponse<String> response = sendRequest(path);
+		if(response == null) return null;
 		return getIrrigationStates(response);
 	}
 
@@ -265,6 +285,7 @@ public class HttpHandler {
 	public static Irrigazione startIrrigation() {
 		String path = START_IRR;
 		HttpResponse<String> response = sendRequest(path);
+		if(response == null) return null;
 		return getIrrigation(response);
 	}
 	
@@ -272,6 +293,7 @@ public class HttpHandler {
 	public static Irrigazione stopIrrigation() {
 		String path = STOP_IRR;
 		HttpResponse<String> response = sendRequest(path);
+		if(response == null) return null;
 		return getIrrigation(response);
 	}
 
@@ -280,6 +302,7 @@ public class HttpHandler {
 	public static String getCurrentIrrigationState() {
 		String path = CURR_IRR_STATE;
 		HttpResponse<String> response = sendRequest(path);
+		if(response == null) return null;
 		return getIrrigationState(response);
 	}
 	
@@ -287,6 +310,7 @@ public class HttpHandler {
 	public static Irrigazione getLastIrrigation() {
 		String path = LAST_IRR;
 		HttpResponse<String> response = sendRequest(path);
+		if(response == null) return null;
 		return getIrrigation(response);
 	}
 
@@ -295,6 +319,7 @@ public class HttpHandler {
 	public static ArrayList<Model> getAllModels() {
 		String path = MODELS;
 		HttpResponse<String> response = sendRequest(path);
+		if(response == null) return null;
 		return getModels(response);
 	}
 	
@@ -302,6 +327,7 @@ public class HttpHandler {
 	public static Model getSelectedModel() {
 		String path = SELECTED_MODEL;
 		HttpResponse<String> response = sendRequest(path);
+		if(response == null) return null;
 		return getSelectedModel(response);
 	}
 
@@ -309,6 +335,7 @@ public class HttpHandler {
 	public static int setModel(String modelName) {
 		String path = SET_MODEL + modelName;
 		HttpResponse<String> response = sendRequest(path);
+		if(response == null) return 400;
 		return response.statusCode();
 	}
 	
@@ -316,6 +343,7 @@ public class HttpHandler {
 	public static int addModel(String fileName) {
 		String path = NEW_MODEL + fileName;
 		HttpResponse<String> response = sendRequest(path);
+		if(response == null) return 400;
 		return response.statusCode();
 	}
 	
@@ -323,6 +351,7 @@ public class HttpHandler {
 	public static int startnewClassification(String datasetName) {
 		String path = NEW_CLASSIF + datasetName;
 		HttpResponse<String> response = sendRequest(path);
+		if(response == null) return 400;
 		return response.statusCode();
 	}
 
@@ -330,6 +359,7 @@ public class HttpHandler {
 	public static ArrayList<ConfigurationItem> getAllConfigurationItems() {
 		String path = CONFIGURATION;
 		HttpResponse<String> response = sendRequest(path);
+		if(response == null) return null;
 		ArrayList<ConfigurationItem> items = getConfigItems(response);
 		return items;
 	}
@@ -338,6 +368,7 @@ public class HttpHandler {
 	public static ArrayList<Integer> getActiveChannels() {
 		String path = ACTIVE_CHANNELS;
 		HttpResponse<String> response = sendRequest(path);
+		if(response == null) return null;
 		ArrayList<Integer> items = getActiveChannels(response);
 		return items;
 	}
@@ -346,6 +377,7 @@ public class HttpHandler {
 	public static LocalTime getIrrigTime() {
 		String path = IRRIG_TIME;
 		HttpResponse<String> response = sendRequest(path);
+		if(response == null) return null;
 		LocalTime time = getIrrigTime(response);
 		return time;
 	}
@@ -354,6 +386,7 @@ public class HttpHandler {
 	public static int setIrrigTime(String time) {
 		String path = SET_IRRIG_TIME + time;
 		HttpResponse<String> response = sendRequest(path);
+		if(response == null) return 400;
 		return response.statusCode();
 	}
 }
