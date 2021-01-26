@@ -34,6 +34,7 @@ import com.innovare.model.IrrigationState;
 import com.innovare.model.Irrigazione;
 import com.innovare.model.Model;
 import com.innovare.model.PlantClassification;
+import com.innovare.model.Sample;
 import com.innovare.model.User;
 import com.innovare.utils.NoUserLogException;
 import com.innovare.utils.Utilities;
@@ -440,13 +441,52 @@ public class MainVerticle extends AbstractVerticle {
     	    	    	if(this.loggingController.isUserLogged()) {
     	    	    		String channel= routingContext.request().getParam("idcanale");
         	    	    	/*
-        	    	    	 * Fallimento se non il parametro non è stato inserito o non esiste il canale selezionato
+        	    	    	 * Fallimento se il parametro non è stato inserito o non esiste il canale selezionato
         	    	    	 */
         	    	    	if(channel==null || !this.sampleChannelQueue.containsKey(channel))
-        	    	    		routingContext
-    			    	   	      .response()
-    				              .setStatusCode(400)
-    				              .end();
+        	    	    		/*
+        	    	    		 * Cerchiamo nel db l'ultimo sample
+        	    	    		 */
+        	    	    	{
+        	    	    		JsonObject q= new JsonObject();
+        	    	    		System.out.println("DEBUG ALL SAMPLE CHANNEL: "+channel);
+        	    	    		this.mongoClient.find("channel-"+channel,q, res-> {
+        	    	      		/*
+        	    	      		 * Successo nel trovare i sample nel db
+        	    	      		 */
+        	    	      		if(res.succeeded()) {
+        	    	      			/*
+        	    	      			 * Prendiamo solo le ultime 4 massimo
+        	    	      			 */
+        	    	      			ArrayList<ClassificationSint> csa= new ArrayList<ClassificationSint>();
+        	    	      			ClassificationSint csObj;
+        	    	      			for(JsonObject jo: res.result()) {
+        	    	      				try {
+        	    	    						csObj= new ObjectMapper().readValue(jo.toString(), ClassificationSint.class);
+        	    	    						csa.add(csObj);
+        	    	    						
+        	    	    					} catch (JsonProcessingException e) {
+        	    	    						System.err.println("Errore conversione json.");
+        	    	    						e.printStackTrace();
+        	    	    					}		
+        	    	      			}
+        	    	      			
+        	    	      			Collections.sort((List<ClassificationSint>) csa);
+        	    	      			ArrayList<ClassificationSint> arrayResp= new ArrayList<ClassificationSint>();
+        	    	      			System.out.println(csa.toString());
+        	    	      			for(int i=0; i<4; i++) {
+        	    	      				if((csa.size()-i)!=0)
+        	    	      					arrayResp.add(csa.get(i));
+        	    	      				else
+        	    	      					i=4;
+        	    	      			}
+        	    	    	  
+        	    	    			
+        	    	    		}else
+	        	    	    		routingContext
+	    			    	   	      .response()
+	    				              .setStatusCode(400)
+	    				              .end("Nessun sample ricevuto di recente");
         	    	    	else {
         	    	    		/*
         	    	    		 * Restituiamo l'ultimo Sample registrato ma non lo eliminiamo
@@ -486,11 +526,12 @@ public class MainVerticle extends AbstractVerticle {
         	    	    	/*
         	    	    	 * Fallimento se non il parametro non è stato inserito o non esiste il canale selezionato
         	    	    	 */
+    	    	    		System.out.println("DEBUG----LASTSAMPLE");
         	    	    	if(channel==null)
         	    	    		routingContext
     			    	   	      .response()
     				              .setStatusCode(400)
-    				              .end();
+    				              .end("ERRORE CANALE NON SCRITTO CORRETTAMENTE");
         	    	    	else {
         	    	    		/*
         	    	    		 * Restituiamo gli ultimi Sample e li eliminiamo
@@ -1651,6 +1692,16 @@ public class MainVerticle extends AbstractVerticle {
 	    });
   }
   */
+  
+  
+  private Sample lastSample(String channelId) {
+	  
+	  
+	  
+	  return s;
+  }
+  
+  
   private void setClientWeatherStation() {
 	  
 	  //DEBUG
