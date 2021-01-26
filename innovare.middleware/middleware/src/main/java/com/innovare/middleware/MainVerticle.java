@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.control.Classificator;
+import com.innovare.control.IrrigationController;
 import com.innovare.control.LoggingController;
 import com.innovare.control.ModelController;
 import com.innovare.control.SampleCSVController;
@@ -89,7 +90,7 @@ public class MainVerticle extends AbstractVerticle {
 	private MqttClient clientWS;
 	private SampleCSVController csvController;
 	private String irrigationState=null;
-	
+	private IrrigationController irrigationController;
 	/*
 	 * AGGIUNGERE PRIORITY QUEUE DELLE CLASSIFICAZIONI, DEVE CONTENERE LE ULTIME 4 CLASSIFICAZIONI EFFETTUATE
 	 */
@@ -265,6 +266,11 @@ public class MainVerticle extends AbstractVerticle {
 	  csvController.start();
 	  
 	  
+	  /*
+	   * IRRIGATION-CONTROLLER avvio
+	   */
+	  this.irrigationController=new IrrigationController(this.mongoClient,this.irrigationCommandClient);
+	  this.irrigationController.startSchedulingIrrigation();
 	  
 	    //////////////////////////////////////////////
 	    
