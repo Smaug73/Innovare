@@ -270,7 +270,7 @@ public class MainVerticle extends AbstractVerticle {
 	   * IRRIGATION-CONTROLLER avvio
 	   */
 	  this.irrigationController=new IrrigationController(this.mongoClient,this.irrigationCommandClient);
-	  this.irrigationController.start();
+	  this.irrigationController.startSchedulingIrrigation();
 	  
 	    //////////////////////////////////////////////
 	    

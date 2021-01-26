@@ -31,6 +31,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.control.Classificator;
+import com.innovare.control.IrrigationController;
 import com.innovare.control.ModelController;
 import com.innovare.control.SampleCSVController;
 import com.innovare.model.ClassificationSint;
@@ -38,6 +39,8 @@ import com.innovare.model.PlantClassification;
 import com.innovare.model.Sample;
 import com.innovare.utils.Utilities;
 
+import io.vertx.ext.mongo.MongoClient;
+import io.vertx.mqtt.MqttClient;
 import net.lingala.zip4j.exception.ZipException;
 
 
@@ -47,6 +50,10 @@ public class TestClassificator {
 	public static final String dirName="test";
 	//private String dirImages="test.zip";
 	private ArrayList<PlantClassification> classifications;
+	private MqttClient irrigationCommandClient;
+	private MongoClient mongoClient;
+	
+	
 	//private String jsonString="[{\"date\": \"2020/09/11\", \"path\": \"/home/stefano/Scrivania/Lavoro/IMMAGINI-TestPythonScript/test/2020_09_11_Dataset_FondatanaDeiFieri-Thermal_Optical-Fila_1_2-Session1-DJI_0455-plant_4.jpg\", \"hash\": \"a91f820cc32c8266445bc97974b0aee9\", \"classification\": {\"classifications\": [{\"classe\": \"0\", \"score\": 23.196931183338165}, {\"classe\": \"1\", \"score\": 23.196931183338165}, {\"classe\": \"2\", \"score\": 23.196931183338165}, {\"classe\": \"3\", \"score\": 23.196931183338165}, {\"classe\": \"4\", \"score\": 23.196931183338165}, {\"classe\": \"5\", \"score\": 23.196931183338165}, {\"classe\": \"6\", \"score\": 23.196931183338165}, {\"classe\": \"7\", \"score\": 23.196931183338165}, {\"classe\": \"8\", \"score\": 23.196931183338165}, {\"classe\": \"9\", \"score\": 23.196931183338165}], \"hash\": \"'a91f820cc32c8266445bc97974b0aee9'\"}, \"originalImage\": \"/home/stefano/Scrivania/Lavoro/IMMAGINI-TestPythonScript/test/2020_09_11_Dataset_FondatanaDeiFieri-Thermal_Optical-Fila_1_2-Session1-DJI_0455-erased_background_with_boxes.jpg\"}]";
 	
 	/*
@@ -139,7 +146,7 @@ public class TestClassificator {
 		SampleCSVController sc = new SampleCSVController();
 		HashMap<String,ArrayList<Sample>> hsc=sc.readSampleFromCSV();
 	}
-	
+	/*
 	@Test
 	public void testWeatherStation() throws IOException, InterruptedException {
 		System.out.println("cd && cd "+Utilities.scriptPath+"vproweather-1.1"+System.getProperty("file.separator")+" && sudo ./vproweather -x /dev/ttyUSB0\n");
@@ -155,6 +162,16 @@ public class TestClassificator {
 		//OutputStream outPSeg= processSt.getOutputStream();
 		//System.out.println(outPSeg.toString());
 	}
+	*
+	
+	@Test
+	public void testIrrigationController() {
+		
+		
+		IrrigationController irr= new IrrigationController();
+		
+	}
+	
 	/*
 	@Test
 	public void testData() throws ParseException, JsonMappingException, JsonProcessingException {
