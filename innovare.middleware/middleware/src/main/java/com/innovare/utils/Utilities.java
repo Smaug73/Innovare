@@ -23,4 +23,5 @@ public final class Utilities {
 	public static final int hourStartIrrigation=9;
 	public static final int minuteStartIrrigation=30;
 	public static final float portata=1;//1 litro al minuto
+	public static final String channelCSV="Umidita' Terreno";
 }

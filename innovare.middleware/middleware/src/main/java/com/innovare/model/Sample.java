@@ -11,12 +11,13 @@ public class Sample implements Comparable<Sample>{
 	 * specifiche per uno specifico sample.
 	 */
 	
-	private String timestamp;
+	private long timestamp;
 	private float misure;	//per ora solo questo
+	private String Channel;
 	//private String _id;
 	
 	public Sample() {
-		this.timestamp= (new Timestamp(System.currentTimeMillis())).toString();
+		this.timestamp= System.currentTimeMillis();
 		/*
 		 * Durante l'instanziamento del Sample, deve essere avviata la cattura delle informazioni 
 		 * dai sensori, in modo da riempirne i della misura. Questo può ritardare durante l'instanziamento.
@@ -26,10 +27,11 @@ public class Sample implements Comparable<Sample>{
 	
 	
 
-	public Sample(String timestamp, float misure) {
+	public Sample(long timestamp, float misure,String Channel) {
 		super();
 		this.timestamp = timestamp;
 		this.misure = misure;
+		this.Channel= Channel;
 		//this._id= "generic";
 	}
 
@@ -51,15 +53,17 @@ public class Sample implements Comparable<Sample>{
 		this.misure = misure;
 	}
 
-
-
-	public String getTimestamp() {
+	public long getTimestamp() {
 		return timestamp;
 	}
 
-	public void setTimestamp(String timestamp) {
+
+
+	public void setTimestamp(long timestamp) {
 		this.timestamp = timestamp;
 	}
+
+
 
 	public float getMisure() {
 		return misure;
@@ -68,10 +72,37 @@ public class Sample implements Comparable<Sample>{
 	public void setMisure(int misure) {
 		this.misure = misure;
 	}
+	
+	
+
+	public String getChannel() {
+		return Channel;
+	}
+
+
+
+	public void setChannel(String channel) {
+		Channel = channel;
+	}
+
+
 
 	@Override
 	public String toString() {
 		return "Sample [timestamp=" + timestamp + ", misure=" + misure + "]";
+	}
+
+
+
+	@Override
+	public int compareTo(Sample o) {
+		if(this.timestamp>o.getTimestamp())
+			return 1;
+		else 
+			if(this.timestamp < o.getTimestamp())
+				return -1;
+			else
+				return 0;
 	}
 
 
@@ -83,11 +114,7 @@ public class Sample implements Comparable<Sample>{
 	}*/
 
 
-	@Override
-	public int compareTo(Sample o) {
-		//Confronto sui timestamp per ordinarli
-			return this.getTimestamp().compareTo(o.getTimestamp());
-	}
+	
 	
 	
 	

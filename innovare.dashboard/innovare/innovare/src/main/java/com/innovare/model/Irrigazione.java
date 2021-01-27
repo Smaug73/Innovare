@@ -3,43 +3,46 @@ package com.innovare.model;
 import java.sql.Timestamp;
 
 public class Irrigazione {
-	private Timestamp inizioIrrig;
-	private Timestamp fineIrrig;
-	private double quantita;
-	
-	public Irrigazione(Timestamp inizioIrrig, Timestamp fineIrrig, double quantita) {
-		this.inizioIrrig = inizioIrrig;
-		this.fineIrrig = fineIrrig;
-		this.quantita = quantita;
-	}
+	private long inizioIrrig;
+	private long fineIrrig;
+	private float quantita;
+	private String _id;
 	
 	public Irrigazione() {}
 	
-
-	public Timestamp getInizioIrrig() {
-		return inizioIrrig;
-	}
-
-	public void setInizioIrrig(Timestamp inizioIrrig) {
+	public Irrigazione(long inizioIrrig, long fineIrrig, float quantita) {
+		super();
 		this.inizioIrrig = inizioIrrig;
-	}
-
-	public Timestamp getFineIrrig() {
-		return fineIrrig;
-	}
-
-	public void setFineIrrig(Timestamp fineIrrig) {
 		this.fineIrrig = fineIrrig;
-	}
-
-	public double getQuantita() {
-		return quantita;
-	}
-
-	public void setQuantita(double quantita) {
 		this.quantita = quantita;
 	}
 	
-	
+	public long getInizioIrrig() {
+		return inizioIrrig;
+	}
+	public void setInizioIrrig(long inizioIrrig) {
+		this.inizioIrrig = inizioIrrig;
+	}
+	public long getFineIrrig() {
+		return fineIrrig;
+	}
+	public void setFineIrrig(long fineIrrig) {
+		this.fineIrrig = fineIrrig;
+	}
+	public float getQuantita() {
+		return quantita;
+	}
+	public void setQuantita(float quantita) {
+		this.quantita = quantita;
+	}
 
+	public String get_id() {
+		return _id;
+	}
+
+	public void set_id(String _id) {
+		this._id = _id;
+	}
+	
+	
 }

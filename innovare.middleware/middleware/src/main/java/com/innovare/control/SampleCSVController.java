@@ -21,6 +21,7 @@ public class SampleCSVController extends Thread{
 	MongoClient mongoClient=null;
 	
 	private ArrayList<Integer> channelNumberCSV= new ArrayList<Integer>();
+	HashMap<String, ArrayList<Sample> > newSamples;
 	public int startingChannel=16;
 	
 	public SampleCSVController() {}
@@ -48,7 +49,7 @@ public class SampleCSVController extends Thread{
 				System.out.println("CSV CONTROLLER DEBUG: Leggo file csv e salvo le nuove misure..");
 				
 				try {
-					HashMap<String, ArrayList<Sample> > newSamples= this.readSampleFromCSV();
+					newSamples= this.readSampleFromCSV();
 					//debug
 					System.out.println("Sensori attivi:"+newSamples.keySet());
 					JsonObject jo;
@@ -178,7 +179,7 @@ public class SampleCSVController extends Thread{
 				for (int j=1; j<allData.size(); j++) {
 					for(int i=0; i<samplesMaps.keySet().size(); i++) {
 						//prendo l'arraylist di un certo sensore e aggiungo il nuovo sample prendendo i dati dalle posizioni del csv
-						samplesMaps.get(samplesMaps.keySet().toArray()[i]).add(new Sample(allData.get(j)[0],Float.valueOf(allData.get(j)[i+posizioneValor])));		
+						samplesMaps.get(samplesMaps.keySet().toArray()[i]).add(new Sample(Long.parseLong(allData.get(j)[0]),Float.valueOf(allData.get(j)[i+posizioneValor]),Utilities.channelCSV));		
 					}		
 		        }
 				

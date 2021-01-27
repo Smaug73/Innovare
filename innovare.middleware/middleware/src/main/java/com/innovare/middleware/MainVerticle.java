@@ -463,8 +463,8 @@ public class MainVerticle extends AbstractVerticle {
 	    	    	    		    	  long max=0;
 	    	    	    		    	  JsonObject lastSample=new JsonObject();
 	    	    	    			      for (JsonObject json : res.result()) {
-	    	    	    			    	if(json.containsKey("timestamp") && (json.getLong("timestamp")>max)) {
-	    	    	    			    		lastSample=json;
+	    	    	    			    	if(json.containsKey("timestamp") && (json.getLong("timestamp")>max)) {	
+	    	    	    			    			lastSample=json;
 	    	    	    			    	}   
 	    	    	    			      }
 	    	    	    			      System.out.println("Canale: "+channel+" --- Last sample  "+lastSample.encodePrettily());
@@ -1272,13 +1272,24 @@ public class MainVerticle extends AbstractVerticle {
     	    	    			//Disconnesione per evitare problemi
             	    	    	this.irrigationCommandClient.disconnect();
     	    	    		});*/
-    	    	    		this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, t ->{
-    	    	    			this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
-    	        	    	    		  Buffer.buffer(Utilities.stateOn),
-    	  								  MqttQoS.AT_LEAST_ONCE,
-    	  								  false,
-    	  								  false);
-    	    	    			this.irrigationCommandClient.disconnect();
+    	    	    		//Controlliamo che non sia gia' in atto una irrigazione
+    	    	    		if(this.irrigationState != Utilities.stateOn) {
+    	    	    			
+	    	    	    		this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, t ->{
+	    	    	    			this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
+	    	        	    	    		  Buffer.buffer(Utilities.stateOn),
+	    	  								  MqttQoS.AT_LEAST_ONCE,
+	    	  								  false,
+	    	  								  false);
+	    	    	    			this.irrigationCommandClient.disconnect();
+	    	    	    			routingContext
+	    							.response()
+	    							.setStatusCode(200)
+	    							.end("Invio comando effettuato");
+	            	    	    	System.out.println("Invio comando start effettuato.");
+	    	    	    		});
+	    	    	    		
+	    	    	    	}else {
             	    	    	//ATTENZIONE AGGIUNGERE CREAZIONE IRRIGAZIONE NEL DATABASE
     	    	    			/*
     	    	    			 * Irrigazione ir= new Irrigazione..
@@ -1286,9 +1297,9 @@ public class MainVerticle extends AbstractVerticle {
             	    	    	routingContext
     							.response()
     							.setStatusCode(200)
-    							.end("Invio comando effettuato");
-            	    	    	System.out.println("Invio comando start effettuato.");
-    	    	    		  });
+    							.end("Stato attuale: irrigazione attiva.");
+            	    	    	System.out.println("Stato attuale: irrigazione attiva.");
+    	    	    		  };
         	    	    	
         	    	    	 	
     	    	    	}
@@ -1383,10 +1394,10 @@ public class MainVerticle extends AbstractVerticle {
     	    	    		JsonObject irrigazioniQuery= new JsonObject();
     	    	    		this.mongoClient.find("Irrigazioni",irrigazioniQuery , res -> {
     	    	    		    if (res.succeeded()) {
-    	    	    			      for (JsonObject json : res.result()) {
-    	    	    			        System.out.println(json.encodePrettily());
-    	    	    			        System.out.println("Connessione effettuata con successo al db!");
-    	    	    			      }
+    	    	    			      //for (JsonObject json : res.result()) {
+    	    	    			        //System.out.println(json.encodePrettily());
+    	    	    			        //System.out.println("Connessione effettuata con successo al db!");
+    	    	    			      //}
     	    	    			      routingContext
     	    		    	   	      .response()
     	    			              .setStatusCode(200)
@@ -1430,10 +1441,10 @@ public class MainVerticle extends AbstractVerticle {
     	    	    			    	if(json.containsKey("inizioIrrig") && (json.getLong("inizioIrrig")>max)) {
     	    	    			    		lastIrrigation=json;
     	    	    			    	}
-    	    	    			        System.out.println("Last irrigation: "+lastIrrigation.encodePrettily());
-    	    	    			        System.out.println("Connessione effettuata con successo al db!");
+    	    	    			        //System.out.println("Last irrigation: "+lastIrrigation.encodePrettily());
+    	    	    			        //System.out.println("Connessione effettuata con successo al db!");
     	    	    			      }
-    	    	    			      
+    	    	    			      System.out.println("Last irrigation: "+lastIrrigation.encodePrettily());
     	    	    			      routingContext
     	    		    	   	      .response()
     	    			              .setStatusCode(200)
@@ -1482,25 +1493,34 @@ public class MainVerticle extends AbstractVerticle {
     	    	    		for(int i=0;i<this.numberOfChannel;i++) {
     	    	    			listIdChannel.add(i);
     	    	    		}
+    	    	    		//DEBUG
+    	    	    		System.out.println("--DEBUG-------Numero canali gateway: "+listIdChannel.size()+" Canali gateway: "+listIdChannel.toString());
+    	    	    		
     	    	    		listIdChannel.addAll(this.csvController.getChannelNumberCSV());
+    	    	    		System.out.println("--DEBUG-------Numero canali totale: "+listIdChannel.size()+" Canali : "+listIdChannel.toString());
     	    	    		
-    	    	    		JsonArray ja= new JsonArray();
-	    	    			JsonObject jo;
-	    	    	    	for(int m: listIdChannel) {
-	    	    	    		try {
-									jo= new JsonObject(new ObjectMapper().writeValueAsString(m));
-									ja.add(jo);
-								} catch (JsonProcessingException e) {
-									// TODO Auto-generated catch block
-									e.printStackTrace();
-								}
-	    	    	    	}
+							try {
+								String jsonArray = new ObjectMapper().writeValueAsString(listIdChannel);
+								System.out.println("--DEBUG-------Json: "+listIdChannel.size());
+								routingContext
+	    		    	   	      .response()
+	    			              .setStatusCode(200)
+	    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+	    			              .end(jsonArray);
+							
+							} catch (JsonProcessingException e) {
+								// TODO Auto-generated catch block
+								routingContext
+	    		    	   	      .response()
+	    			              .setStatusCode(500)
+	    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+	    			              .end();
+								e.printStackTrace();
+							}
     	    	    		
-    	    	    		routingContext
-    		    	   	      .response()
-    			              .setStatusCode(200)
-    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-    			              .end(ja.toString());	    		
+    	    	    		
+
+    	    	    			    		
     	    	    	}
     	    	    	else {
     	    	    		routingContext

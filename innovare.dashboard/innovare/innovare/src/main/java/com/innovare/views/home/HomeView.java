@@ -237,7 +237,7 @@ public class HomeView extends Div {
 		}
 		else {
 			if(lastIrrigation != null) {
-				long durata = (lastIrrigation.getFineIrrig().getTime() - lastIrrigation.getInizioIrrig().getTime());
+				long durata = (lastIrrigation.getFineIrrig()- lastIrrigation.getInizioIrrig());
 				int intervallo = (int) (durata/10);
 				double portata = lastIrrigation.getQuantita()/durata;
 				double aggiornamentoQuantita = Math.round(portata * intervallo * 100.0) / 100.0;
@@ -245,7 +245,7 @@ public class HomeView extends Div {
 				//System.out.println("Durata: " + durata/1000 + "s\nIntervallo: " + intervallo/1000 + "s\nPortata: " + portata*1000 + " L/s\nAggiornamento: " + aggiornamentoQuantita);
 				
 				quantitaL = new FlexBoxLayout();
-				quantitaAttuale = (float) ((System.currentTimeMillis() - lastIrrigation.getInizioIrrig().getTime()) * portata);
+				quantitaAttuale = (float) ((System.currentTimeMillis() - lastIrrigation.getInizioIrrig()) * portata);
 				quantitaAttuale = (float) (Math.round(quantitaAttuale * 100.0) / 100.0);
 				quantitaL.add(UIUtils.createLabel(FontSize.L, quantitaAttuale + "/" + lastIrrigation.getQuantita()));
 				
