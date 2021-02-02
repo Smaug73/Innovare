@@ -19,6 +19,9 @@ public class Classification {
 	private int percScartate;
 	private int percInfestanti;
 	private String model;
+	private String maxPercForIrrigation;
+
+	
 
 	
 
@@ -140,6 +143,14 @@ public class Classification {
 
 	public void setModel(String model) {
 		this.model = model;
+	}
+	
+	public String getMaxPercForIrrigation() {
+		return maxPercForIrrigation;
+	}
+
+	public void setMaxPercForIrrigation(String maxPercForIrrigation) {
+		this.maxPercForIrrigation = maxPercForIrrigation;
 	}
 
 	@Override

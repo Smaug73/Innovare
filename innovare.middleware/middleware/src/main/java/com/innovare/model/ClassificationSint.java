@@ -1,5 +1,6 @@
 package com.innovare.model;
 
+import java.nio.charset.Charset;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -7,6 +8,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Random;
+
 import com.innovare.model.Status;
 import com.innovare.utils.Utilities;
 
@@ -21,6 +24,7 @@ public class ClassificationSint implements Comparable<ClassificationSint>{
 	private int percScartate;
 	private int percInfestanti;
 	private String model;
+	private String maxPercForIrrigation;
 	private String _id;
 
 	
@@ -92,6 +96,7 @@ public class ClassificationSint implements Comparable<ClassificationSint>{
 
 
 	public ClassificationSint(ArrayList<PlantClassification> classifications) {
+		this._id= this.RandomId();
 		int carenza=0;
 		int eccesso=0;
 		int sane=0;
@@ -195,6 +200,14 @@ public class ClassificationSint implements Comparable<ClassificationSint>{
 	    
 		
 	}
+	
+	private String RandomId() {
+		byte[] randArr= new byte[4];
+		new Random().nextBytes(randArr);
+		String randStr = new String(randArr,Charset.forName("UTF-8"));
+		return String.valueOf(System.currentTimeMillis()+randStr);
+	}
+
 
 	public String getStatus() {
 		return status.name;
@@ -324,6 +337,7 @@ public class ClassificationSint implements Comparable<ClassificationSint>{
 		
 		
 	}
+	
 
 
 	@Override

@@ -184,6 +184,8 @@ public class SampleCSVController extends Thread{
 		        }
 				
 				//AGGIUNGERE RIMOZIONE DEL FILE
+				this.deleteAllFiles(csvFile);
+				
 				
 				return samplesMaps;
 				
@@ -204,16 +206,15 @@ public class SampleCSVController extends Thread{
 	}
 	
 	
-	private void deleteAllFiles(File[] files) {
-		for(File f: files) {
+	private void deleteAllFiles(File f) {
 			//Rimozione ricorsiva
 			if(f.isDirectory()) {
 				File[] childF= f.listFiles();
-				deleteAllFiles(childF);
+				for(File child: childF)
+					deleteAllFiles(child);
 			}
 			else
 				f.delete();
-		}
 	}
 
 	public ArrayList<Integer> getChannelNumberCSV() {

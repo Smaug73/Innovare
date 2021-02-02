@@ -157,7 +157,8 @@ public class HttpHandler {
 		} catch (JsonProcessingException e) {
 			e.printStackTrace();
 		}
-		return null;
+		//return null;
+		return new ArrayList<Classification>();
 	}
 
 	// Ricostruisce l'ArrayList degli stati passati delle irrigazioni facendo il parsing del json nel body della risposta

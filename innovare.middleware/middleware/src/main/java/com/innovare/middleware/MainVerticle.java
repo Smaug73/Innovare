@@ -806,6 +806,7 @@ public class MainVerticle extends AbstractVerticle {
         								//Memorizzio nel database tutte le classificazioni
             	    	    			//JsonArray newClassificationsJson= new JsonArray(jsonClassifications);
             	    	    			JsonObject singleClassification= new JsonObject(jsonClassifications);
+            	    	    			System.out.println("--DEBUG-- "+singleClassification.toString());
             	    	    			mongoClient.insert("ClassificazioniSintetiche", singleClassification , res ->{
   						    			  if(res.succeeded())
   						    				  System.out.println("Classificazione sintetica salvata correttamente nel DB.");
@@ -999,6 +1000,7 @@ public class MainVerticle extends AbstractVerticle {
             	    	    			}
             	    	    			
             	    	    			try {
+            	    	    				
 											routingContext
 											.response()
 											.setStatusCode(200)
