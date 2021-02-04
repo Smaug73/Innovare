@@ -48,6 +48,9 @@ public class IrrigationController extends TimerTask implements Job{
 	private Trigger trigger;
 	private Scheduler sch;
 	
+	private Irrigazione irr;
+	
+	private String state=Utilities.stateOff;
 	
 	private long timeWaitIrrigation=0;
 	
@@ -116,7 +119,7 @@ public class IrrigationController extends TimerTask implements Job{
     			Collections.sort((List<ClassificationSint>) csa);
     			//ArrayList<ClassificationSint> arrayResp= new ArrayList<ClassificationSint>();
     			
-    			System.out.println(csa.toString());
+    			System.out.println(LOGIRR+csa.toString());
     			if(csa.size()>=1) {
     				lastClassification=csa.get(0);
     				System.out.println(LOGIRR+"Ultima classificazione effettuata: "+lastClassification);
@@ -193,13 +196,14 @@ public class IrrigationController extends TimerTask implements Job{
 		 * generare la nuova irrigazione
 		 */
 		
-				
+			System.out.println(LOGIRR+System.currentTimeMillis()+"  Avvio job di Irrigazione...");	
 			JsonObject q= new JsonObject();
 			//Controlliamo l'ultima classificazione effettuata
 			this.mongoClient.find("ClassificazioniSintetiche",q, res-> {
 	    		/*
 	    		 * Successo nel trovare i sample nel db
 	    		 */
+				System.out.println(LOGIRR+System.currentTimeMillis()+" Ricerca ultima classificazione effettuata...");
 				Irrigazione newIrr;
 	    		if(res.succeeded()) {
 	    			/*
@@ -314,7 +318,9 @@ public class IrrigationController extends TimerTask implements Job{
 	*/
 	
 	private void startIrrigation() {
+		this.state=Utilities.stateOn;
 		this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, t ->{
+			System.out.println("DEBUG IRRIGAZIONE--- INVIO STATE-ON AL GATEWAY");
 			this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
     	    		  Buffer.buffer(Utilities.stateOn),
 						  MqttQoS.AT_LEAST_ONCE,
@@ -326,8 +332,9 @@ public class IrrigationController extends TimerTask implements Job{
 	}
 	
 	private void stopIrrigation() {
+		this.state=Utilities.stateOff;
 		this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, v ->{
-			
+			System.out.println("DEBUG IRRIGAZIONE--- INVIO STATE-OFF AL GATEWAY");
 			this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
     	    		  Buffer.buffer(Utilities.stateOff),
 						  MqttQoS.AT_LEAST_ONCE,
@@ -351,6 +358,14 @@ public class IrrigationController extends TimerTask implements Job{
 			  else
 				  System.err.println(LOGIRR+"ERRORE salvataggio Irrigazione");  
 			});		
+	}
+
+	public String getState() {
+		return state;
+	}
+
+	public void setState(String state) {
+		this.state = state;
 	}
 
 

@@ -264,11 +264,15 @@ public class MainVerticle extends AbstractVerticle {
 	    		  
 	    		  System.out.println(Utilities.irrigationLogMqttChannel+":"+c.payload().toString());	
 	    		  //Modifichiamo lo stato dell'irrigazione corrente
-	    		  if(c.payload().toString().contains(Utilities.stateOn))
+	    		  if(c.payload().toString().contains(Utilities.stateOn)) {
 	    			  this.irrigationState=Utilities.stateOn;
+	    			  System.out.println("---DEBUG IRRIGAZIONE---- stato irrigazione modificato ON");
+	    		  }
 	    		  else
-	    			  if(c.payload().toString().contains(Utilities.stateOff))
+	    			  if(c.payload().toString().contains(Utilities.stateOff)) {
 	    				  this.irrigationState=Utilities.stateOff;
+	    				  System.out.println("---DEBUG IRRIGAZIONE---- stato irrigazione modificato OFF");
+	    			  }
 	    		  
 	    		  //JsonObject confJson= new JsonObject( c.payload().toString());
 	    		})
@@ -298,9 +302,10 @@ public class MainVerticle extends AbstractVerticle {
 	    dateC.set(Calendar.MINUTE, 0);
 	    dateC.set(Calendar.SECOND, 0);
 	    dateC.set(Calendar.MILLISECOND, 0);
-	    // Schedule to run every Sunday in midnight
+	    this.irrigationController= new IrrigationController(MongoClient.createShared(vertx, mongoconfig),this.irrigationCommandClient);
+	    // Schedule to run 
 	    timer.schedule(
-	      new IrrigationController(MongoClient.createShared(vertx, mongoconfig),this.irrigationCommandClient),
+	      this.irrigationController,
 	      60000,
 	      60000*5
 	     );
@@ -1367,13 +1372,13 @@ public class MainVerticle extends AbstractVerticle {
 	      		    	   	      .response()
 	      			              .setStatusCode(200)
 	      			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-	      			              .end(Utilities.stateOff);
+	      			              .end(this.irrigationController.getState());
     	    	    		}else {
     	    	    			routingContext
 	      		    	   	      .response()
 	      			              .setStatusCode(200)
 	      			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-	      			              .end(this.irrigationState);
+	      			              .end(this.irrigationController.getState());
     	    	    			 	    			
     	    	    		}    	    		
     	    	    	}
