@@ -9,6 +9,7 @@ import java.util.NoSuchElementException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.innovare.control.ConfigurationController;
 import com.innovare.control.WeatherStationController;
 import com.innovare.model.Channel;
 import com.innovare.model.ConfigurationItem;
@@ -68,6 +69,8 @@ public class GatewayVerticle extends AbstractVerticle {
   private IrrigationController irrigation;
   private ConfigurationItem cfi;
   private WeatherStationController weatherStationC;
+  private ConfigurationController confController;
+  
   
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
@@ -75,10 +78,15 @@ public class GatewayVerticle extends AbstractVerticle {
 	 //Metodi di verifica del corretto caricamento del gateway. Da aggiungere..
 	 this.cfi=this.generateConfigurationItem();
 	
-	  
+	 //Creiamo il configuration controller
+	 this.confController= new ConfigurationController();
+	 System.out.println("ipMiddleLayer: "+this.confController.getIpMiddleLayer());
+	 System.out.println("tempo di campionamento: "+this.confController.getTempoCampionamentoWS());
+	 
+	 
 	//Creazione client MQTT
 	    MqttClient client = MqttClient.create(vertx);
-	    client.connect(1883, Utilities.ipMiddleLayer, t -> {
+	    client.connect(1883, this.confController.getIpMiddleLayer(), t -> {
 	    	
 	    	//Appena il gateway si collega per avvisare del suo corretto collegamento.
 	    	 client.publish("gatewayLog",
@@ -120,7 +128,7 @@ public class GatewayVerticle extends AbstractVerticle {
 	    	 //RIATTIVARE LA CREAZIONE DEI THREAD , COMMENTATO PER TEST
 	    	 //this.channelCreation();   ///////////////////////////////////////////////////
 	    	 
-	    	 this.weatherStationC= new WeatherStationController(Utilities.tempoCampionamentoWeatherStationTest,vertx);
+	    	 this.weatherStationC= new WeatherStationController(this.confController.getTempoCampionamentoWS(),vertx);
 	    	 this.weatherStationC.start();
 	    	 //this.channelCreation();
 	    	 //Si può anche disconnettere questo client dopo l'instanziazione dei client dei singoli sensori...
@@ -136,7 +144,7 @@ public class GatewayVerticle extends AbstractVerticle {
 	     * Il controller per il comando deve ricevere, quindi si iscriverà al relativo topic
 	     */
 	    this.irrigation.setCommandClient( MqttClient.create(vertx));
-	    this.irrigation.getCommandClient().connect(1883, Utilities.ipMiddleLayer, p -> {
+	    this.irrigation.getCommandClient().connect(1883, this.confController.getIpMiddleLayer(), p -> {
 	    	System.out.println("Client mqtt per i comandi dell'irrigazione connesso..");
 	    	/*
 		     *Il client mqtt per la ricezione di comandi si iscriverà al relativo topic 
@@ -213,7 +221,7 @@ public class GatewayVerticle extends AbstractVerticle {
     			System.out.println(s.toString());
     		}	
     		System.out.println(chan.toString());
-	    	this.mapClient.get(chan).connect(1883, Utilities.ipMiddleLayer, s -> {	
+	    	this.mapClient.get(chan).connect(1883, this.confController.getIpMiddleLayer(), s -> {	
 		    	//
 					try {
 						this.mapClient.get(chan).publish(chan.getID(),

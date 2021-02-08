@@ -39,6 +39,17 @@ public class WeatherStationController extends Thread{
 	
 	private long tempoCampionamento;
 	
+	//DEBUG
+	public WeatherStationController() {
+		channels= new HashMap<String,Float>();
+		channelsSample= new HashMap<String,Sample>();
+		channelsNames= new HashSet<String>();
+		//Creo l'hash set dei nomi dei vari canali
+				for(int i=0; i< Utilities.channelsNames.length; i++) {
+					channelsNames.add(Utilities.channelsNames[i]);
+				}
+	}
+	
 	public WeatherStationController(long tempoCampionamento, Vertx vertx) {
 		
 		channels= new HashMap<String,Float>();
@@ -67,11 +78,18 @@ public class WeatherStationController extends Thread{
 	public void run() {
 		while(true) {
 			//Avvio l'aggiornamento dei valori tramite uno dei due metodi
-			this.campionamentoFromFile();//TEST/////////////////
+			//this.campionamentoFromFile();//TEST/////////////////
+			try {
+				this.campionamentoFromProcess();
+			} catch (IOException e1) {
+				
+				System.err.println("ERRORE AVVIO PROCESSO LETTURA WEATHERSTATION..");
+				e1.printStackTrace();
+			}
 			//this.campionamentoFromProcess(); /////VERO
 			
 			//Dopo il campionamento inviamo tramite mqtt i dati
-			this.mqttClient.connect(1883, Utilities.ipMiddleLayer, s -> {	
+			this.mqttClient.connect(1883, ConfigurationController.ipMiddleLayer, s -> {	
 					
 					ArrayList<Sample> newSamples= new ArrayList<Sample>();
 				
@@ -248,9 +266,135 @@ public class WeatherStationController extends Thread{
 			e.printStackTrace();
 		}
 	}
+	/*
+	public synchronized void campionamentoFromFileFromProcess() {
+		try {
+			//Lanciamo il processo e salviamo nel file sample.txt
+			Process processSt= Runtime.getRuntime().exec("./vproweather -x /dev/ttyUSB0 >> sample.txt",null,new File(Utilities.scriptWeatherPath));
+			//attendiamo file del processo
+			int processSegOutput=processSt.waitFor();
+			//leggiamo il file prodotto
+			File f= new File(Utilities.scriptWeatherPath+"sample.txt");
+			//Leggiamo tutto il file
+			String fileString="";
+			Scanner sc = new Scanner(f);
+			while(sc.hasNext()) {
+				fileString=fileString+sc.nextLine()+"\n";
+			}
+			sc.close();
+			
+			//Letto tutto il file facciamo uno split
+			System.out.println("\nFILE:");//debug
+			System.out.println(fileString);//debug
+			String reg="[ = \n]+";
+			String[] token=fileString.split(reg);
+			
+			//debug
+			System.out.println("\nDEBUG SPLIT STRING");//debug
+			for(int i=0;i<token.length;i++)//debug
+				System.out.println(token[i]);//debug
+			////////////
+			
+			//Generazione time stamp per il sample appena catturati
+			this.timestamp= System.currentTimeMillis();
+			//Leggiamo per ogni canale il valore corrispondente
+			//Avanziamo di due posizioni alla volta ed ogni volta che leggiamo un channel che e' presente lo aggiungo
+			for(int j=0; j<token.length;j=j+1) {
+				System.out.println("Token: "+token[j]);
+				if(this.channelsNames.contains(token[j])) {
+					try {
+						System.out.println("SI!");
+						//this.channels.put(token[j], Float.valueOf(token[j+1]));
+						this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(token[j+1])));
+					}
+					catch(NumberFormatException n) {
+						System.err.println("Errore conversione numero, sara' aggiunto null");
+						//this.channels.put(token[j], null);
+						//Inseriamo un Sample con canale corretto e valore 0
+						if(token[j].equalsIgnoreCase("rtWindDirRose")) {
+							switch(token[j+1]) {
+								case "N": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.N.getNum())));
+									break;
+								case "NNW": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.NNW.getNum())));
+								  	break;
+								case "NNE": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.NNE.getNum())));
+								  	break;
+								case "NW": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.NW.getNum())));
+								  	break;
+								case "NE": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.NE.getNum())));
+								  	break;
+								case "WNW": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.WNW.getNum())));
+								  	break;
+								case "WSW": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.WSW.getNum())));
+								  	break;
+								case "E": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.E.getNum())));
+								  	break;
+								case "ENE": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.ENE.getNum())));
+								  	break;
+								case "ESE": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.ESE.getNum())));
+								  	break;
+								case "S": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.S.getNum())));
+								  	break;
+								case "SSE": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.SSE.getNum())));
+								  	break;
+								case "SSW": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.SSW.getNum())));
+								  	break;
+								case "SW": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.SW.getNum())));
+								  	break;
+								case "SE": 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.SE.getNum())));
+								  	break;	
+								default: 
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],0));
+								  	break;
+							}	
+						}
+						
+					}	
+				}
+			}
+		
+			//Eliminiamo il file prodotto
+			sc.close();
+			this.deleteAllFiles(f);
+		
+		
+		}catch (FileNotFoundException e) {
+				System.out.println("File non trovato");
+				e.printStackTrace();
+			
+		} catch (IOException e) {
+			//Eliminiamo il file prodotto
+			this.deleteAllFiles(new File(Utilities.scriptWeatherPath+"sample.txt"));
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+				
+	}
+	
+	*/
+	
+	
+	
 	
 	//Aggiorna i dati della weatherstation da un processo, l'aggiornamento dei dati deve avvenire in mutua esclusione
-	private synchronized void campionamentoFromProcess() throws IOException {
+	public synchronized void campionamentoFromProcess() throws IOException {
 		//Lanciamo il processo e leggiamo l'outputstream
 		Process processSt= Runtime.getRuntime().exec("./vproweather -x /dev/ttyUSB0\n >> sample.txt",null,new File(Utilities.scriptPath+"vproweather-1.1"+System.getProperty("file.separator")));
 		//Leggiamo l'output del processo e lo salviamo in una stringa
@@ -266,23 +410,86 @@ public class WeatherStationController extends Thread{
 		long timestamp= System.currentTimeMillis();
 		
 		while ((line = br.readLine()) != null) {
+			line=line+"\n";
+			//System.out.println("debug--line: "+line);
 			//L'array generato dove essere di dimensione 2, canale[0] e valore[1]
 			token=line.split(reg);
+			//System.out.println("debug--token: ");
+			//for(String s: token) {
+			//	System.out.println(s);			
+			//}
+			
 			//Se il canale letto fa parte di quelli di interesse allora lo inserisco nella hashMap
 			if(this.channelsNames.contains(token[0])) {
 				try {
-					System.out.println("SI!");
+					//System.out.println("SI!"+"\n");
 					//this.channels.put(token[0], Float.valueOf(token[1]));
 					this.channelsSample.put(token[0], new Sample(timestamp,token[0],Float.valueOf(token[1])));
 				}
 				catch(NumberFormatException n) {
-					System.err.println("Errore conversione numero, sara' aggiunto null");
+					//System.err.println("Errore conversione numero, sara' aggiunto null"+"\n");
 					//this.channels.put(token[0], null);
-					this.channelsSample.put(token[0], new Sample(this.timestamp,token[1]));
+					//CONTROLLIAMO CASO DELLA MISURA DI WIND-DIR-ROSE
+					if(!token[0].equalsIgnoreCase("rtWindDirRose"))
+						this.channelsSample.put(token[0], new Sample(timestamp,token[0]));
+					else {
+						switch(token[1]) {
+						case "N": 
+							this.channelsSample.put(token[0], new Sample(this.timestamp,token[0],Float.valueOf(com.innovare.model.Direction.N.getNum())));
+							break;
+						case "NNW": 
+							this.channelsSample.put(token[0], new Sample(this.timestamp,token[0],Float.valueOf(com.innovare.model.Direction.NNW.getNum())));
+						  	break;
+						case "NNE": 
+							this.channelsSample.put(token[0], new Sample(this.timestamp,token[0],Float.valueOf(com.innovare.model.Direction.NNE.getNum())));
+						  	break;
+						case "NW": 
+							this.channelsSample.put(token[0], new Sample(this.timestamp,token[0],Float.valueOf(com.innovare.model.Direction.NW.getNum())));
+						  	break;
+						case "NE": 
+							this.channelsSample.put(token[0], new Sample(this.timestamp,token[0],Float.valueOf(com.innovare.model.Direction.NE.getNum())));
+						  	break;
+						case "WNW": 
+							this.channelsSample.put(token[0], new Sample(this.timestamp,token[0],Float.valueOf(com.innovare.model.Direction.WNW.getNum())));
+						  	break;
+						case "WSW": 
+							this.channelsSample.put(token[0], new Sample(this.timestamp,token[0],Float.valueOf(com.innovare.model.Direction.WSW.getNum())));
+						  	break;
+						case "E": 
+							this.channelsSample.put(token[0], new Sample(this.timestamp,token[0],Float.valueOf(com.innovare.model.Direction.E.getNum())));
+						  	break;
+						case "ENE": 
+							this.channelsSample.put(token[0], new Sample(this.timestamp,token[0],Float.valueOf(com.innovare.model.Direction.ENE.getNum())));
+						  	break;
+						case "ESE": 
+							this.channelsSample.put(token[0], new Sample(this.timestamp,token[0],Float.valueOf(com.innovare.model.Direction.ESE.getNum())));
+						  	break;
+						case "S": 
+							this.channelsSample.put(token[0], new Sample(this.timestamp,token[0],Float.valueOf(com.innovare.model.Direction.S.getNum())));
+						  	break;
+						case "SSE": 
+							this.channelsSample.put(token[0], new Sample(this.timestamp,token[0],Float.valueOf(com.innovare.model.Direction.SSE.getNum())));
+						  	break;
+						case "SSW": 
+							this.channelsSample.put(token[0], new Sample(this.timestamp,token[0],Float.valueOf(com.innovare.model.Direction.SSW.getNum())));
+						  	break;
+						case "SW": 
+							this.channelsSample.put(token[0], new Sample(this.timestamp,token[0],Float.valueOf(com.innovare.model.Direction.SW.getNum())));
+						  	break;
+						case "SE": 
+							this.channelsSample.put(token[0], new Sample(this.timestamp,token[0],Float.valueOf(com.innovare.model.Direction.SE.getNum())));
+						  	break;	
+						default: 
+							this.channelsSample.put(token[0], new Sample(timestamp,token[0]));
+						  	break;
+					}
 				}	
-			}else
-				System.out.println("NO");
+			}
+		}else {
+			System.out.println("NO"+"\n");
 		}
+	}
+		
 		is.close();
 		isr.close();
 		br.close();
@@ -305,6 +512,48 @@ public class WeatherStationController extends Thread{
 	public HashMap<String,Float> getMapValue(){
 		return this.channels;
 	}
+	
+	private void deleteAllFiles(File f) {
+		//Rimozione ricorsiva
+		if(f.isDirectory()) {
+			File[] childF= f.listFiles();
+			for(File child: childF)
+				deleteAllFiles(child);
+		}
+		else
+			f.delete();
+	}
+
+	
+	
+	public HashMap<String, Float> getChannels() {
+		return channels;
+	}
+
+	public HashMap<String, Sample> getChannelsSample() {
+		return channelsSample;
+	}
+
+	public HashSet<String> getChannelsNames() {
+		return channelsNames;
+	}
+
+	public String getCampionamento() {
+		return campionamento;
+	}
+
+	public MqttClient getMqttClient() {
+		return mqttClient;
+	}
+
+	public long getTimestamp() {
+		return timestamp;
+	}
+
+	public long getTempoCampionamento() {
+		return tempoCampionamento;
+	}
+	
 	
 	
 }

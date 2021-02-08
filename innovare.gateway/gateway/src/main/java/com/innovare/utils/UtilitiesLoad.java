@@ -19,7 +19,7 @@ public class UtilitiesLoad {
 	public String ipMiddlelayer;
 	public String ipDashboard;
 	public double sogliaClassificazione;
-	
+	public static final String configurationJsonPath=System.getProperty("user.home")+System.getProperty("file.separator")+"InnovareData"+System.getProperty("file.separator")+"configuration.json";
 	
 	public UtilitiesLoad() {
 		
@@ -27,7 +27,7 @@ public class UtilitiesLoad {
 	
 	
 	public static UtilitiesLoad UtilitiesLoadFromJson() {
-		File confJsonFile= new File(Utilities.configurationJsonPath);
+		File confJsonFile= new File(configurationJsonPath);
 		
 		//Dopo aver letto il json lo convertiamo in una classe
 		try {

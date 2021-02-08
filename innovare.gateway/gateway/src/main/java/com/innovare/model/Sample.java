@@ -39,6 +39,7 @@ public class Sample implements Comparable<Sample>{
 		this.misure=random.nextInt();//solo per il testing
 	}
 	
+	//QUANDO LA MISURA NON E' RESA DISPONIBILE DALLA WEATHERSTATION
 	public Sample(long timestamp,String channel) {
 		this.timestamp= timestamp;
 		this.channel=channel;
@@ -47,7 +48,7 @@ public class Sample implements Comparable<Sample>{
 		 * dai sensori, in modo da riempirne i della misura. Questo può ritardare durante l'instanziamento.
 		 */
 		//Random random = new Random();
-		this.misure=0;//solo per il testing
+		this.misure=-1;//solo per il testing
 	}
 	
 	
