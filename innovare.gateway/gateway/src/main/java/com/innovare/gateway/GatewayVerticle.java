@@ -145,12 +145,12 @@ public class GatewayVerticle extends AbstractVerticle {
 	     */
 	    this.irrigation.setCommandClient( MqttClient.create(vertx));
 	    this.irrigation.getCommandClient().connect(1883, this.confController.getIpMiddleLayer(), p -> {
-	    	System.out.println("Client mqtt per i comandi dell'irrigazione connesso..");
+	    	System.out.println("IRRIGATION-MQTT: Client mqtt per i comandi dell'irrigazione connesso..");
 	    	/*
 		     *Il client mqtt per la ricezione di comandi si iscriverà al relativo topic 
 		     */
 		    this.irrigation.getCommandClient().publishHandler(c ->{
-		    	System.out.println("Comando ricevuto: "+c.payload().toString());
+		    	System.out.println("IRRIGATION-MQTT: Comando ricevuto: "+c.payload().toString());
 		    	String comando=c.payload().toString();
 		    	//long time=Long.parseLong(comando.substring(18));
 		    	

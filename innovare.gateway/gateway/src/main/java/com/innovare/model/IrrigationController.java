@@ -154,7 +154,7 @@ public class IrrigationController extends Thread{
 			this.logClient.connect(1883, Utilities.ipMqtt, s -> {	
 				
 				System.out.println(tm+": Stop irrigazione.");
-				this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+": "+this.stateOn),
+				this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+": "+this.stateOff),
 						  MqttQoS.AT_LEAST_ONCE,
 						  false,
 						  false);		

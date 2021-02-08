@@ -486,7 +486,7 @@ public class WeatherStationController extends Thread{
 				}	
 			}
 		}else {
-			System.out.println("NO"+"\n");
+			//System.out.println("NO"+"\n");
 		}
 	}
 		

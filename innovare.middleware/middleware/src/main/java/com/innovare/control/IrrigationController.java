@@ -48,7 +48,7 @@ public class IrrigationController extends TimerTask implements Job{
 	private Trigger trigger;
 	private Scheduler sch;
 	
-	private Irrigazione irr;
+	private Irrigazione irr=null;
 	
 	private String state=Utilities.stateOff;
 	
@@ -88,6 +88,16 @@ public class IrrigationController extends TimerTask implements Job{
 	
 	@Override
 	public void execute(JobExecutionContext context) throws JobExecutionException {
+		
+		System.out.println(LOGIRR+System.currentTimeMillis()+" IRRIGATION FLAG");
+		
+		//Controlliamo se non e' in eseguzione un'altra irrigazione
+		if(this.state==Utilities.stateOn) {
+			System.out.println(LOGIRR+System.currentTimeMillis()+" Irrigazione gia' in eseguzione!");
+			return ;
+		}else
+			System.out.println(LOGIRR+System.currentTimeMillis()+" Irrigazione non in eseguzione...");
+		
 		
 		System.out.println(LOGIRR+System.currentTimeMillis()+"  Avvio job di Irrigazione...");
 		JsonObject q= new JsonObject();
@@ -160,16 +170,21 @@ public class IrrigationController extends TimerTask implements Job{
     			newIrr= new Irrigazione(Status.NORMALE);
     		}
     		
-    		/*
-    		 * Avvio irrigazione
-    		 */
-    		startIrrigation();
+    		
     		
     		
     		//Attesa irrigazione
     		//Mettiamo in sleep il thread
     		timeWaitIrrigation=newIrr.getFineIrrig()-newIrr.getInizioIrrig();
-			try {
+    		/*
+    		 * Avvio irrigazione, controllo prima se non e' in corso un'altra irrigazione
+    		 */
+    		if(this.state== Utilities.stateOff)
+    			startIrrigation(timeWaitIrrigation);
+    		else
+    			System.out.println(LOGIRR+"Irrigazione gia' in corso, non verra' iniziata altra irrigazione.");
+    		
+    		/*try {
 				Thread.sleep(newIrr.getFineIrrig()-newIrr.getInizioIrrig());
 			} catch (InterruptedException e) {
 				System.err.println("Errore nella sleep del thread IrrigationController");
@@ -179,7 +194,7 @@ public class IrrigationController extends TimerTask implements Job{
     		/*
     		 * Stop-Irrigazione
     		 */
-    		stopIrrigation();
+    		//stopIrrigation();
     		
     		//Attendiamo il tempo per riattivare il thread per l'irrigazione
     	});		
@@ -196,7 +211,14 @@ public class IrrigationController extends TimerTask implements Job{
 		 * generare la nuova irrigazione
 		 */
 		
-			System.out.println(LOGIRR+System.currentTimeMillis()+"  Avvio job di Irrigazione...");	
+			//Controlliamo se non e' in eseguzione un'altra irrigazione
+			if(this.state==Utilities.stateOn) {
+				System.out.println(LOGIRR+System.currentTimeMillis()+" Irrigazione gia' in eseguzione!");
+				return ;
+			}else
+				System.out.println(LOGIRR+System.currentTimeMillis()+" Irrigazione non in eseguzione...");
+			
+			System.out.println(LOGIRR+System.currentTimeMillis()+" flag  Avvio job di Irrigazione...");	
 			JsonObject q= new JsonObject();
 			//Controlliamo l'ultima classificazione effettuata
 			this.mongoClient.find("ClassificazioniSintetiche",q, res-> {
@@ -270,37 +292,13 @@ public class IrrigationController extends TimerTask implements Job{
 	    		/*
 	    		 * Avvio irrigazione
 	    		 */
-	    		startIrrigation();
-	    		
-	    		
-	    		//Attesa irrigazione
-	    		//Mettiamo in sleep il thread
 	    		timeWaitIrrigation=newIrr.getFineIrrig()-newIrr.getInizioIrrig();
-				try {
-					Thread.sleep(newIrr.getFineIrrig()-newIrr.getInizioIrrig());
-				} catch (InterruptedException e) {
-					System.err.println("Errore nella sleep del thread IrrigationController");
-					e.printStackTrace();
-				}
+	    		startIrrigation(timeWaitIrrigation);
 	    		
-	    		/*
-	    		 * Stop-Irrigazione
-	    		 */
-	    		stopIrrigation();
 	    		
-	    		//Attendiamo il tempo per riattivare il thread per l'irrigazione
+	    		
 	    	});		
-			//Attesa irrigazione
-    		//Mettiamo in sleep il thread fino alla prossima irrigazione
-			//try {
 				
-				//Thread.sleep(60*60*24*7*1000-timeWaitIrrigation); //una settimana dopo meno il tempo perso ad irrigare
-			//} catch (InterruptedException e) {
-			//	System.err.println("Errore nella sleep del thread IrrigationController");
-			//	e.printStackTrace();
-			//}
-			
-			
 	}
 	
 	
@@ -317,8 +315,8 @@ public class IrrigationController extends TimerTask implements Job{
 	}
 	*/
 	
-	private void startIrrigation() {
-		this.state=Utilities.stateOn;
+	public void startIrrigation(long time) {
+		
 		this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, t ->{
 			System.out.println("DEBUG IRRIGAZIONE--- INVIO STATE-ON AL GATEWAY");
 			this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
@@ -326,12 +324,32 @@ public class IrrigationController extends TimerTask implements Job{
 						  MqttQoS.AT_LEAST_ONCE,
 						  false,
 						  false);
-			this.irrigationCommandClient.disconnect();
-	    	System.out.println("Invio comando start effettuato.");
+			this.irrigationCommandClient.publishCompletionHandler(id ->{
+				this.irrigationCommandClient.disconnect();
+				this.state=Utilities.stateOn;
+				System.out.println("Invio comando start effettuato.");
+				//Attendiamo fino alla fine dell'irrigazione
+		    	try {
+					Thread.sleep(time);
+				} catch (InterruptedException e) {
+					System.err.println("Errore nella sleep del thread IrrigationController");
+					e.printStackTrace();
+				}
+	    		
+	    		/*
+	    		 * Avviamo Stop-Irrigazione
+	    		 */
+	    		stopIrrigation();
+		    	
+			});
+			
+	    	
+	    	
+	    	
 		  });
 	}
 	
-	private void stopIrrigation() {
+	public void stopIrrigation() {
 		this.state=Utilities.stateOff;
 		this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, v ->{
 			System.out.println("DEBUG IRRIGAZIONE--- INVIO STATE-OFF AL GATEWAY");
@@ -343,6 +361,67 @@ public class IrrigationController extends TimerTask implements Job{
 			this.irrigationCommandClient.disconnect();
 	    	
 	    	System.out.println("Invio comando stop effettuato.");
+		  });
+	}
+	
+	
+	
+	//Questo metodo viene chiamato quando non si sa subito il tempo di durata dell'irrigazione
+	//Viene eseguito dalla chiamata rest di start dell'irrigazione
+	public void startIrrigationDirect() {
+		//cambiamo stato di irrigazione
+		this.state=Utilities.stateOn;
+		
+		//Creiamo nuova irrigazione
+		this.irr= new Irrigazione(System.currentTimeMillis());
+		
+		//Invio il comando di irrigazione al gateway
+		this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, t ->{
+			System.out.println("DEBUG IRRIGAZIONE--- INVIO STATE-ON AL GATEWAY");
+			this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
+    	    		  Buffer.buffer(Utilities.stateOn),
+						  MqttQoS.AT_LEAST_ONCE,
+						  false,
+						  false);
+			//attendiamo l'effettivo invio del comando
+			this.irrigationCommandClient.publishCompletionHandler(id ->{
+				this.irrigationCommandClient.disconnect();
+				
+				System.out.println("Invio comando start effettuato.");	    	
+			});
+	
+		  });
+	}
+	
+	public void stopIrrigationDirect() {
+		this.state=Utilities.stateOff;
+		this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, v ->{
+			System.out.println("DEBUG IRRIGAZIONE--- INVIO STATE-OFF AL GATEWAY");
+			this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
+    	    		  Buffer.buffer(Utilities.stateOff),
+						  MqttQoS.AT_LEAST_ONCE,
+						  false,
+						  false);
+			//attendiamo l'effettivo invio del comando
+			this.irrigationCommandClient.publishCompletionHandler(id ->{
+				this.irrigationCommandClient.disconnect();
+				
+				System.out.println("Invio comando stop effettuato.");	
+				
+				//Salviamo l'irrigazione
+				if(this.irr!=null) {
+					this.irr.setFineIrrig(System.currentTimeMillis());
+					float qualt= (this.irr.getFineIrrig()-this.irr.getInizioIrrig())*this.irr.capacita;
+					this.irr.setQuantita(qualt);
+					try {
+						this.memorizationIrrigation(irr);
+						System.err.println("Irrigazione memorizzata");
+					} catch (JsonProcessingException e) {
+						System.err.println("Impossibile memorizzare irrigazione: JsonProcessingException");
+						System.err.println(e.getMessage());
+					}
+				}
+			});		
 		  });
 	}
 	

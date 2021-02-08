@@ -104,7 +104,7 @@ public class MainVerticle extends AbstractVerticle {
 	private SampleCSVController csvController;
 	private String irrigationState=null;
 	
-	private IrrigationController irrigationController;
+	private IrrigationController irrigationController=null;
 	private JobDetail job;
 	private Trigger trigger;
 	private Scheduler sch;
@@ -1262,51 +1262,27 @@ public class MainVerticle extends AbstractVerticle {
     	    	     */
     	    	    routerFactory.addHandlerByOperationId("startIrrigation", routingContext ->{	
     	    	    	if(this.loggingController.isUserLogged()) {
-    	    	    		/*
-    	    	    		 * Invio il comando tramite il client mqtt per il comando
-    	    	    		 */
     	    	    		System.out.println("Invio comando di start dell'irrigazione...");
-    	    	    		/*
-    	    	    		 * Utiliziamo un handler per capire quando la pubblicazione è stata completata(?)
-    	    	    		 * Quando è andata a buon fine restituiamo un 200
-    	    	    		 */
-    	    	    		/*this.irrigationCommandClient.publishCompletionHandler(c ->{
-    	    	    			System.out.println("Invio effettuato con successo");
-    	    	    			routingContext
-    							.response()
-    							.setStatusCode(200)
-    							.end();
-    	    	    			//Disconnesione per evitare problemi
-            	    	    	this.irrigationCommandClient.disconnect();
-    	    	    		});*/
-    	    	    		//Controlliamo che non sia gia' in atto una irrigazione
-    	    	    		if(this.irrigationState != Utilities.stateOn) {
+    	    	    		
+    	    	    		if(this.irrigationController.getState() != Utilities.stateOn) {
     	    	    			
-	    	    	    		this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, t ->{
-	    	    	    			this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
-	    	        	    	    		  Buffer.buffer(Utilities.stateOn),
-	    	  								  MqttQoS.AT_LEAST_ONCE,
-	    	  								  false,
-	    	  								  false);
-	    	    	    			this.irrigationCommandClient.disconnect();
-	    	    	    			routingContext
-	    							.response()
-	    							.setStatusCode(200)
-	    							.end("Invio comando effettuato");
-	            	    	    	System.out.println("Invio comando start effettuato.");
-	    	    	    		});
-	    	    	    		
-	    	    	    	}else {
-            	    	    	//ATTENZIONE AGGIUNGERE CREAZIONE IRRIGAZIONE NEL DATABASE
-    	    	    			/*
-    	    	    			 * Irrigazione ir= new Irrigazione..
-    	    	    			 */
-            	    	    	routingContext
+    	    	    			this.irrigationController.startIrrigationDirect();
+    	    	    			
+    	    	    			routingContext
     							.response()
     							.setStatusCode(200)
     							.end("Stato attuale: irrigazione attiva.");
             	    	    	System.out.println("Stato attuale: irrigazione attiva.");
-    	    	    		  };
+	    	    	    				
+	    	    	    	}else {
+            	    	    	
+    	    	    			
+            	    	    	routingContext
+    							.response()
+    							.setStatusCode(200)
+    							.end("Stato attuale: irrigazione gia' in eseguzione");
+            	    	    	System.out.println("Stato attuale: irrigazione gia' in eseguzione");
+    	    	    		};
         	    	    	
         	    	    	 	
     	    	    	}
@@ -1328,26 +1304,25 @@ public class MainVerticle extends AbstractVerticle {
     	    	    		 * Invio il comando tramite il client mqtt per il comando
     	    	    		 */
     	    	    		System.out.println("Invio comando di stop dell'irrigazione...");
-    	    	    		/*
-    	    	    		 * Utiliziamo un handler per capire quando la pubblicazione è stata completata(?)
-    	    	    		 * Quando è andata a buon fine restituiamo un 200
-    	    	    		 */
-    	    	    		this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, v ->{
+    	    	    		if(this.irrigationController.getState() == Utilities.stateOn) {
     	    	    			
-    	    	    			this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
-    	        	    	    		  Buffer.buffer(Utilities.stateOff),
-    	  								  MqttQoS.AT_LEAST_ONCE,
-    	  								  false,
-    	  								  false);
-    	    	    			this.irrigationCommandClient.disconnect();
-            	    	    	
-            	    	    	routingContext
+    	    	    			this.irrigationController.stopIrrigationDirect();
+    	    	    			
+    	    	    			routingContext
     							.response()
     							.setStatusCode(200)
-    							.end("Invio comando effettuato");
-            	    	    	
-            	    	    	System.out.println("Invio comando stop effettuato.");
-    	    	    		  });
+    							.end("Stato attuale: irrigazione disattiva.");
+            	    	    	System.out.println("Stato attuale: irrigazione disattiva.");
+	    	    	    				
+	    	    	    	}else {
+            	    	    				
+	    	    	    		routingContext
+    							.response()
+    							.setStatusCode(200)
+    							.end("Stato attuale: irrigazione disattiva.");
+            	    	    	System.out.println("Stato attuale: irrigazione disattiva.");
+    	    	    		};
+        	    	    	
         	    	    	
         	    	    	
     	    	    	}
@@ -1367,7 +1342,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	    routerFactory.addHandlerByOperationId("getStatoIrrigazione", routingContext ->{	
     	    	    	if(this.loggingController.isUserLogged()) {
     	    	    		//Caso nel quale non è stata creata nessuna irrigazione
-    	    	    		if(this.irrigationState == null) {
+    	    	    		if(this.irrigationController != null) {
     	    	    			routingContext
 	      		    	   	      .response()
 	      			              .setStatusCode(200)
@@ -1376,9 +1351,9 @@ public class MainVerticle extends AbstractVerticle {
     	    	    		}else {
     	    	    			routingContext
 	      		    	   	      .response()
-	      			              .setStatusCode(200)
+	      			              .setStatusCode(400)
 	      			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-	      			              .end(this.irrigationController.getState());
+	      			              .end("Errore: stato non determinabile");
     	    	    			 	    			
     	    	    		}    	    		
     	    	    	}
@@ -1757,7 +1732,7 @@ public class MainVerticle extends AbstractVerticle {
 		    			  String channelName;
 		    			  int channelId=-1;
 		    			  if(singleMisure.containsKey("channel")){
-		    				  System.out.println("--DEBUG-----Canale trovato-----");
+		    				  //System.out.println("--DEBUG-----Canale trovato-----");
 		    				  channelName=singleMisure.getString("channel");
 		    				  for(int k=0;k<Utilities.channelsNames.length;k++) {
 		    					  if(channelName.equalsIgnoreCase(Utilities.channelsNames[k]))
@@ -1769,10 +1744,10 @@ public class MainVerticle extends AbstractVerticle {
 				    			  
 				    			//Salviamo la misura nel DB
 				    			  mongoClient.insert("channel-"+channelId, singleMisure , res ->{
-					    			  if(res.succeeded())
-					    				  System.out.println("Misura salvata correttamente nel DB.");
-					    			  else
-					    				  System.err.println("ERRORE salvataggio misura");  
+					    			  //if(res.succeeded())
+					    				  //System.out.println("Misura salvata correttamente nel DB.");
+					    			  //else
+					    				  //System.err.println("ERRORE salvataggio misura");  
 					    		  });
 		    				  }	  
 		    				
