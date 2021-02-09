@@ -7,7 +7,7 @@ public class Irrigazione {
 	private long inizioIrrig;
 	private long fineIrrig;
 	private float quantita;
-	public final float capacita=(float) 0.2;
+	
 	
 	
 	public Irrigazione() {}

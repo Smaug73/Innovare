@@ -2,6 +2,7 @@ package com.innovare.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.innovare.control.ConfigurationController;
 import com.innovare.gateway.GatewayVerticle;
 import com.innovare.utils.Utilities;
 
@@ -85,7 +86,7 @@ public class IrrigationController extends Thread{
 			this.logClient.connect(1883, Utilities.ipMqtt, s -> {	
 				
 				System.out.println(tm+": Avvio irrigazione.");
-				this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+": "+this.stateOn),
+				this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+"-IrrigazioneLogGateway: "+this.stateOn),
 						  MqttQoS.AT_LEAST_ONCE,
 						  false,
 						  false);		
@@ -103,11 +104,55 @@ public class IrrigationController extends Thread{
 		try {
 			process = Runtime.getRuntime().exec(this.scriptPathIrrigation+" on");
 			int processOutput=process.waitFor();
+			
+			//TESTING 
+			if(ConfigurationController.testingIrrigazione)
+				processOutput=0;
+			
+			//Controlliamo se il processo e' stato eseguito correttamente
+			if(processOutput==0) {
+				System.out.println("IrrigationControllerLOG: processo eseguito con successo!");
+				//Se il processo e' stato eseguito con successo bisogna comunicarlo al middlelayer
+				if(this.logClient!=null) {
+					//Connesione al server mqtt
+					this.logClient.connect(1883, Utilities.ipMqtt, s -> {	
+						
+						System.out.println("Comunicazione esito positivo del processo...");
+						this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+"-IrrigazioneLogGateway: "+this.stateOn),
+								  MqttQoS.AT_LEAST_ONCE,
+								  false,
+								  false);		
+						this.logClient.disconnect();//Per evitare problemi relativi alla connessione
+				    });		
+				}else {
+					System.out.println("Client mqtt per il log non instanziato");
+				}
+			}else {
+				
+				System.out.println("IrrigationControllerLOG: processo NON ESEUGITO CON SUCCESSO");
+				//Se il processo e' stato eseguito con successo bisogna comunicarlo al middlelayer
+				if(this.logClient!=null) {
+					//Connesione al server mqtt
+					this.logClient.connect(1883, Utilities.ipMqtt, s -> {	
+						
+						System.out.println("Comunicazione esito NEGATIVO del processo...");
+						this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+"-IrrigazioneLogGateway: ERROR."),
+								  MqttQoS.AT_LEAST_ONCE,
+								  false,
+								  false);		
+						this.logClient.disconnect();//Per evitare problemi relativi alla connessione
+				    });		
+				}else {
+					System.out.println("Client mqtt per il log non instanziato");
+				}
+				
+			}
+			
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			
 			e.printStackTrace();
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
+			
 			e.printStackTrace();
 		}
 		
@@ -154,7 +199,7 @@ public class IrrigationController extends Thread{
 			this.logClient.connect(1883, Utilities.ipMqtt, s -> {	
 				
 				System.out.println(tm+": Stop irrigazione.");
-				this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+": "+this.stateOff),
+				this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+"-IrrigazioneLogGateway: "+this.stateOff),
 						  MqttQoS.AT_LEAST_ONCE,
 						  false,
 						  false);		
@@ -170,6 +215,49 @@ public class IrrigationController extends Thread{
 		try {
 			process = Runtime.getRuntime().exec(this.scriptPathIrrigation+" off");
 			int processOutput=process.waitFor();
+			
+			//TESTING 
+			if(ConfigurationController.testingIrrigazione)
+				processOutput=0;
+			
+			//Controlliamo se il processo e' stato eseguito correttamente
+			if(processOutput==0) {
+				System.out.println("IrrigationControllerLOG: processo eseguito con successo!");
+				//Se il processo e' stato eseguito con successo bisogna comunicarlo al middlelayer
+				if(this.logClient!=null) {
+					//Connesione al server mqtt
+					this.logClient.connect(1883, Utilities.ipMqtt, s -> {	
+						
+						System.out.println("Comunicazione esito positivo del processo...");
+						this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+"-IrrigazioneLogGateway: "+this.stateOff),
+								  MqttQoS.AT_LEAST_ONCE,
+								  false,
+								  false);		
+						this.logClient.disconnect();//Per evitare problemi relativi alla connessione
+				    });		
+				}else {
+					System.out.println("Client mqtt per il log non instanziato");
+				}
+			}else {
+				
+				System.out.println("IrrigationControllerLOG: processo NON ESEUGITO CON SUCCESSO");
+				//Se il processo e' stato eseguito con successo bisogna comunicarlo al middlelayer
+				if(this.logClient!=null) {
+					//Connesione al server mqtt
+					this.logClient.connect(1883, Utilities.ipMqtt, s -> {	
+						
+						System.out.println("Comunicazione esito NEGATIVO del processo...");
+						this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+"-IrrigazioneLogGateway: ERROR."),
+								  MqttQoS.AT_LEAST_ONCE,
+								  false,
+								  false);		
+						this.logClient.disconnect();//Per evitare problemi relativi alla connessione
+				    });		
+				}else {
+					System.out.println("Client mqtt per il log non instanziato");
+				}
+				
+			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -86,6 +86,7 @@ public class IrrigationController extends TimerTask implements Job{
 		
 	}
 	
+	
 	@Override
 	public void execute(JobExecutionContext context) throws JobExecutionException {
 		
@@ -208,11 +209,12 @@ public class IrrigationController extends TimerTask implements Job{
 	public void run(){
 		/*
 		 * Il thread deve verificare l'ultima classificazione generata e deve basarsi su quella
-		 * generare la nuova irrigazione
+		 * per generare la nuova irrigazione
 		 */
 		
 			//Controlliamo se non e' in eseguzione un'altra irrigazione
 			if(this.state==Utilities.stateOn) {
+				//se e' in eseguzione usciamo
 				System.out.println(LOGIRR+System.currentTimeMillis()+" Irrigazione gia' in eseguzione!");
 				return ;
 			}else
@@ -324,10 +326,14 @@ public class IrrigationController extends TimerTask implements Job{
 						  MqttQoS.AT_LEAST_ONCE,
 						  false,
 						  false);
+			
+			
 			this.irrigationCommandClient.publishCompletionHandler(id ->{
 				this.irrigationCommandClient.disconnect();
+				//IMPOSTO LO STATO DELL'IRRIGAZIONE A ON
 				this.state=Utilities.stateOn;
-				System.out.println("Invio comando start effettuato.");
+				System.out.println("Invio comando start effettuato con successo.");
+				
 				//Attendiamo fino alla fine dell'irrigazione
 		    	try {
 					Thread.sleep(time);
@@ -350,7 +356,7 @@ public class IrrigationController extends TimerTask implements Job{
 	}
 	
 	public void stopIrrigation() {
-		this.state=Utilities.stateOff;
+		//this.state=Utilities.stateOff;
 		this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, v ->{
 			System.out.println("DEBUG IRRIGAZIONE--- INVIO STATE-OFF AL GATEWAY");
 			this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
@@ -358,9 +364,19 @@ public class IrrigationController extends TimerTask implements Job{
 						  MqttQoS.AT_LEAST_ONCE,
 						  false,
 						  false);
-			this.irrigationCommandClient.disconnect();
-	    	
-	    	System.out.println("Invio comando stop effettuato.");
+			
+			this.irrigationCommandClient.publishCompletionHandler(id ->{
+				this.irrigationCommandClient.disconnect();
+				//IMPOSTO LO STATO DELL'IRRIGAZIONE A OFF
+				this.state=Utilities.stateOff;
+				System.out.println("Invio comando stop effettuato con successo.");
+				
+				this.irrigationCommandClient.disconnect();
+		    	
+			});
+			
+			
+		
 		  });
 	}
 	
@@ -411,7 +427,7 @@ public class IrrigationController extends TimerTask implements Job{
 				//Salviamo l'irrigazione
 				if(this.irr!=null) {
 					this.irr.setFineIrrig(System.currentTimeMillis());
-					float qualt= (this.irr.getFineIrrig()-this.irr.getInizioIrrig())*this.irr.capacita;
+					float qualt= (this.irr.getFineIrrig()-this.irr.getInizioIrrig())*Utilities.capacita;
 					this.irr.setQuantita(qualt);
 					try {
 						this.memorizationIrrigation(irr);

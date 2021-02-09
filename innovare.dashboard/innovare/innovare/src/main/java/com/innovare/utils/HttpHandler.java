@@ -288,6 +288,7 @@ public class HttpHandler {
 		HttpResponse<String> response = sendRequest(path);
 		if(response == null) return null;
 		return getIrrigation(response);
+		//return response.statusCode();
 	}
 	
 	// Manda il commando di avvio/stop dell'irrigazione al middleware
@@ -295,6 +296,7 @@ public class HttpHandler {
 		String path = STOP_IRR;
 		HttpResponse<String> response = sendRequest(path);
 		if(response == null) return null;
+		//return response.statusCode();
 		return getIrrigation(response);
 	}
 

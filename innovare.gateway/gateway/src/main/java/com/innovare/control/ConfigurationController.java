@@ -10,7 +10,7 @@ public class ConfigurationController {
 
 	public static String ipMiddleLayer=Utilities.ipMiddleLayer;
 	public static long tempoCampionamentoWS= Utilities.tempoCampionamentoWeatherStationTest;
-	
+	public static boolean testingIrrigazione= false;
 	
 	public ConfigurationController(){
 		//verifichiamo l'esistenza del file di configurazione e lo leggiamo
@@ -33,7 +33,14 @@ public class ConfigurationController {
 							this.tempoCampionamentoWS= Long.parseLong(sc.next());
 							if(sc.hasNext())
 								sc.nextLine();
+							break;					
+						case "testing-irrigazioneON" :
+							this.testingIrrigazione= true;
+							if(sc.hasNext())
+								sc.nextLine();
 							break;
+							
+							
 						default:
 							sc.nextLine();
 					}	

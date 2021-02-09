@@ -369,7 +369,7 @@ public class ConfigurazioneView extends Div {
 		on_off.addValueChangeListener(new ValueChangeListener<ValueChangeEvent>() {
 			@Override
 			public void valueChanged(ValueChangeEvent event) {
-				if(event.getValue().equals("ON")) {
+				if(event.getValue().equals("ON") ) {
 					change(event, IrrigationState.ACCESO);
 				}
 				else {
@@ -379,7 +379,12 @@ public class ConfigurazioneView extends Div {
 			}
 
 			private void change(ValueChangeEvent event, IrrigationState irrState) {
+				
+				
 				Irrigazione newIrrigation;
+				
+				
+			
 				if(irrState.equals(IrrigationState.ACCESO)) {
 					newIrrigation = HttpHandler.startIrrigation();
 					//newIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis()),
@@ -408,13 +413,14 @@ public class ConfigurazioneView extends Div {
 				else {
 					on_off.setValue((String)event.getOldValue());
 				}
+				 
 			}
 
 			private void changeLastIrrigationView() {
 				cardLastIrrigation.removeAll();
 				cardLastIrrigation = (FlexBoxLayout) createLastIrrigationCard();
 			}
-
+				
 		});
 
 		
