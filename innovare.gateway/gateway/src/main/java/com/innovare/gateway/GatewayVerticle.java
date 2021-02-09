@@ -293,11 +293,4 @@ public class GatewayVerticle extends AbstractVerticle {
 	    
   }
   
-  
-  
-  
-
-  
-  
-  
 }

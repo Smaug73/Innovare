@@ -320,44 +320,73 @@ public class IrrigationController extends TimerTask implements Job{
 	public void startIrrigation(long time) {
 		
 		this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, t ->{
-			System.out.println("DEBUG IRRIGAZIONE--- INVIO STATE-ON AL GATEWAY");
+			System.out.println("DEBUG IRRIGAZIONE AUTOMATICA--- INVIO STATE-ON AL GATEWAY");
+			
+			this.irrigationCommandClient.publishHandler(r-> {
+				//Attendiamo risposta dal gateway
+				if(r.payload().toString().contains(Utilities.stateOn)) {
+					
+					this.irrigationCommandClient.disconnect();
+					//IMPOSTO LO STATO DELL'IRRIGAZIONE A ON
+					this.state=Utilities.stateOn;
+					System.out.println("DEBUG IRRIGAZIONE AUTOMATICA--- Invio comando start effettuato con successo.");
+					
+					//Attendiamo fino alla fine dell'irrigazione
+			    	try {
+						Thread.sleep(time);
+					} catch (InterruptedException e) {
+						System.err.println("DEBUG IRRIGAZIONE AUTOMATICA--- Errore nella sleep del thread IrrigationController");
+						e.printStackTrace();
+					}
+		    		
+		    	
+		    		 //Avviamo Stop-Irrigazione
+		    		stopIrrigation();
+	    			  
+	    		}
+				else if(r.payload().toString().contains("ERROR")) {
+					//Caso errore
+					System.out.println("DEBUG IRRIGAZIONE AUTOMATICA--- ERROR: irrigazione non avviata");
+					this.irrigationCommandClient.disconnect();
+	    	    	System.out.println("DEBUG IRRIGAZIONE AUTOMATICA--- Stato attuale: errore attivazione.");
+	    		}
+	
+			}).subscribe("Irrigation-LOG", 2);
+			
+			//Invio comando di azionamento dell'irrigazione
 			this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
-    	    		  Buffer.buffer(Utilities.stateOn),
+  	    		  Buffer.buffer(Utilities.stateOn),
 						  MqttQoS.AT_LEAST_ONCE,
 						  false,
-						  false);
+						  false);	
 			
-			
-			this.irrigationCommandClient.publishCompletionHandler(id ->{
-				this.irrigationCommandClient.disconnect();
-				//IMPOSTO LO STATO DELL'IRRIGAZIONE A ON
-				this.state=Utilities.stateOn;
-				System.out.println("Invio comando start effettuato con successo.");
-				
-				//Attendiamo fino alla fine dell'irrigazione
-		    	try {
-					Thread.sleep(time);
-				} catch (InterruptedException e) {
-					System.err.println("Errore nella sleep del thread IrrigationController");
-					e.printStackTrace();
-				}
-	    		
-	    		/*
-	    		 * Avviamo Stop-Irrigazione
-	    		 */
-	    		stopIrrigation();
-		    	
-			});
-			
-	    	
-	    	
-	    	
-		  });
+		});
+			  
 	}
+	
+	
+	
 	
 	public void stopIrrigation() {
 		//this.state=Utilities.stateOff;
 		this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, v ->{
+			
+			this.irrigationCommandClient.publishHandler(r->{
+				
+				if(r.payload().toString().contains(Utilities.stateOff)) {
+	    			  this.setState(Utilities.stateOff);
+	    			  System.out.println("DEBUG IRRIGAZIONE AUTOMATICA--- stato irrigazione modificato OFF");
+	    			  this.irrigationCommandClient.disconnect(); 
+	    			  
+	    		}
+				else if(r.payload().toString().contains("ERROR")) {
+					//Caso errore
+					System.out.println("---DEBUG IRRIGAZIONE-LOG---- ERROR: irrigazione non disattivata");
+					//ERRORE NEL DISATTIVARE IMPIANTO DI IRRIGAZIONE
+	    		}
+	
+			}).subscribe("Irrigation-LOG", 2);
+					
 			System.out.println("DEBUG IRRIGAZIONE--- INVIO STATE-OFF AL GATEWAY");
 			this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
     	    		  Buffer.buffer(Utilities.stateOff),
@@ -365,18 +394,6 @@ public class IrrigationController extends TimerTask implements Job{
 						  false,
 						  false);
 			
-			this.irrigationCommandClient.publishCompletionHandler(id ->{
-				this.irrigationCommandClient.disconnect();
-				//IMPOSTO LO STATO DELL'IRRIGAZIONE A OFF
-				this.state=Utilities.stateOff;
-				System.out.println("Invio comando stop effettuato con successo.");
-				
-				this.irrigationCommandClient.disconnect();
-		    	
-			});
-			
-			
-		
 		  });
 	}
 	
@@ -463,11 +480,5 @@ public class IrrigationController extends TimerTask implements Job{
 		this.state = state;
 	}
 
-
-
-	
-	
-	
-	
 	
 }

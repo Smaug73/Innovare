@@ -225,7 +225,7 @@ public class IrrigationController extends Thread{
 				System.out.println("IrrigationControllerLOG: processo eseguito con successo!");
 				//Se il processo e' stato eseguito con successo bisogna comunicarlo al middlelayer
 				if(this.logClient!=null) {
-					//Connesione al server mqtt
+					//Connessione al server mqtt
 					this.logClient.connect(1883, Utilities.ipMqtt, s -> {	
 						
 						System.out.println("Comunicazione esito positivo del processo...");
@@ -234,6 +234,7 @@ public class IrrigationController extends Thread{
 								  false,
 								  false);		
 						this.logClient.disconnect();//Per evitare problemi relativi alla connessione
+						
 				    });		
 				}else {
 					System.out.println("Client mqtt per il log non instanziato");
@@ -243,7 +244,7 @@ public class IrrigationController extends Thread{
 				System.out.println("IrrigationControllerLOG: processo NON ESEUGITO CON SUCCESSO");
 				//Se il processo e' stato eseguito con successo bisogna comunicarlo al middlelayer
 				if(this.logClient!=null) {
-					//Connesione al server mqtt
+					//Connessione al server mqtt
 					this.logClient.connect(1883, Utilities.ipMqtt, s -> {	
 						
 						System.out.println("Comunicazione esito NEGATIVO del processo...");

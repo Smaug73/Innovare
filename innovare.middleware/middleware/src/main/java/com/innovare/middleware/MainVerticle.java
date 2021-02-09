@@ -1277,19 +1277,19 @@ public class MainVerticle extends AbstractVerticle {
     	    	    		    			  this.irrigationController.setState(Utilities.stateOn);
     	    	    		    			  System.out.println("---DEBUG IRRIGAZIONE-LOG---- stato irrigazione modificato ON");
     	    	    		    			  routingContext
-    	    	    							.response()
-    	    	    							.setStatusCode(200)
-    	    	    							.end("Stato attuale: irrigazione attivata.");
-    	    	            	    	    	System.out.println("Stato attuale: irrigazione attivata.");
+    	    	    		    			  .response()
+    	    	    		    			  .setStatusCode(200)
+    	    	    		    			  .end("Stato attuale: irrigazione attivata.");
+    	    	    		    			  System.out.println("Stato attuale: irrigazione attivata.");
     	    	    		    			  
     	    	    		    		}
     	    	    					else if(r.payload().toString().contains("ERROR")) {
     	    	    						//Caso errore
     	    	    						System.out.println("---DEBUG IRRIGAZIONE-LOG---- ERROR: irrigazione non avviata");
     	    	    						routingContext
-    	        							.response()
-    	        							.setStatusCode(400)
-    	        							.end("Stato attuale: errore attivazione.");
+	    	        						.response()
+	    	        						.setStatusCode(400)
+	    	        						.end("Stato attuale: errore attivazione.");
     	                	    	    	System.out.println("Stato attuale: errore attivazione.");
     	    	    		    		}
 	    					
