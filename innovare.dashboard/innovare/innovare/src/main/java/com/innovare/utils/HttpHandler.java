@@ -283,21 +283,23 @@ public class HttpHandler {
 	}
 
 	// Manda il commando di avvio/stop dell'irrigazione al middleware
-	public static Irrigazione startIrrigation() {
+	public static int startIrrigation() {
 		String path = START_IRR;
 		HttpResponse<String> response = sendRequest(path);
-		if(response == null) return null;
-		return getIrrigation(response);
-		//return response.statusCode();
+		//if(response == null) return null;
+		if(response == null) return 401; 
+		//return getIrrigation(response);
+		return response.statusCode();
 	}
 	
 	// Manda il commando di avvio/stop dell'irrigazione al middleware
-	public static Irrigazione stopIrrigation() {
+	public static int stopIrrigation() {
 		String path = STOP_IRR;
 		HttpResponse<String> response = sendRequest(path);
-		if(response == null) return null;
-		//return response.statusCode();
-		return getIrrigation(response);
+		//if(response == null) return null;
+		if(response == null) return 401;
+		return response.statusCode();
+		//return getIrrigation(response);
 	}
 
 

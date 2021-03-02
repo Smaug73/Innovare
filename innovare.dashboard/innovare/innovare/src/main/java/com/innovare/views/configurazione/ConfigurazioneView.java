@@ -366,7 +366,7 @@ public class ConfigurazioneView extends Div {
 		
 		
 		
-		/*on_off.addValueChangeListener(new ValueChangeListener<ValueChangeEvent>() {
+		on_off.addValueChangeListener(new ValueChangeListener<ValueChangeEvent>() {
 			@Override
 			public void valueChanged(ValueChangeEvent event) {
 				if(event.getValue().equals("ON") ) {
@@ -379,7 +379,45 @@ public class ConfigurazioneView extends Div {
 			}
 
 			private void change(ValueChangeEvent event, IrrigationState irrState) {
-								
+				
+				int response=401;
+				
+				if(irrState.equals(IrrigationState.ACCESO)) {
+					//controlliamo che non sia gia' acceso
+					if(!isIrrigationOn.equalsIgnoreCase("ON")) {
+						response=HttpHandler.startIrrigation();
+						
+					}else
+						return;
+					//Caso nel quale isIrrigation e' gia' on
+				}else {
+					if(!isIrrigationOn.equalsIgnoreCase("OFF")) {
+						response=HttpHandler.stopIrrigation();
+						
+					}else 
+						return;
+					
+				}
+				
+				if(response==200) {
+					lastIrrigation = new Irrigazione(System.currentTimeMillis(),System.currentTimeMillis()+1000000,10000);
+					isIrrigationOn=irrState.getShortName();
+					icon.setColor(irrState.getColor());
+					label.setText(irrState.getName());
+					lastIrrigation = new Irrigazione();
+					changeLastIrrigationView();
+				}else {
+					//nel caso non va a buon fine reinpostare la scelta precendente
+					//on_off.setValue((String)event.getOldValue());
+				}
+				
+				
+				
+				
+				
+				
+				
+				/*OLD CODE
 				Irrigazione newIrrigation;
 				
 				if(irrState.equals(IrrigationState.ACCESO)) {
@@ -410,14 +448,14 @@ public class ConfigurazioneView extends Div {
 					on_off.setValue((String)event.getOldValue());
 				}
 				 
+			*/
 			}
-			
 			private void changeLastIrrigationView() {
 				cardLastIrrigation.removeAll();
 				cardLastIrrigation = (FlexBoxLayout) createLastIrrigationCard();
 			}
 				
-		});*/
+		});
 
 		
 		

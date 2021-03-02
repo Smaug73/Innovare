@@ -66,7 +66,7 @@ public class WeatherStationController extends Thread{
 		}
 		
 		//debug
-		System.out.println("\nDEBUG HASHSET");
+		//System.out.println("\nDEBUG HASHSET");
 		for(int i=0;i<channelsNames.size();i++)
 			System.out.println(channelsNames.toArray()[i]);
 		////////////
@@ -81,6 +81,63 @@ public class WeatherStationController extends Thread{
 			//this.campionamentoFromFile();//TEST/////////////////
 			try {
 				this.campionamentoFromProcess();
+				
+				
+				//Dopo il campionamento inviamo tramite mqtt i dati
+				this.mqttClient.connect(1883, ConfigurationController.ipMiddleLayer, s -> {	
+						
+						ArrayList<Sample> newSamples= new ArrayList<Sample>();
+					
+						for(int i=0; i<Utilities.channelsNames.length; i++) {
+							try {
+								
+								newSamples.add(this.getDato(Utilities.channelsNames[i]));
+								
+								
+							} catch (Exception e) {
+								System.err.println(e.getMessage());
+								//e.printStackTrace();
+							}
+							/*
+							//DEBUG
+							try {
+								System.out.println("Nuovo Sample: "+new ObjectMapper().writeValueAsString(this.getDato(Utilities.channelsNames[i])));
+								if(this.getDato(Utilities.channelsNames[i])!=null)
+									this.mqttClient.publish(""+i,
+											 //Invio dell'array contenente le misure
+											  Buffer.buffer(new ObjectMapper().writeValueAsString(this.getDato(Utilities.channelsNames[i]))),
+											  MqttQoS.AT_LEAST_ONCE,
+											  false,
+											  false);	
+								else
+									System.out.println("VOLERE DA INVIARE NULL, PROBLEMI AL CANALE:"+i);
+							} catch (Exception e) {
+								//errore non esiste il canale
+								System.err.println(e.getMessage());
+								e.printStackTrace();
+							}*/						
+						} 
+						System.out.println("LOG-WEATHERSTATION-CHANNEL: invio");
+						
+						try {
+							System.out.println(new ObjectMapper().writeValueAsString(newSamples));
+							this.mqttClient.publish("weatherStation",
+									 //Invio dell'array contenente le misure
+									  Buffer.buffer(new ObjectMapper().writeValueAsString(newSamples)),
+									  MqttQoS.AT_LEAST_ONCE,
+									  false,
+									  false);
+						} catch (JsonProcessingException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}	
+						
+						//Il client si disconnette dopo aver inviato il messaggio.-NECESSARIO PER EVITARE BUG SULLA RICONNESSIONE-
+						this.mqttClient.disconnect();
+						
+			    });
+				
+				
 			} catch (IOException e1) {
 				
 				System.err.println("ERRORE AVVIO PROCESSO LETTURA WEATHERSTATION..");
@@ -88,59 +145,7 @@ public class WeatherStationController extends Thread{
 			}
 			//this.campionamentoFromProcess(); /////VERO
 			
-			//Dopo il campionamento inviamo tramite mqtt i dati
-			this.mqttClient.connect(1883, ConfigurationController.ipMiddleLayer, s -> {	
-					
-					ArrayList<Sample> newSamples= new ArrayList<Sample>();
-				
-					for(int i=0; i<Utilities.channelsNames.length; i++) {
-						try {
-							
-							newSamples.add(this.getDato(Utilities.channelsNames[i]));
-							
-							
-						} catch (Exception e) {
-							System.err.println(e.getMessage());
-							//e.printStackTrace();
-						}
-						/*
-						//DEBUG
-						try {
-							System.out.println("Nuovo Sample: "+new ObjectMapper().writeValueAsString(this.getDato(Utilities.channelsNames[i])));
-							if(this.getDato(Utilities.channelsNames[i])!=null)
-								this.mqttClient.publish(""+i,
-										 //Invio dell'array contenente le misure
-										  Buffer.buffer(new ObjectMapper().writeValueAsString(this.getDato(Utilities.channelsNames[i]))),
-										  MqttQoS.AT_LEAST_ONCE,
-										  false,
-										  false);	
-							else
-								System.out.println("VOLERE DA INVIARE NULL, PROBLEMI AL CANALE:"+i);
-						} catch (Exception e) {
-							//errore non esiste il canale
-							System.err.println(e.getMessage());
-							e.printStackTrace();
-						}*/						
-					} 
-					System.out.println("LOG-WEATHERSTATION-CHANNEL: invio");
-					
-					try {
-						System.out.println(new ObjectMapper().writeValueAsString(newSamples));
-						this.mqttClient.publish("weatherStation",
-								 //Invio dell'array contenente le misure
-								  Buffer.buffer(new ObjectMapper().writeValueAsString(newSamples)),
-								  MqttQoS.AT_LEAST_ONCE,
-								  false,
-								  false);
-					} catch (JsonProcessingException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}	
-					
-					//Il client si disconnette dopo aver inviato il messaggio.-NECESSARIO PER EVITARE BUG SULLA RICONNESSIONE-
-					this.mqttClient.disconnect();
-					
-		    });
+			
 			try {
 				this.sleep(tempoCampionamento);
 			} catch (InterruptedException e) {
@@ -406,7 +411,7 @@ public class WeatherStationController extends Thread{
 		String[] token;
 		String reg="[ = \n]+";
 		
-		//Generazione time stamp per il sample appena catturati
+		//Generazione time stamp per i sample appena catturati
 		long timestamp= System.currentTimeMillis();
 		
 		while ((line = br.readLine()) != null) {
@@ -423,15 +428,115 @@ public class WeatherStationController extends Thread{
 			if(this.channelsNames.contains(token[0])) {
 				try {
 					//System.out.println("SI!"+"\n");
-					//this.channels.put(token[0], Float.valueOf(token[1]));
-					this.channelsSample.put(token[0], new Sample(timestamp,token[0],Float.valueOf(token[1])));
+					//DEBUG
+					System.out.println("token0<"+token[0]+"> token1<"+token[1]+">\n");
+					/*
+					//Controllo se il canale letto e' rtInsideTemp o rtOutsideTemp, va convertita la temperatura
+					if(token[0].equalsIgnoreCase("rtOutsideTemp") || token[0].equalsIgnoreCase("rtInsideTemp"))
+						//Controlliamo che sia stato letto corretamente dal programma 
+						//Come documentato a pag 31  VantageSeriaProtocolDocs_v261 https://drive.google.com/drive/u/0/folders/18HTT0s0AMP_H6wIpoATokqDbR2JfiNNL
+						if(!token[1].equalsIgnoreCase("3276.7") && !token[1].equalsIgnoreCase("32767") )
+							//Convertiamo il valore della temperatura in Celsius.
+							this.channelsSample.put(token[0], new Sample(timestamp,token[0], (Float.valueOf(token[1])-32)*(5/9) ));
+						else
+							this.channelsSample.put(token[0], new Sample(timestamp,token[0]));
+					else {
+						System.out.println("Aggiunta normale");
+						//Lo aggiungiamo con valore 
+						this.channelsSample.put(token[0], new Sample(timestamp,token[0],Float.valueOf(token[1])));
+					}
+					*/
+					
+					switch(token[0]) {
+					
+										
+					case "rtInsideTemp":
+						if(!token[1].equalsIgnoreCase("3276.7") && !token[1].equalsIgnoreCase("32767") )
+							//Convertiamo il valore della temperatura in Celsius.
+							this.channelsSample.put(token[0], new Sample(timestamp,token[0], Float.valueOf(token[1]) ));
+						else
+							//Caso errore lettura
+							this.channelsSample.put(token[0], new Sample(timestamp,token[0]));
+						break;
+						
+					case "rtInsideHum":
+						if(!token[1].equalsIgnoreCase("255") )
+							//Convertiamo il valore della temperatura in Celsius.
+							this.channelsSample.put(token[0], new Sample(timestamp,token[0], Float.valueOf(token[1])  ));
+						else
+							//Caso errore lettura
+							this.channelsSample.put(token[0], new Sample(timestamp,token[0]));
+						break;
+						
+					case "rtOutsideTemp":
+						if(!token[1].equalsIgnoreCase("3276.7") && !token[1].equalsIgnoreCase("32767") )
+							//Convertiamo il valore della temperatura in Celsius.
+							this.channelsSample.put(token[0], new Sample(timestamp,token[0], (Float.valueOf(token[1])-32)*(5/9) ));
+						else
+							//Caso errore lettura
+							this.channelsSample.put(token[0], new Sample(timestamp,token[0]));
+						break;
+						
+						
+					case "rtWindSpeed":
+						if(!token[1].equalsIgnoreCase("255") )
+							//Convertiamo il valore della temperatura in Celsius.
+							this.channelsSample.put(token[0], new Sample(timestamp,token[0], Float.valueOf(token[1])  ));
+						else
+							//Caso errore lettura
+							this.channelsSample.put(token[0], new Sample(timestamp,token[0]));
+						break;
+						
+					case "rtWindAvgSpeed":
+						if(!token[1].equalsIgnoreCase("255") )
+							//Convertiamo il valore della temperatura in Celsius.
+							this.channelsSample.put(token[0], new Sample(timestamp,token[0], Float.valueOf(token[1])  ));
+						else
+							//Caso errore lettura
+							this.channelsSample.put(token[0], new Sample(timestamp,token[0]));
+						break;
+						
+					case "rtWindDir":
+						if(!token[1].equalsIgnoreCase("255") )
+							//Convertiamo il valore della temperatura in Celsius.
+							this.channelsSample.put(token[0], new Sample(timestamp,token[0], Float.valueOf(token[1])  ));
+						else
+							//Caso errore lettura
+							this.channelsSample.put(token[0], new Sample(timestamp,token[0]));
+						break;
+						
+					case "rtOutsideHum":
+						if(!token[1].equalsIgnoreCase("255") )
+							//Convertiamo il valore della temperatura in Celsius.
+							this.channelsSample.put(token[0], new Sample(timestamp,token[0], Float.valueOf(token[1])  ));
+						else
+							//Caso errore lettura
+							this.channelsSample.put(token[0], new Sample(timestamp,token[0]));
+						break;
+						
+					case "rtRainRate":
+						if(!token[1].equalsIgnoreCase("655.35") )
+							//Convertiamo il valore della temperatura in Celsius.
+							this.channelsSample.put(token[0], new Sample(timestamp,token[0], Float.valueOf(token[1])  ));
+						else
+							//Caso errore lettura
+							this.channelsSample.put(token[0], new Sample(timestamp,token[0]));
+						break;
+					
+					default:
+						this.channelsSample.put(token[0], new Sample(timestamp,token[0], Float.valueOf(token[1])  ));
+						
+					}
+					
+		
 				}
 				catch(NumberFormatException n) {
 					//System.err.println("Errore conversione numero, sara' aggiunto null"+"\n");
 					//this.channels.put(token[0], null);
 					//CONTROLLIAMO CASO DELLA MISURA DI WIND-DIR-ROSE
 					if(!token[0].equalsIgnoreCase("rtWindDirRose"))
-						this.channelsSample.put(token[0], new Sample(timestamp,token[0]));
+						System.out.println("WEATHER STATION ERROR--- Errore lettura :"+token[0]);
+						//this.channelsSample.put(token[0], new Sample(timestamp,token[0]));
 					else {
 						switch(token[1]) {
 						case "N": 
@@ -500,6 +605,7 @@ public class WeatherStationController extends Thread{
 	private void mqttComunication() {
 		
 	}
+	
 	
 	
 	public synchronized Sample getDato(String channelName) throws Exception {

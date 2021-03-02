@@ -53,7 +53,9 @@ public class ConfigurationController {
 		} catch (FileNotFoundException e) {
 			System.err.println("ERRORE LETTURA FILE CONFIGURAZIONE: file non presente.");
 			
-		}		
+		}catch(Exception e) {
+			System.err.println("ERRORE lettura generico..");
+		}
 		
 	}
 
