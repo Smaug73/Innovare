@@ -35,6 +35,13 @@ public class HumAmbView extends StoricoView {
 	@Override
 	protected void getData() {
 		samples = HttpHandler.getAllSamples(Channel.OUTSIDE_HUM.getValue());
+		//FILTRO ELIMINO I SAMPLE NON CORRETTI
+		if(samples!= null) {
+				for(Sample s: samples) {
+					if(s.getMisure()==-1)
+						samples.remove(s);
+				}
+		}
 	}
 
 

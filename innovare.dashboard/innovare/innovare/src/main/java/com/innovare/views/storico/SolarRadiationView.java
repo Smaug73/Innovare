@@ -38,7 +38,11 @@ public class SolarRadiationView extends StoricoView{
 	@Override
 	protected void getData() {
 		solarRadiations = HttpHandler.getAllSamples(Channel.SOLAR_RAD.getValue());
-		
+		//FILTRO ELIMINO I SAMPLE NON CORRETTI
+				for(Sample s: solarRadiations) {
+					if(s.getMisure()==-1)
+						solarRadiations.remove(s);
+				}
 	}
 
 	@Override

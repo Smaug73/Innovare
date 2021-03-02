@@ -36,15 +36,21 @@ public class TempSuoloView extends StoricoView{
 
 	@Override
 	protected void getData() {
-/*		sensors = new HashMap<Integer, ArrayList<Sample>>();
+		///
+		sensors = new HashMap<Integer, ArrayList<Sample>>();
 		ArrayList<Integer> channels = HttpHandler.getActiveChannels();
 		for(Integer channel : channels) {
 			ArrayList<Sample> samples = HttpHandler.getAllSamples(channel);
+			//FILTRO ELIMINO I SAMPLE NON CORRETTI
+			for(Sample s: samples) {
+				if(s.getMisure()==-273.15)
+						samples.remove(s);
+			}
 			sensors.put(channel, samples);
 		}
-*/		
-		sensors = new HashMap<Integer, ArrayList<Sample>>();
-		ArrayList<Integer> channels = new ArrayList<Integer>();
+		////
+		//sensors = new HashMap<Integer, ArrayList<Sample>>();
+		//ArrayList<Integer> channels = new ArrayList<Integer>();
 		channels.add(16);
 		channels.add(17);
 		channels.add(20);

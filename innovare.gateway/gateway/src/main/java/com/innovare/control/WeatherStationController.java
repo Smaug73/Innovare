@@ -453,10 +453,10 @@ public class WeatherStationController extends Thread{
 					case "rtInsideTemp":
 						if(!token[1].equalsIgnoreCase("3276.7") && !token[1].equalsIgnoreCase("32767") )
 							//Convertiamo il valore della temperatura in Celsius.
-							this.channelsSample.put(token[0], new Sample(timestamp,token[0], Float.valueOf(token[1]) ));
+							this.channelsSample.put(token[0], new Sample(timestamp,token[0], (Float.valueOf(token[1])-32)*(5/9) ));
 						else
 							//Caso errore lettura
-							this.channelsSample.put(token[0], new Sample(timestamp,token[0]));
+							this.channelsSample.put(token[0], new Sample(timestamp,token[0], Float.valueOf("-273.15")));
 						break;
 						
 					case "rtInsideHum":
@@ -474,7 +474,7 @@ public class WeatherStationController extends Thread{
 							this.channelsSample.put(token[0], new Sample(timestamp,token[0], (Float.valueOf(token[1])-32)*(5/9) ));
 						else
 							//Caso errore lettura
-							this.channelsSample.put(token[0], new Sample(timestamp,token[0]));
+							this.channelsSample.put(token[0], new Sample(timestamp,token[0], Float.valueOf("-273.15")));
 						break;
 						
 						
@@ -497,7 +497,7 @@ public class WeatherStationController extends Thread{
 						break;
 						
 					case "rtWindDir":
-						if(!token[1].equalsIgnoreCase("255") )
+						if(!token[1].equalsIgnoreCase("32767") )
 							//Convertiamo il valore della temperatura in Celsius.
 							this.channelsSample.put(token[0], new Sample(timestamp,token[0], Float.valueOf(token[1])  ));
 						else

@@ -35,6 +35,12 @@ public class TempAmbView extends StoricoView{
 	@Override
 	protected void getData() {
 		samples = HttpHandler.getAllSamples(Channel.OUTSIDE_TEMP.getValue());
+		
+		//FILTRO ELIMINO I SAMPLE NON CORRETTI
+		for(Sample s: samples) {
+			if(s.getMisure()==-273.15)
+					samples.remove(s);
+		}
 	}
 
 

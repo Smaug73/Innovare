@@ -37,6 +37,12 @@ public class UVView extends StoricoView{
 	@Override
 	protected void getData() {
 		uvLevels = HttpHandler.getAllSamples(Channel.UV_LEVEL.getValue());
+		
+		//FILTRO ELIMINO I SAMPLE NON CORRETTI
+		for(Sample s: uvLevels) {
+			if(s.getMisure()==-1)
+				uvLevels.remove(s);
+		}
 	}
 
 	@Override

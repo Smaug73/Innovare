@@ -56,12 +56,17 @@ public class WindView extends StoricoView{
 		ArrayList<Sample> WIND_DIRECTIONS = HttpHandler.getAllSamples(Channel.WIND_DIR.getValue());
 		ArrayList<Sample> WIND_SPEEDS = HttpHandler.getAllSamples(Channel.WIND_SPEED.getValue());
 		
+		
+		
 		WIND = new ArrayList<>();
 		for(Sample dir : WIND_DIRECTIONS) {
 			for(Sample speed : WIND_SPEEDS) {
 				if(dir.getTimestamp() == speed.getTimestamp()) {
-					Wind wind = new Wind(Direction.getDirection((int) dir.getMisure()), new Timestamp(dir.getTimestamp()), speed.getMisure());
-					WIND.add(wind);
+					//Fix per evitare che mostri sample incorretamente registrati dalla weatherstation
+					if (speed.getMisure() != -1) {
+						Wind wind = new Wind(Direction.getDirection((int) dir.getMisure()), new Timestamp(dir.getTimestamp()), speed.getMisure());
+						WIND.add(wind);
+					}
 				}
 			}
 		}
