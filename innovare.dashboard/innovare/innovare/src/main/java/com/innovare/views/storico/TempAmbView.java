@@ -38,7 +38,7 @@ public class TempAmbView extends StoricoView{
 		
 		//FILTRO ELIMINO I SAMPLE NON CORRETTI
 		for(Sample s: samples) {
-			if(s.getMisure()==-273.15)
+			if(s.getMisure() == Channel.OUTSIDE_TEMP.getInvalidValue())
 					samples.remove(s);
 		}
 	}

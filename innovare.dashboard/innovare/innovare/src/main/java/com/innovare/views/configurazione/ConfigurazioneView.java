@@ -379,7 +379,7 @@ public class ConfigurazioneView extends Div {
 			}
 
 			private void change(ValueChangeEvent event, IrrigationState irrState) {
-				
+				/*
 				int response=401;
 				
 				if(irrState.equals(IrrigationState.ACCESO)) {
@@ -411,25 +411,28 @@ public class ConfigurazioneView extends Div {
 					//on_off.setValue((String)event.getOldValue());
 				}
 				
+				*/
 				
 				
 				
 				
 				
-				
-				/*OLD CODE
+				/*OLD CODE--- codice da rivedere ---- */
 				Irrigazione newIrrigation;
 				
 				if(irrState.equals(IrrigationState.ACCESO)) {
 					newIrrigation = HttpHandler.startIrrigation();
-					//newIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis()),
-					//		new Timestamp(System.currentTimeMillis() + 40000), 58.34);				
+					//newIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 40000),
+					//	new Timestamp(System.currentTimeMillis())+40000, 58.34);
+					//newIrrigation = new Irrigazione(System.currentTimeMillis(),
+						//	System.currentTimeMillis() + 40000,Float.parseFloat("58.34") );				
 				}
 				else {
 					newIrrigation = HttpHandler.stopIrrigation();
-					//ewIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 40000),
-					//		new Timestamp(System.currentTimeMillis()), 58.34);
-					
+					//newIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 40000),
+						//	new Timestamp(System.currentTimeMillis()), 58.34);
+					//newIrrigation = new Irrigazione(System.currentTimeMillis(),
+					//		System.currentTimeMillis() ,Float.parseFloat("58.34") );	
 				}
 				
 				// Se la richiesta va a buon fine, è necessario cambiare
@@ -448,7 +451,7 @@ public class ConfigurazioneView extends Div {
 					on_off.setValue((String)event.getOldValue());
 				}
 				 
-			*/
+			/**/
 			}
 			private void changeLastIrrigationView() {
 				cardLastIrrigation.removeAll();
