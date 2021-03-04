@@ -1,6 +1,7 @@
 package com.innovare.control;
 
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,11 +35,20 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.mqtt.MqttClient;
 
+import java.time.temporal.ChronoUnit;
+
 /*
  * Si occupa del controllo dell'innaffiamento
  */
 public class IrrigationController extends TimerTask implements Job{
 
+	
+	public static final long delayDay= 24*60*60*1000l;
+	public static final long delayOneMinutetTest= 60*1000l;//Un minuto di delay
+	public static final long delayStartDEFAULT=1000*20l; // 20 Secondi
+	
+	private LocalTime StartingTimeIrrigation= LocalTime.of(14, 0);
+	
 	private static final String LOGIRR="LOG-IRRIGATION-CONTROLLER: ";
 	//Orario di start dell'irrigazione giornaliera
 	private LocalTime startIrrigationTime= LocalTime.of(Utilities.hourStartIrrigation, Utilities.minuteStartIrrigation);
@@ -471,6 +481,35 @@ public class IrrigationController extends TimerTask implements Job{
 				  System.err.println(LOGIRR+"ERRORE salvataggio Irrigazione");  
 			});		
 	}
+	
+	
+	
+	/*
+	 * Metodo per il calcolo della distanza temporale tra il tempo ld e il tempo attuale
+	 * 
+	 */
+	public long delayFromNewIrrigation(LocalTime ld) {
+		
+		//Calcoliamo il delay come la distanza da questo istante all'orario di irrigazione
+		LocalTime now= LocalTime.now();
+		
+		
+		if(now.compareTo(ld)==1) { 
+			//Now e' maggiore
+			//Dobbiamo calcolare il tempo sommando la differenza tra il LocalTime massimo e now e il LocalTimeMinimo e ld
+			return now.until(LocalTime.MAX, ChronoUnit.MILLIS)+ ld.until(LocalTime.MIN, ChronoUnit.MILLIS)*-1;
+		}
+		else
+			return now.until(ld, ChronoUnit.MILLIS);
+		
+		
+		
+		
+	}
+	
+	
+	
+	
 
 	public String getState() {
 		return state;
@@ -480,5 +519,17 @@ public class IrrigationController extends TimerTask implements Job{
 		this.state = state;
 	}
 
+	public LocalTime getStartingTimeIrrigation() {
+		return StartingTimeIrrigation;
+	}
+
+	public void setStartingTimeIrrigation(LocalTime defaultStartingTimeIrrigation) {
+		this.StartingTimeIrrigation = defaultStartingTimeIrrigation;
+	}
+	
+	
+	
+	
+	
 	
 }

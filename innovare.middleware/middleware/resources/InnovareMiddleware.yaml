@@ -197,10 +197,6 @@ paths:
     get:
       responses:
         "200":
-          content:
-            application/json:
-              schema:
-                type: boolean
           description: RIchiesta stato irrigazione
       operationId: getStatoIrrigazione
       summary: RIchiesta stato irrigazione.
@@ -324,13 +320,6 @@ paths:
           description: "Recupero dell'orario in cui, ogni giorno, ha inizio l'irrigazione"
       operationId: irrigationTime
       summary: "Recupero dell'orario in cui, ogni giorno, ha inizio l'irrigazione"
-  /setIrrigationTime:
-    get:
-      responses:
-        "200":
-          description: Se l'impostazione e' andata a buon fine.
-      operationId: setIrrigationTIme
-      summary: Imposta l'ora di irrigazione
   /channelsNumber:
     get:
       responses:
@@ -338,6 +327,17 @@ paths:
           description: Restituisce array con il numero dei canali attivi
       operationId: channelsNum
       summary: Richiesta numero di canali attivi
+  /setIrrigationTime/{irrigationTime}:
+    get:
+      responses:
+        "200":
+          description: Modifica orario avvenuta con successo.
+      operationId: setIrrigationTime
+      summary: Imposta l'orario di avvio dell'irrigazione.
+    parameters:
+    - name: irrigationTime
+      in: path
+      required: true
 components:
   schemas:
     ConfigurationItem:

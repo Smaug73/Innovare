@@ -1,6 +1,8 @@
 package com.innovare.middleware;
 
 import java.io.FileNotFoundException;
+import java.time.DateTimeException;
+import java.time.LocalTime;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -109,6 +111,7 @@ public class MainVerticle extends AbstractVerticle {
 	private Trigger trigger;
 	private Scheduler sch;
 	private Irrigazione irr=null;
+	private Timer timer=null;
 	/*
 	 * AGGIUNGERE PRIORITY QUEUE DELLE CLASSIFICAZIONI, DEVE CONTENERE LE ULTIME 4 CLASSIFICAZIONI EFFETTUATE
 	 */
@@ -292,7 +295,7 @@ public class MainVerticle extends AbstractVerticle {
 	   * IRRIGATION-CONTROLLER avvio
 	   */
 	  //this.irrigationController =new IrrigationController(MongoClient.createShared(vertx, mongoconfig),this.irrigationCommandClient);
-	    Timer timer = new Timer();
+	    this.timer = new Timer();
 	    Calendar dateC = Calendar.getInstance();
 	    dateC.set(
 	      Calendar.DAY_OF_WEEK,
@@ -303,13 +306,24 @@ public class MainVerticle extends AbstractVerticle {
 	    dateC.set(Calendar.SECOND, 0);
 	    dateC.set(Calendar.MILLISECOND, 0);
 	    this.irrigationController= new IrrigationController(MongoClient.createShared(vertx, mongoconfig),this.irrigationCommandClient);
+	    System.out.println("----DEBUG---- irrigationController  ");
 	    // Schedule to run 
-	    timer.schedule(
+	    /*timer.schedule(
 	      this.irrigationController,
 	      120000,
 	      120000*5
 	     );
-	  
+	  	*/
+	    this.timer.schedule(
+	    		this.irrigationController,
+	    		this.irrigationController.delayFromNewIrrigation(this.irrigationController.getStartingTimeIrrigation()),
+	    		this.irrigationController.delayDay
+	    );
+	    
+	    
+	    
+	    
+	    
 	    //////////////////////////////////////////////
 	    
 	    /*
@@ -1506,11 +1520,119 @@ public class MainVerticle extends AbstractVerticle {
     	    	    /*
     	    	     * IRRIGATION TIME
     	    	     */
+    	    	    routerFactory.addHandlerByOperationId("irrigationTime", routingContext ->{	
+    	    	    	if(this.loggingController.isUserLogged()) {	    	    		
+    	    	    
+    	    	    		System.out.println("IRRIGATION-TIME...");
+    	    	    		if(this.irrigationController != null)
+	    	    	    		routingContext
+	  		    	   	       .response()
+	  			               .setStatusCode(200)
+	  			               .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+	  			               .end(this.irrigationController.getStartingTimeIrrigation().toString());
+    	    	    		else	
+    	    	    			routingContext
+	    		    	   	      .response()
+	    			              .setStatusCode(400)
+	    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+	    			              .end("Request error");
+    	    	    			    		
+    	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}	    	    	 	    	
+    	    	    }); 
+    	    	    
     	    	    
     	    	    
     	    	    /*
     	    	     * SET IRRIGATION TIME
     	    	     */
+    	    	    routerFactory.addHandlerByOperationId("setIrrigationTime", routingContext ->{	
+    	    	    	if(this.loggingController.isUserLogged()) {	    	    		
+    	    	    
+    	    	    		System.out.println("SET-IRRIGATION-TIME ...");
+    	    	    		if(this.irrigationController != null) {
+    	    	    			try {
+    	    	    				
+    	    	    				//Converto il tempo acquisito come parametro in LocalTime dell'irrigationController
+    	    	    				System.out.println(routingContext.request().getParam("irrigationTime"));
+        	    	    			LocalTime newIrrigationTime =LocalTime.parse(routingContext.request().getParam("irrigationTime"));
+        	    	    			      	    	    			
+        	    	    			
+        	    	    			//Dopo aver impostato l'irrigazione resettare il timer e il timer task e crearne uno nuovo
+        	    	    			this.timer.cancel();
+        	    	    			
+        	    	    			//Un timer task non e' riutilizzabile quindi una volta cancellato va ricostruito
+        	    	    			this.irrigationController= new IrrigationController(MongoClient.createShared(vertx, mongoconfig),this.irrigationCommandClient);
+        	    	    			//Impostiamo il nuovo tempo di irrigazione
+        	    	    			this.irrigationController.setStartingTimeIrrigation(newIrrigationTime);
+        	    	    			
+        	    	    			//Ricreiamo il timer
+        	    	    			this.timer=new Timer();
+        	    	    			      	    	    			
+        	    	    			//Il calcolo dell'inizio della nuova irrigazione viene effettuato dall'irrigationController
+        	    	    			this.timer.schedule(this.irrigationController, 
+        	    	    					this.irrigationController.delayFromNewIrrigation(newIrrigationTime),
+        	    	    					this.irrigationController.delayDay);
+        	    	    			
+        	    	    			
+        	    	    			System.out.println("--debug tempo da attendere:  "+this.irrigationController.delayFromNewIrrigation(newIrrigationTime)/(60*60*1000));
+        	    	    			
+        	    	    			//Restituiamo risposta
+        	    	    			routingContext
+     	  		    	   	       .response()
+     	  			               .setStatusCode(200)
+     	  			               .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+     	  			               .end(this.irrigationController.getStartingTimeIrrigation().toString());
+
+        	    	    			
+    	    	    			}
+    	    	    			catch(DateTimeException err) {
+    	    	    				System.err.println("Errore SET IRRIGATION TIME- formato date sbagliato");
+    	    	    				System.err.println(err.getStackTrace());
+    	    	    				routingContext
+	  	    		    	   	      .response()
+	  	    			              .setStatusCode(500)
+	  	    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+	  	    			              .end("Internal server error!");
+    	    	    				
+    	    	    			}
+    	    	    			catch(Exception e) {
+    	    	    				//In caso di generazione di eccezione
+    	    	    				System.err.println("Errore SET IRRIGATION TIME");
+    	    	    				System.err.println(e.getStackTrace());
+    	    	    				e.printStackTrace();
+    	    	    				routingContext
+	  	    		    	   	      .response()
+	  	    			              .setStatusCode(500)
+	  	    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+	  	    			              .end("Internal server error!");
+    	    	    			}
+    	    	    			
+    	    	    			
+    	    	    		}
+	    	    	    		
+    	    	    		else	
+    	    	    			routingContext
+	    		    	   	      .response()
+	    			              .setStatusCode(400)
+	    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+	    			              .end("No error irrigation controller...");
+    	    	    			    		
+    	    	    	}
+    	    	    	else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}	    	    	 	    	
+    	    	    });
     	    	    
     	    	    
     	    	    
@@ -1585,7 +1707,10 @@ public class MainVerticle extends AbstractVerticle {
     			              .end("Non autorizzato: non sei loggato.");
     	    	    	}	    	    	 	    	
     	    	    }); 
-    	    
+    	    	    
+    	    	    
+    	    	    
+    	    	    
     	    Router router = routerFactory.getRouter(); // <1>
             router.errorHandler(404, routingContext -> { // <2>
               JsonObject errorObject = new JsonObject() // <3>
