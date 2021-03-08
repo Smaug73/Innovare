@@ -2,18 +2,7 @@ package com.innovare.middleware;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.ArrayList;
 
-import org.junit.jupiter.api.Test;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.innovare.control.WeatherStationController;
-import com.innovare.model.Sample;
-import com.innovare.utils.Utilities;
-import com.innovare.utils.UtilitiesLoad;
 
 public class TestConfiguration {
 
