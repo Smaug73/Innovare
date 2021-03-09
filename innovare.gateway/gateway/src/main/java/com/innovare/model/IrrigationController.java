@@ -27,7 +27,7 @@ public class IrrigationController extends Thread{
 	
 	private ConfigurationController confContr;
 	
-	public static final String scriptPathIrrigation="python3 "+System.getProperty("user.home")+System.getProperty("file.separator")+"InnovareData"+System.getProperty("file.separator")+"InnovareScript"+System.getProperty("file.separator")+" python3 irrigationCommand.py";
+	public static final String scriptPathIrrigation="python3 "+System.getProperty("user.home")+System.getProperty("file.separator")+"InnovareData"+System.getProperty("file.separator")+"InnovareScript"+System.getProperty("file.separator")+"irrigationCommand.py";
 
 	
 	private long irrigationTime; 
@@ -118,7 +118,7 @@ public class IrrigationController extends Thread{
 				//Se il processo e' stato eseguito con successo bisogna comunicarlo al middlelayer
 				if(this.logClient!=null) {
 					//Connesione al server mqtt
-					this.logClient.connect(1883, Utilities.ipMqtt, s -> {	
+					this.logClient.connect(1883, this.confContr.getIpMiddleLayer(), s -> {	
 						
 						System.out.println("Comunicazione esito positivo del processo...");
 						this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+"-IrrigazioneLogGateway: "+this.stateOn),
@@ -132,11 +132,11 @@ public class IrrigationController extends Thread{
 				}
 			}else {
 				
-				System.out.println("IrrigationControllerLOG: processo NON ESEUGITO CON SUCCESSO");
+				System.out.println("IrrigationControllerLOG: processo NON ESEGUITO CON SUCCESSO");
 				//Se il processo e' stato eseguito con successo bisogna comunicarlo al middlelayer
 				if(this.logClient!=null) {
 					//Connesione al server mqtt
-					this.logClient.connect(1883, Utilities.ipMqtt, s -> {	
+					this.logClient.connect(1883, this.confContr.getIpMiddleLayer(), s -> {	
 						
 						System.out.println("Comunicazione esito NEGATIVO del processo...");
 						this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+"-IrrigazioneLogGateway: ERROR."),
@@ -229,7 +229,7 @@ public class IrrigationController extends Thread{
 				//Se il processo e' stato eseguito con successo bisogna comunicarlo al middlelayer
 				if(this.logClient!=null) {
 					//Connessione al server mqtt
-					this.logClient.connect(1883, Utilities.ipMqtt, s -> {	
+					this.logClient.connect(1883, this.confContr.getIpMiddleLayer(), s -> {	
 						
 						System.out.println("Comunicazione esito positivo del processo...");
 						this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+"-IrrigazioneLogGateway: "+this.stateOff),
@@ -248,7 +248,7 @@ public class IrrigationController extends Thread{
 				//Se il processo e' stato eseguito con successo bisogna comunicarlo al middlelayer
 				if(this.logClient!=null) {
 					//Connessione al server mqtt
-					this.logClient.connect(1883, Utilities.ipMqtt, s -> {	
+					this.logClient.connect(1883, this.confContr.getIpMiddleLayer(), s -> {	
 						
 						System.out.println("Comunicazione esito NEGATIVO del processo...");
 						this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+"-IrrigazioneLogGateway: ERROR."),
