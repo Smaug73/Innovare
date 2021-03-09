@@ -139,7 +139,7 @@ public class GatewayVerticle extends AbstractVerticle {
 	     * IRRIGAZIONE
 	     */
     	System.out.println("Creazione Irrigazione Controller..");
-	    this.irrigation= new IrrigationController();
+	    this.irrigation= new IrrigationController(this.confController);
 	    /*
 	     * Il controller per il comando deve ricevere, quindi si iscriverà al relativo topic
 	     */

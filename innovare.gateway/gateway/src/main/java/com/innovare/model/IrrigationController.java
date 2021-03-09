@@ -25,6 +25,8 @@ public class IrrigationController extends Thread{
 	private MqttClient logClient=null;
 	private MqttClient commandClient=null;
 	
+	private ConfigurationController confContr;
+	
 	public static final String scriptPathIrrigation="python3 "+System.getProperty("user.home")+System.getProperty("file.separator")+"InnovareData"+System.getProperty("file.separator")+"InnovareScript"+System.getProperty("file.separator")+" python3 irrigationCommand.py";
 
 	
@@ -35,7 +37,8 @@ public class IrrigationController extends Thread{
 	 * instanziazione per settare lo stato di conseguenza, in modo di non avere 
 	 * eventuali incongruenze sul campo.
 	 */
-	public IrrigationController() {
+	public IrrigationController(ConfigurationController confContr) {
+		this.confContr= confContr;
 	}
 	
 	
@@ -54,7 +57,7 @@ public class IrrigationController extends Thread{
 		Timestamp tm= new Timestamp(System.currentTimeMillis());
 		if(this.logClient!=null) {
 			//Connesione al server mqtt
-			this.logClient.connect(1883, Utilities.ipMqtt, s -> {	
+			this.logClient.connect(1883, this.confContr.getIpMiddleLayer(), s -> {	
 				
 				System.out.println(tm+": Avvio irrigazione.");
 				this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+": "+this.stateOn),
@@ -83,7 +86,7 @@ public class IrrigationController extends Thread{
 		Timestamp tm= new Timestamp(System.currentTimeMillis());
 		if(this.logClient!=null) {
 			//Connesione al server mqtt
-			this.logClient.connect(1883, Utilities.ipMqtt, s -> {	
+			this.logClient.connect(1883, this.confContr.getIpMiddleLayer(), s -> {	
 				
 				System.out.println(tm+": Avvio irrigazione.");
 				this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+"-IrrigazioneLogGateway: "+this.stateOn),
@@ -196,7 +199,7 @@ public class IrrigationController extends Thread{
 		Timestamp tm= new Timestamp(System.currentTimeMillis());
 		if(this.logClient!=null) {
 			//Connesione al server mqtt
-			this.logClient.connect(1883, Utilities.ipMqtt, s -> {	
+			this.logClient.connect(1883, this.confContr.getIpMiddleLayer(), s -> {	
 				
 				System.out.println(tm+": Stop irrigazione.");
 				this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+"-IrrigazioneLogGateway: "+this.stateOff),
