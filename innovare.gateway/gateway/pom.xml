@@ -19,7 +19,7 @@
     <vertx.version>3.9.3</vertx.version>
     <junit-jupiter.version>5.4.0</junit-jupiter.version>
 
-    <main.verticle>com.innovare.middleware.MainVerticle</main.verticle>
+    <main.verticle>com.innovare.gateway.GatewayVerticle</main.verticle>
   </properties>
 
   <dependencyManagement>
@@ -157,7 +157,10 @@
               <artifactSet>
               </artifactSet>
               <outputFile>${project.build.directory}/${project.artifactId}-${project.version}-fat.jar
-              </outputFile>
+              </outputFile>     
+              <excludes>META-INF/*.SF</excludes>
+              <excludes>META-INF/*.DSA</excludes>
+              <excludes>META-INF/*.RSA</excludes>           
             </configuration>
           </execution>
         </executions>
