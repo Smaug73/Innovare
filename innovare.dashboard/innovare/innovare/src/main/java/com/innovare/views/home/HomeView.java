@@ -32,10 +32,14 @@ import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexDirection;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+
+import java.lang.reflect.Array;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -64,6 +68,7 @@ import com.innovare.ui.utils.UIUtils;
 import com.innovare.ui.utils.Uniform;
 import com.innovare.utils.Channel;
 import com.innovare.utils.Constants;
+import com.innovare.utils.Direction;
 import com.innovare.utils.HttpHandler;
 import com.innovare.views.main.ContentView;
 import com.vaadin.flow.router.RouteAlias;
@@ -87,6 +92,8 @@ public class HomeView extends Div {
 	private float lastMeasureRain;
 	private float lastMeasureHum;
 	private float lastMeasureHeat;
+	private float lastMeasureWindSpeed;
+	private float lastMeasureWindDirection;
 	private HashMap<Integer, Sensor> sensors;
 	
 	private float quantitaAttuale;
@@ -104,8 +111,7 @@ public class HomeView extends Div {
     
     private void getData() {
 /*
-    	lastIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 54657),
-				new Timestamp(System.currentTimeMillis() + 40000), 58.34);
+    	lastIrrigation = new Irrigazione(System.currentTimeMillis() - 54657, System.currentTimeMillis() + 40000, 58);
     	classifications = new ArrayList();
     	isIrrigationOn = "ON";
     	
@@ -115,6 +121,8 @@ public class HomeView extends Div {
 		lastMeasureRain = 9;
 		lastMeasureHum = 32;
 		lastMeasureHeat = 550;
+		lastMeasureWindSpeed = (float) Channel.WIND_SPEED.getInvalidValue();
+		lastMeasureWindDirection = (float) 1.0;
 		
 		sensors = new HashMap<Integer, Sensor>();
 		ArrayList<Integer> channels = new ArrayList<Integer>();
@@ -126,7 +134,7 @@ public class HomeView extends Div {
 			Sensor sensor1 = new Sensor("Sensore Canale " + channel, sample1);
 			sensors.put(channel, sensor1);
 		}
-*/		
+*/	
    	
 		isIrrigationOn = HttpHandler.getCurrentIrrigationState();
 		if(isIrrigationOn == null) {
@@ -142,6 +150,8 @@ public class HomeView extends Div {
 		lastMeasureRain = HttpHandler.getLastSample(Channel.DAY_RAIN).getMisure();
 		lastMeasureHum = HttpHandler.getLastSample(Channel.OUTSIDE_HUM).getMisure();
 		lastMeasureHeat = HttpHandler.getLastSample(Channel.SOLAR_RAD).getMisure();
+		lastMeasureWindSpeed = HttpHandler.getLastSample(Channel.WIND_SPEED).getMisure();
+		lastMeasureWindDirection = HttpHandler.getLastSample(Channel.WIND_DIR).getMisure();
 
 		sensors = new HashMap<Integer, Sensor>();
 		channels = HttpHandler.getActiveChannels();
@@ -195,8 +205,8 @@ public class HomeView extends Div {
 					+ " " + Constants.DATE_FORMAT.format(lastIrrigation.getInizioIrrig());
 		}
 		else {
-			fromString = "Impossibile recuperare i dati. Controlla la tua connessione";
-			toString = "Impossibile recuperare i dati. Controlla la tua connessione";
+			fromString = Constants.erroreConnessione;
+			toString = Constants.erroreConnessione;
 		}
 		
 		FlexBoxLayout fromLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Dalle:"));
@@ -232,7 +242,7 @@ public class HomeView extends Div {
 				quantitaL = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "" + lastIrrigation.getQuantita()));
 			}
 			else {
-				quantitaL = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Impossibile recuperare i dati. Controlla la tua connessione"));
+				quantitaL = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, Constants.erroreConnessione));
 			}
 		}
 		else {
@@ -294,7 +304,7 @@ public class HomeView extends Div {
 				}, intervallo, intervallo);
 			}
 			else {
-				quantitaL = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Impossibile recuperare i dati. Controlla la tua connessione"));
+				quantitaL = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, Constants.erroreConnessione));
 			}
 		}
 
@@ -342,7 +352,7 @@ public class HomeView extends Div {
 			colorState = IrrigationState.SPENTO.getColor();
 		}
 		else {
-			state = "Impossibile recuperare i dati. Controlla la tua connessione";
+			state = Constants.erroreConnessione;
 			colorState = TextColor.DISABLED.getValue();
 		}
 
@@ -415,7 +425,7 @@ public class HomeView extends Div {
 		
 		if(classifications == null) {
 			classifications = new ArrayList<Classification>();
-			configuration.setSubTitle("Impossibile recuperare i dati. Controlla la tua connessione");
+			configuration.setSubTitle(Constants.erroreConnessione);
 		}
 		
 		for(Classification classif : classifications) {
@@ -501,7 +511,7 @@ public class HomeView extends Div {
 
 		String dateString;
 		if(lastMeasureDate == 0) {
-			dateString = "Impossibile recuperare i dati";
+			dateString = Constants.erroreDato;
 		}
 		else {
 			dateString = Constants.DATE_FORMAT.format(lastMeasureDate) + " " + Constants.TIME_FORMAT.format(lastMeasureDate);
@@ -509,7 +519,7 @@ public class HomeView extends Div {
 		
 		String tempString;
 		if(lastMeasureTemp == Channel.OUTSIDE_TEMP.getInvalidValue()) {
-			tempString = "Impossibile recuperare i dati";
+			tempString = Constants.erroreDato;
 		}
 		else {
 			tempString = "Temperatura: " + lastMeasureTemp + "°C";
@@ -517,7 +527,7 @@ public class HomeView extends Div {
 		
 		String uvString;
 		if(lastMeasureUV == Channel.UV_LEVEL.getInvalidValue()) {
-			uvString = "Impossibile recuperare i dati";
+			uvString = Constants.erroreDato;
 		}
 		else {
 			uvString = "Indice UV: " + lastMeasureUV;
@@ -525,7 +535,7 @@ public class HomeView extends Div {
 		
 		String radiationString;
 		if(lastMeasureUV == Channel.UV_LEVEL.getInvalidValue()) {
-			radiationString = "Impossibile recuperare i dati";
+			radiationString = Constants.erroreDato;
 		}
 		else {
 			radiationString = "Irraggiamento: " + lastMeasureHeat + " W/m^2";
@@ -533,7 +543,7 @@ public class HomeView extends Div {
 		
 		String rainString;
 		if(lastMeasureUV == Channel.UV_LEVEL.getInvalidValue()) {
-			rainString = "Impossibile recuperare i dati";
+			rainString = Constants.erroreDato;
 		}
 		else {
 			rainString = "Pioggia: " + lastMeasureRain + " mm";
@@ -541,7 +551,7 @@ public class HomeView extends Div {
 		
 		String humString;
 		if(lastMeasureUV == Channel.UV_LEVEL.getInvalidValue()) {
-			humString = "Impossibile recuperare i dati";
+			humString = Constants.erroreDato;
 		}
 		else {
 			humString = "Umidità: " + lastMeasureHum + "%";
@@ -639,13 +649,23 @@ public class HomeView extends Div {
         Tooltip tooltip = conf.getTooltip();
         tooltip.setValueSuffix("m/s");
 
-
-        ListSeries series = new ListSeries("NNE", 0.0, 6.7, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-        series.setName("Velocità del Vento");
-        ListSeries seriesS = new ListSeries("S", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 7.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-        seriesS.setName("Velocità del Vento");
-        conf.setSeries(series, seriesS);
+        if((lastMeasureWindDirection != Channel.WIND_DIR.getInvalidValue()) && (lastMeasureWindSpeed != Channel.WIND_SPEED.getInvalidValue())) {
+        	int direction = (int)lastMeasureWindDirection;
         
+        	Float[] arrayDirectionsSpeed = new Float[16];
+        	for(int i = 0; i < 16; i++) {
+        		if(i == direction) {
+        			arrayDirectionsSpeed[i] = lastMeasureWindSpeed;
+        		}
+       			else {
+       				arrayDirectionsSpeed[i] = (float) 0.0;
+       			}	
+        	}
+        
+        	ListSeries series = new ListSeries(Direction.getDirection(direction).getName(), arrayDirectionsSpeed);
+        	series.setName("Velocità del Vento");
+        	conf.setSeries(series);
+        }
 
         FlexBoxLayout card = new FlexBoxLayout(chart);
 		card.setBackgroundColor(LumoStyles.Color.BASE_COLOR);

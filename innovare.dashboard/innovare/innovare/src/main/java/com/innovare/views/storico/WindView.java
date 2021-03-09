@@ -63,7 +63,7 @@ public class WindView extends StoricoView{
 			for(Sample speed : WIND_SPEEDS) {
 				if(dir.getTimestamp() == speed.getTimestamp()) {
 					//Fix per evitare che mostri sample incorretamente registrati dalla weatherstation
-					if (speed.getMisure() != -1) {
+					if (speed.getMisure() != Channel.WIND_SPEED.getInvalidValue()) {
 						Wind wind = new Wind(Direction.getDirection((int) dir.getMisure()), new Timestamp(dir.getTimestamp()), speed.getMisure());
 						WIND.add(wind);
 					}
