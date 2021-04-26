@@ -1,6 +1,7 @@
 package com.innovare.views.storico;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import com.innovare.model.Sample;
 import com.innovare.utils.Channel;
@@ -37,10 +38,25 @@ public class TempAmbView extends StoricoView{
 		samples = HttpHandler.getAllSamples(Channel.OUTSIDE_TEMP.getValue());
 		
 		//FILTRO ELIMINO I SAMPLE NON CORRETTI
-		for(Sample s: samples) {
+		/*for(Sample s: samples) {
 			if(s.getMisure() == Channel.OUTSIDE_TEMP.getInvalidValue())
 					samples.remove(s);
 		}
+		
+		for(int i=0; i<samples.size(); i++) {
+			if(samples.get(i).getMisure()==Channel.OUTSIDE_TEMP.getInvalidValue())
+				samples.remove(i);
+		}
+		
+		*
+		*/
+		for (Iterator<Sample> iterator = samples.iterator(); iterator.hasNext(); ) {
+			Sample value = iterator.next();
+		    if (value.getMisure() == Channel.OUTSIDE_TEMP.getInvalidValue()) {
+		        iterator.remove();
+		    }
+		}
+		
 	}
 
 

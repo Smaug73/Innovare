@@ -1,6 +1,7 @@
 package com.innovare.views.storico;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import com.innovare.model.Sample;
 import com.innovare.utils.Channel;
@@ -37,10 +38,16 @@ public class HumAmbView extends StoricoView {
 		samples = HttpHandler.getAllSamples(Channel.OUTSIDE_HUM.getValue());
 		//FILTRO ELIMINO I SAMPLE NON CORRETTI
 		if(samples!= null) {
-				for(Sample s: samples) {
+			/*for(Sample s: samples) {
 					if(s.getMisure()==-1)
 						samples.remove(s);
-				}
+				}*/
+			for (Iterator<Sample> iterator = samples.iterator(); iterator.hasNext(); ) {
+				Sample value = iterator.next();
+			    if (value.getMisure() == -1) {
+			        iterator.remove();
+			    }
+			}
 		}
 	}
 
