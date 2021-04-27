@@ -198,17 +198,23 @@ public class HomeView extends Div {
 	private Component createLastIrrigationCard() {
 		String fromString;
 		String toString;
+		
+		/* Se la richiesta HTTP ha ricevuto una risposta valida, si va a recuperare e mostrare
+		 * la data e l'ora di inizio e fine dell'ultima irrigazione effettuata.
+		 * Se la richiesta HTTP non riceve una risposta valida, si notifica all'utente un errore di connessione
+		 */
 		if(lastIrrigation != null) {
 			fromString = Constants.TIME_FORMAT.format(lastIrrigation.getInizioIrrig())
 					+ " " + Constants.DATE_FORMAT.format(lastIrrigation.getInizioIrrig());
 			toString = Constants.TIME_FORMAT.format(lastIrrigation.getFineIrrig())
-					+ " " + Constants.DATE_FORMAT.format(lastIrrigation.getInizioIrrig());
+					+ " " + Constants.DATE_FORMAT.format(lastIrrigation.getFineIrrig());
 		}
 		else {
 			fromString = Constants.erroreConnessione;
 			toString = Constants.erroreConnessione;
 		}
 		
+		// Si crea la riga relativa all'inizio dell'ultima irrigazione
 		FlexBoxLayout fromLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Dalle:"));
 		fromLabel.setWidth("200px");
 		
@@ -219,10 +225,17 @@ public class HomeView extends Div {
 		from.setFlexDirection(FlexLayout.FlexDirection.ROW);
 		from.setFlexGrow(2, fromLabel, fromDate);
 
+		// Si crea la riga relativa alla fine dell'ultima irrigazione
 		FlexBoxLayout toLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Alle:"));
 		toLabel.setWidth("200px");
 		
 		FlexBoxLayout toDate;
+		
+		/* Se l'irrigazione è spenta, viene mostrata la data e l'ora in cui si è conclusa l'ultima irrigazione.
+		 * Se ci sono problemi di connessione si mostra un messaggio di errore di connessione.
+		 * Se l'irrigazione è accesa, viene mostrato un messaggio che indica che l'irrigazione è ancora in corso
+		 * e quali sono la data e l'ora previste di fine di tale irrigazione
+		 */
 		if(!isIrrigationOn.equalsIgnoreCase("ON")) {
 			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, toString));
 		}
@@ -234,9 +247,16 @@ public class HomeView extends Div {
 		to.setFlexDirection(FlexLayout.FlexDirection.ROW);
 		to.setFlexGrow(2, toLabel, toDate);
 
+		// Si crea la riga relativa alla quantità di acqua erogata durante l'ultima irrigazione
 		FlexBoxLayout quantitaLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Quantità:"));
 		quantitaLabel.setWidth("200px");
 		
+		/* Se non c'è nessuna irrigazione in corso, allora bisogna mostrare i dati dell'ultima irrigazione:
+		 * Data Inizio, Data Fine e Quantità di acqua erogata.
+		 * Se non si riescono a recuperare i dati dell'ultima irrigazione, è necessario avvisare che c'è stato un errore di connessione.
+		 * Se c'è un'irrigazione in corso, bisogna mostrare quando è iniziata, quando è previsto che finisca
+		 * e la quantità correntemente erogata rispetto al totale da erogare
+		 */
 		if(!isIrrigationOn.equalsIgnoreCase("ON")) {
 			if(lastIrrigation != null) {
 				quantitaL = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "" + lastIrrigation.getQuantita()));
@@ -246,6 +266,9 @@ public class HomeView extends Div {
 			}
 		}
 		else {
+			/* 
+			 * 
+			 */
 			if(lastIrrigation != null) {
 				long durata = (lastIrrigation.getFineIrrig()- lastIrrigation.getInizioIrrig());
 				int intervallo = (int) (durata/10);
@@ -286,7 +309,7 @@ public class HomeView extends Div {
 						}
 					}
 					else {
-						// Codice clone a porzione di codice da 258 a 269
+						
 						quantitaL.add(UIUtils.createLabel(FontSize.L, lastIrrigation.getQuantita() + "/" + lastIrrigation.getQuantita()));
 						do {
 							//isIrrigationOn = "OFF";
@@ -534,7 +557,7 @@ public class HomeView extends Div {
 		}
 		
 		String radiationString;
-		if(lastMeasureUV == Channel.UV_LEVEL.getInvalidValue()) {
+		if(lastMeasureHeat == Channel.SOLAR_RAD.getInvalidValue()) {
 			radiationString = Constants.erroreDato;
 		}
 		else {
@@ -542,7 +565,7 @@ public class HomeView extends Div {
 		}
 		
 		String rainString;
-		if(lastMeasureUV == Channel.UV_LEVEL.getInvalidValue()) {
+		if(lastMeasureRain == Channel.DAY_RAIN.getInvalidValue()) {
 			rainString = Constants.erroreDato;
 		}
 		else {
@@ -550,7 +573,7 @@ public class HomeView extends Div {
 		}
 		
 		String humString;
-		if(lastMeasureUV == Channel.UV_LEVEL.getInvalidValue()) {
+		if(lastMeasureHum == Channel.OUTSIDE_HUM.getInvalidValue()) {
 			humString = Constants.erroreDato;
 		}
 		else {
@@ -649,7 +672,8 @@ public class HomeView extends Div {
         Tooltip tooltip = conf.getTooltip();
         tooltip.setValueSuffix("m/s");
 
-        if((lastMeasureWindDirection != Channel.WIND_DIR.getInvalidValue()) && (lastMeasureWindSpeed != Channel.WIND_SPEED.getInvalidValue())) {
+        if((lastMeasureWindDirection != Channel.WIND_DIR.getInvalidValue()) && (lastMeasureWindSpeed != Channel.WIND_SPEED.getInvalidValue())
+        		&& (Direction.getDirection((int)lastMeasureWindDirection) != null)) {
         	int direction = (int)lastMeasureWindDirection;
         
         	Float[] arrayDirectionsSpeed = new Float[16];

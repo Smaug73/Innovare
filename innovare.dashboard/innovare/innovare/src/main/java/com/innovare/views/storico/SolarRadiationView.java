@@ -1,6 +1,7 @@
 package com.innovare.views.storico;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import com.innovare.model.Sample;
 import com.innovare.model.Wind;
@@ -39,10 +40,12 @@ public class SolarRadiationView extends StoricoView{
 	protected void getData() {
 		solarRadiations = HttpHandler.getAllSamples(Channel.SOLAR_RAD.getValue());
 		//FILTRO ELIMINO I SAMPLE NON CORRETTI
-				for(Sample s: solarRadiations) {
-					if(s.getMisure()==-1)
-						solarRadiations.remove(s);
-				}
+		for (Iterator<Sample> iterator = solarRadiations.iterator(); iterator.hasNext(); ) {
+			Sample value = iterator.next();
+			if (value.getMisure() == Channel.UV_LEVEL.getInvalidValue()) {
+				iterator.remove();
+			}
+		}
 	}
 
 	@Override

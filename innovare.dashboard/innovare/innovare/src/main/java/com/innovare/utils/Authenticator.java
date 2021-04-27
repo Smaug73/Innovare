@@ -37,10 +37,10 @@ public class Authenticator {
 				String body = response.body();
 				if(body.trim().equals(Role.ADMIN))  vaadinSession.setAttribute(ATTRIBUTE_ROLE , Role.ADMIN);
 				else if (body.trim().equals(Role.USER)) vaadinSession.setAttribute(ATTRIBUTE_ROLE , Role.USER);
-				else return false; 
+				else return false; 	
 				vaadinSession.setAttribute(ATTRIBUTE_USERNAME , username);
 				vaadinSession.setAttribute(ATTRIBUTE_IS_AUTH , true);
-				return true;
+			return true;
 					} catch (IOException e) {
 				e.printStackTrace();
 				return false;

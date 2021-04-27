@@ -1,6 +1,7 @@
 package com.innovare.views.storico;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import com.innovare.model.Sample;
 import com.innovare.ui.utils.FontSize;
@@ -39,9 +40,11 @@ public class UVView extends StoricoView{
 		uvLevels = HttpHandler.getAllSamples(Channel.UV_LEVEL.getValue());
 		
 		//FILTRO ELIMINO I SAMPLE NON CORRETTI
-		for(Sample s: uvLevels) {
-			if(s.getMisure()==-1)
-				uvLevels.remove(s);
+		for (Iterator<Sample> iterator = uvLevels.iterator(); iterator.hasNext(); ) {
+			Sample value = iterator.next();
+		    if (value.getMisure() == Channel.UV_LEVEL.getInvalidValue()) {
+		        iterator.remove();
+		    }
 		}
 	}
 

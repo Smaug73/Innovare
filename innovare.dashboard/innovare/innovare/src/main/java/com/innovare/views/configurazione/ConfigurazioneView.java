@@ -147,8 +147,7 @@ public class ConfigurazioneView extends Div {
     	item2.setProperties(properties);
     	configurationItems.add(item);
     	configurationItems.add(item2);
-    	lastIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 54657),
-				new Timestamp(System.currentTimeMillis() + 40000), 58.34);
+    	lastIrrigation = new Irrigazione();
     	isIrrigationOn = "OFF";
     	models = new ArrayList<Model>();
     	Model model = new Model("modello 1");
@@ -238,7 +237,7 @@ public class ConfigurazioneView extends Div {
 		else {
 			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "In corso - Fine prevista: " +
 					Constants.TIME_FORMAT.format(lastIrrigation.getFineIrrig())
-					+ " " + Constants.DATE_FORMAT.format(lastIrrigation.getInizioIrrig())));
+					+ " " + Constants.DATE_FORMAT.format(lastIrrigation.getFineIrrig())));
 		}
 
 		FlexBoxLayout to = new FlexBoxLayout(toLabel, toDate);
@@ -369,6 +368,7 @@ public class ConfigurazioneView extends Div {
 		on_off.addValueChangeListener(new ValueChangeListener<ValueChangeEvent>() {
 			@Override
 			public void valueChanged(ValueChangeEvent event) {
+				
 				if(event.getValue().equals("ON") ) {
 					change(event, IrrigationState.ACCESO);
 				}
@@ -418,21 +418,41 @@ public class ConfigurazioneView extends Div {
 				
 				
 				/*OLD CODE--- codice da rivedere ---- */
-				Irrigazione newIrrigation;
+				
+				Irrigazione newIrrigation = null;
+				
+				
+				//isIrrigationOn = HttpHandler.getCurrentIrrigationState();
+				isIrrigationOn = "ON";
+				if(isIrrigationOn == null) {
+					on_off.setValue((String)event.getOldValue());
+					return;
+				}
+				//System.err.println("Stato irrigazione: " + isIrrigationOn);
 				
 				if(irrState.equals(IrrigationState.ACCESO)) {
-					newIrrigation = HttpHandler.startIrrigation();
-					//newIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 40000),
-					//	new Timestamp(System.currentTimeMillis())+40000, 58.34);
-					//newIrrigation = new Irrigazione(System.currentTimeMillis(),
-						//	System.currentTimeMillis() + 40000,Float.parseFloat("58.34") );				
+					
+					// Controlliamo se l'irrigazione non è già accesa
+					if(!isIrrigationOn.equalsIgnoreCase("ON")) {
+						
+						//newIrrigation = HttpHandler.startIrrigation();
+						
+						newIrrigation = new Irrigazione(System.currentTimeMillis(),
+								System.currentTimeMillis() + 40000,Float.parseFloat("58.34") );	
+					}
+								
 				}
 				else {
-					newIrrigation = HttpHandler.stopIrrigation();
-					//newIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 40000),
-						//	new Timestamp(System.currentTimeMillis()), 58.34);
-					//newIrrigation = new Irrigazione(System.currentTimeMillis(),
-					//		System.currentTimeMillis() ,Float.parseFloat("58.34") );	
+					// Controlliamo se l'irrigazione non è già spenta
+					if(!isIrrigationOn.equalsIgnoreCase("OFF")) {
+						
+						//newIrrigation = HttpHandler.stopIrrigation();
+						
+						//newIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 40000),
+							//	new Timestamp(System.currentTimeMillis()), 58.34);
+						newIrrigation = new Irrigazione(System.currentTimeMillis(),
+								System.currentTimeMillis() ,Float.parseFloat("58.34") );	
+					}
 				}
 				
 				// Se la richiesta va a buon fine, è necessario cambiare
@@ -442,16 +462,18 @@ public class ConfigurazioneView extends Div {
 					lastIrrigation = newIrrigation;
 					icon.setColor(irrState.getColor());
 					label.setText(irrState.getName());
-					changeLastIrrigationView();
+					
 
 				}
 				// Se la richiesta non va a buon fine, è necessario settare
 				// il valore della ComboBox al valore precedente al cambio
-				else {
-					on_off.setValue((String)event.getOldValue());
-				}
+				//else {
+					//on_off.setValue((String)event.getOldValue());
+				//}
+				changeLastIrrigationView();
+				System.err.println("Ultima irrigazione: " + newIrrigation);
+				
 				 
-			/**/
 			}
 			private void changeLastIrrigationView() {
 				cardLastIrrigation.removeAll();

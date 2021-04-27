@@ -1,6 +1,7 @@
 package com.innovare.views.storico;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import com.innovare.model.Sample;
 import com.innovare.utils.Channel;
@@ -40,6 +41,13 @@ public class RainView extends StoricoView{
 	@Override
 	protected void getData() {
 		samples = HttpHandler.getAllSamples(Channel.DAY_RAIN.getValue());
+		//FILTRO ELIMINO I SAMPLE NON CORRETTI
+		for (Iterator<Sample> iterator = samples.iterator(); iterator.hasNext(); ) {
+			Sample value = iterator.next();
+			if (value.getMisure() == Channel.UV_LEVEL.getInvalidValue()) {
+				iterator.remove();
+			}
+		}
 	}
 
 	@Override
