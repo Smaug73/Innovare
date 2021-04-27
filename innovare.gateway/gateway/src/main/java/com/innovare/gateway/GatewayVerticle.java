@@ -1,5 +1,7 @@
 package com.innovare.gateway;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -249,8 +251,25 @@ public class GatewayVerticle extends AbstractVerticle {
   
   
   private ConfigurationItem generateConfigurationItem() {
-	  Property p1= new Property("indirizzo","localhost");
+	  /*Property p1= new Property("indirizzo","localhost");
 	  Property p2= new Property("porta","8888");
+	  Property[] pa = {p1,p2};
+	  ConfigurationItem cfiN= new ConfigurationItem("sensor-gateway",pa);
+	  return cfiN;*/
+	  try {
+		InetAddress myIP=InetAddress.getLocalHost();
+		Property p1= new Property("indirizzo",myIP.getHostAddress());
+		Property p2= new Property("porta","8888");
+		Property[] pa = {p1,p2};
+		ConfigurationItem cfiN= new ConfigurationItem("sensor-gateway",pa);
+		return cfiN;
+	} catch (UnknownHostException e) {
+		System.err.println("Errore lettura IP..");
+		e.printStackTrace();
+	}
+	//CASO ERRORE
+	  Property p1= new Property("indirizzo","error");
+	  Property p2= new Property("porta","error");
 	  Property[] pa = {p1,p2};
 	  ConfigurationItem cfiN= new ConfigurationItem("sensor-gateway",pa);
 	  return cfiN;
