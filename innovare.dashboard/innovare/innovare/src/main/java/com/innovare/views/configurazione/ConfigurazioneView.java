@@ -44,12 +44,15 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasValue.ValueChangeEvent;
 import com.vaadin.flow.component.HasValue.ValueChangeListener;
 import com.vaadin.flow.component.board.Row;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexDirection;
@@ -158,6 +161,9 @@ public class ConfigurazioneView extends Div {
 		
 		configurationItems = HttpHandler.getAllConfigurationItems();
 		isIrrigationOn = HttpHandler.getCurrentIrrigationState();
+		if(isIrrigationOn == null) {
+			isIrrigationOn = "UNKNOWN";
+		}
 		lastIrrigation = HttpHandler.getLastIrrigation();
 		selectedModel = HttpHandler.getSelectedModel();
 		models = HttpHandler.getAllModels();
@@ -186,8 +192,10 @@ public class ConfigurazioneView extends Div {
 		confItemsCards.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
 		confItemsCards.setSizeFull();
 		UIUtils.setMaxWidth(Constants.MAX_WIDTH, confItemsCards);
-		for(ConfigurationItem item : configurationItems) {
-			confItemsCards.add(createConfItemView(item));
+		if(configurationItems != null) {
+			for(ConfigurationItem item : configurationItems) {
+				confItemsCards.add(createConfItemView(item));
+			}
 		}
 
 		// Si crea una card per ogni upload possibile:
@@ -214,11 +222,28 @@ public class ConfigurazioneView extends Div {
 	}
 
 	private Component createLastIrrigationCard() {
+		
+		String fromString;
+		String toString;
+		
+		/* Se la richiesta HTTP ha ricevuto una risposta valida, si va a recuperare e mostrare
+		 * la data e l'ora di inizio e fine dell'ultima irrigazione effettuata.
+		 * Se la richiesta HTTP non riceve una risposta valida, si notifica all'utente un errore di connessione
+		 */
+		if(lastIrrigation != null) {
+			fromString = Constants.TIME_FORMAT.format(lastIrrigation.getInizioIrrig())
+					+ " " + Constants.DATE_FORMAT.format(lastIrrigation.getInizioIrrig());
+			toString = Constants.TIME_FORMAT.format(lastIrrigation.getFineIrrig())
+					+ " " + Constants.DATE_FORMAT.format(lastIrrigation.getFineIrrig());
+		}
+		else {
+			fromString = Constants.erroreConnessione;
+			toString = Constants.erroreConnessione;
+		}
+		
 		FlexBoxLayout fromLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Dalle:"));
 		fromLabel.setWidth("200px");
-		FlexBoxLayout fromDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, 
-				Constants.TIME_FORMAT.format(lastIrrigation.getInizioIrrig())
-				+ " " + Constants.DATE_FORMAT.format(lastIrrigation.getInizioIrrig())));
+		FlexBoxLayout fromDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, fromString));
 
 
 		FlexBoxLayout from = new FlexBoxLayout(fromLabel, fromDate);
@@ -229,16 +254,13 @@ public class ConfigurazioneView extends Div {
 		toLabel.setWidth("200px");
 
 		FlexBoxLayout toDate;
-		if(isIrrigationOn.equalsIgnoreCase("OFF")) {
-			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, 
-					Constants.TIME_FORMAT.format(lastIrrigation.getFineIrrig())
-					+ " " + Constants.DATE_FORMAT.format(lastIrrigation.getInizioIrrig())));
+		if(!isIrrigationOn.equalsIgnoreCase("ON")) {
+			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, toString));
 		}
 		else {
-			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "In corso - Fine prevista: " +
-					Constants.TIME_FORMAT.format(lastIrrigation.getFineIrrig())
-					+ " " + Constants.DATE_FORMAT.format(lastIrrigation.getFineIrrig())));
+			toDate = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "In corso - Fine prevista: " + toString));
 		}
+
 
 		FlexBoxLayout to = new FlexBoxLayout(toLabel, toDate);
 		to.setFlexDirection(FlexLayout.FlexDirection.ROW);
@@ -247,8 +269,13 @@ public class ConfigurazioneView extends Div {
 		FlexBoxLayout quantitaLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Quantità:"));
 		quantitaLabel.setWidth("200px");
 		
-		if(isIrrigationOn.equalsIgnoreCase("OFF")) {
-			quantitaL = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "" + lastIrrigation.getQuantita()));
+		if(!isIrrigationOn.equalsIgnoreCase("ON")) {
+			if(lastIrrigation != null) {
+				quantitaL = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "" + lastIrrigation.getQuantita()));
+			}
+			else {
+				quantitaL = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, Constants.erroreConnessione));
+			}
 		}
 		else {
 			
@@ -337,19 +364,27 @@ public class ConfigurazioneView extends Div {
 	private Component createIrrigationStateCard() {
 		String state;
 		String colorState;
-		RadioButtonGroup<String> on_off = new RadioButtonGroup<>();
-		on_off.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
-		on_off.setItems("ON", "OFF");
+		//RadioButtonGroup<String> on_off = new RadioButtonGroup<>();
+		//on_off.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
+		//on_off.setItems("ON", "OFF");
+		
+		Button on_off = new Button();
+		
 
 		if(isIrrigationOn.equals("ON")) {
 			state = IrrigationState.ACCESO.getName();
 			colorState = IrrigationState.ACCESO.getColor();
-			on_off.setValue("ON");
+			on_off.setText("STOP");
 		}
-		else {
+		else if(isIrrigationOn.equals("OFF")){
 			state = IrrigationState.SPENTO.getName();
 			colorState = IrrigationState.SPENTO.getColor();
-			on_off.setValue("OFF");
+			on_off.setText("START");
+		}
+		else {
+			state = Constants.erroreConnessione;
+			colorState = TextColor.DISABLED.getValue();
+			on_off.setEnabled(false);
 		}
 		
 		FlexBoxLayout descLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Stato dell'impianto irriguo:"));
@@ -363,130 +398,61 @@ public class ConfigurazioneView extends Div {
 		status.setAlignItems(Alignment.CENTER);
 		
 		
-		
-		
-		on_off.addValueChangeListener(new ValueChangeListener<ValueChangeEvent>() {
-			@Override
-			public void valueChanged(ValueChangeEvent event) {
-				
-				if(event.getValue().equals("ON") ) {
-					change(event, IrrigationState.ACCESO);
-				}
-				else {
-					change(event, IrrigationState.SPENTO);
-
-				}
-			}
-
-			private void change(ValueChangeEvent event, IrrigationState irrState) {
-				/*
-				int response=401;
-				
-				if(irrState.equals(IrrigationState.ACCESO)) {
-					//controlliamo che non sia gia' acceso
-					if(!isIrrigationOn.equalsIgnoreCase("ON")) {
-						response=HttpHandler.startIrrigation();
+		on_off.addClickListener(event -> {
+			Irrigazione newIrrigation = null;
+			
+			
+			isIrrigationOn = HttpHandler.getCurrentIrrigationState();
+			//isIrrigationOn = "ON";
+			
+			if(isIrrigationOn != null) {
+				if(on_off.getText().equalsIgnoreCase("START")) {
+					if(isIrrigationOn.equalsIgnoreCase("ON")) {
+						newIrrigation = HttpHandler.startIrrigation();
+						on_off.setText("STOP");
+						//newIrrigation = new Irrigazione(System.currentTimeMillis(), System.currentTimeMillis() ,Float.parseFloat("58.34") );	
 						
-					}else
-						return;
-					//Caso nel quale isIrrigation e' gia' on
-				}else {
-					if(!isIrrigationOn.equalsIgnoreCase("OFF")) {
-						response=HttpHandler.stopIrrigation();
-						
-					}else 
-						return;
-					
-				}
-				
-				if(response==200) {
-					lastIrrigation = new Irrigazione(System.currentTimeMillis(),System.currentTimeMillis()+1000000,10000);
-					isIrrigationOn=irrState.getShortName();
-					icon.setColor(irrState.getColor());
-					label.setText(irrState.getName());
-					lastIrrigation = new Irrigazione();
-					changeLastIrrigationView();
-				}else {
-					//nel caso non va a buon fine reinpostare la scelta precendente
-					//on_off.setValue((String)event.getOldValue());
-				}
-				
-				*/
-				
-				
-				
-				
-				
-				/*OLD CODE--- codice da rivedere ---- */
-				
-				Irrigazione newIrrigation = null;
-				
-				
-				//isIrrigationOn = HttpHandler.getCurrentIrrigationState();
-				isIrrigationOn = "ON";
-				if(isIrrigationOn == null) {
-					on_off.setValue((String)event.getOldValue());
-					return;
-				}
-				//System.err.println("Stato irrigazione: " + isIrrigationOn);
-				
-				if(irrState.equals(IrrigationState.ACCESO)) {
-					
-					// Controlliamo se l'irrigazione non è già accesa
-					if(!isIrrigationOn.equalsIgnoreCase("ON")) {
-						
-						//newIrrigation = HttpHandler.startIrrigation();
-						
-						newIrrigation = new Irrigazione(System.currentTimeMillis(),
-								System.currentTimeMillis() + 40000,Float.parseFloat("58.34") );	
 					}
-								
 				}
 				else {
-					// Controlliamo se l'irrigazione non è già spenta
 					if(!isIrrigationOn.equalsIgnoreCase("OFF")) {
-						
-						//newIrrigation = HttpHandler.stopIrrigation();
-						
-						//newIrrigation = new Irrigazione(new Timestamp(System.currentTimeMillis() - 40000),
-							//	new Timestamp(System.currentTimeMillis()), 58.34);
-						newIrrigation = new Irrigazione(System.currentTimeMillis(),
-								System.currentTimeMillis() ,Float.parseFloat("58.34") );	
+						newIrrigation = HttpHandler.stopIrrigation();
+						on_off.setText("START");
+						//newIrrigation = new Irrigazione(System.currentTimeMillis(), System.currentTimeMillis() ,Float.parseFloat("58.34") );	
 					}
 				}
 				
-				// Se la richiesta va a buon fine, è necessario cambiare
-				// le informazioni riguardanti lo stato attuale e l'ultima irrigazione
-				if(newIrrigation != null) {
-					isIrrigationOn = irrState.getShortName();
+/*				if(newIrrigation != null) {
 					lastIrrigation = newIrrigation;
-					icon.setColor(irrState.getColor());
-					label.setText(irrState.getName());
-					
-
+					if(isIrrigationOn.equals("ON")) {
+						state = IrrigationState.ACCESO.getName();
+						colorState = IrrigationState.ACCESO.getColor();
+					}
+					else if(isIrrigationOn.equals("OFF")){
+						state = IrrigationState.SPENTO.getName();
+						colorState = IrrigationState.SPENTO.getColor();
+					}
+					else {
+						state = Constants.erroreConnessione;
+						colorState = TextColor.DISABLED.getValue();
+					}
 				}
-				// Se la richiesta non va a buon fine, è necessario settare
-				// il valore della ComboBox al valore precedente al cambio
-				//else {
-					//on_off.setValue((String)event.getOldValue());
-				//}
-				changeLastIrrigationView();
-				System.err.println("Ultima irrigazione: " + newIrrigation);
-				
-				 
-			}
-			private void changeLastIrrigationView() {
+*/				
 				cardLastIrrigation.removeAll();
 				cardLastIrrigation = (FlexBoxLayout) createLastIrrigationCard();
-			}
 				
+			}
+			else {
+				isIrrigationOn = "UNKNOWN";
+				on_off.setEnabled(false);
+			}
+			
 		});
 
+	
 		
 		
-		
-		
-		cardIrrigationState.add(descLabel, status, on_off);
+		cardIrrigationState.add(descLabel, status , on_off);
 		cardIrrigationState.setFlexDirection(FlexLayout.FlexDirection.ROW);
 		cardIrrigationState.setFlexGrow(1, descLabel, status);
 		cardIrrigationState.setBackgroundColor(LumoStyles.Color.BASE_COLOR);
@@ -523,8 +489,15 @@ public class ConfigurazioneView extends Div {
 		timePicker.addValueChangeListener(event -> {
 			// Deve essere fatta una chiamata http per settare il nuovo orario
 			if(HttpHandler.setIrrigTime(event.getValue().getHour() + ":" + event.getValue().getMinute()) != 200) {
-				irrigationTime = event.getOldValue();
-				timePicker.setValue(irrigationTime);
+				try {
+					irrigationTime = event.getOldValue();
+					timePicker.setValue(irrigationTime);
+				}
+				catch(NullPointerException e) {
+					Notification notif = Notification.show("Impossibile definire un nuovo orario. Controlla la tua connessione");
+					notif.setPosition(Position.MIDDLE);
+					
+				}
 			}
 		});
 		
@@ -633,9 +606,12 @@ public class ConfigurazioneView extends Div {
 
 	private Component createUploadZip() {
 		modelsNames = new ArrayList<String>();
-		for(Model m : models) {
-			modelsNames.add(m.getName());
+		if(models != null) {
+			for(Model m : models) {
+				modelsNames.add(m.getName());
+			}
 		}
+		
 
 		modelSelection = new ComboBox<>("Seleziona il modello che vuoi usare", modelsNames);
 
