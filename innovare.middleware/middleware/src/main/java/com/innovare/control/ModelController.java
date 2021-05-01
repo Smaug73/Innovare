@@ -100,7 +100,9 @@ public class ModelController {
 	}
 	
 	
-	
+	/*
+	 * Verificare se il modello e' ancora in memoria
+	 */
 	public Model getSelectedModel() {
 		return this.modelSelected;
 	}

@@ -31,14 +31,19 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.control.Classificator;
+import com.innovare.control.ConfigurationController;
 import com.innovare.control.IrrigationController;
 import com.innovare.control.ModelController;
 import com.innovare.control.SampleCSVController;
+import com.innovare.control.SensorDataController;
 import com.innovare.model.ClassificationSint;
 import com.innovare.model.PlantClassification;
 import com.innovare.model.Sample;
 import com.innovare.utils.Utilities;
 
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.mqtt.MqttClient;
 import net.lingala.zip4j.exception.ZipException;
@@ -141,11 +146,51 @@ public class TestClassificator {
 		mc.unZipModel("stubdsds.zip");
 	}
 	*/
+	/*
 	@Test
 	public void testCSVReader() throws IOException {
 		SampleCSVController sc = new SampleCSVController();
 		HashMap<String,ArrayList<Sample>> hsc=sc.readSampleFromCSV();
 	}
+	*/
+	
+	/*
+	 *Testing SensorDataController
+	 */
+	@Test
+	public void testSensorDataController() {
+		ConfigurationController cc= new ConfigurationController();
+		System.out.println(cc.getChannelForClassification());
+		
+		Vertx vertx = Vertx.vertx();
+		String uri = "mongodb://localhost:27017";
+		String db = "innovare";
+		JsonObject mongoconfig = new JsonObject()
+		        .put("connection_string", uri)
+		        .put("db_name", db);
+		
+		System.out.println("ok");
+		
+		MongoClient mongoClient= MongoClient.create(vertx, mongoconfig);
+		SensorDataController sc= new SensorDataController(mongoClient, cc.getChannelForClassification());
+		
+		try {
+			Future<HashMap<Integer, Sample>> result =sc.getSamples();
+			result.onComplete(res->{
+				HashMap<Integer, Sample> rr=res.result();
+				System.out.println("OK");
+				for(Integer i:  rr.keySet())
+					System.out.println("Channel: "+i+" value: "+rr.get(i).toString() );
+			});
+			
+			
+		} catch (Exception e) {
+			System.err.println("FAIL");
+			e.printStackTrace();
+		}
+	}
+	
+	
 	/*
 	@Test
 	public void testWeatherStation() throws IOException, InterruptedException {

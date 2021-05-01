@@ -19,6 +19,8 @@ import io.vertx.ext.mongo.MongoClient;
 public class SampleCSVController extends Thread{
 
 	MongoClient mongoClient=null;
+	//tempo di attesa del polling sulla cartella per la lettura del file csv
+	public static long waitTime=10000l;
 	
 	private ArrayList<Integer> channelNumberCSV= new ArrayList<Integer>();
 	HashMap<String, ArrayList<Sample> > newSamples;
@@ -40,9 +42,9 @@ public class SampleCSVController extends Thread{
 				
 				//Mettiamo in sleep il thread
 				try {
-					this.sleep(10000);
+					this.sleep(waitTime);
 				} catch (InterruptedException e) {
-					System.err.println("Errore nella sleep del thread WeatherStationController");
+					System.err.println("Errore nella sleep del thread SampleCSVController");
 					e.printStackTrace();
 				}
 				

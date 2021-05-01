@@ -5,16 +5,12 @@ import java.util.Comparator;
 
 public class Sample implements Comparable<Sample>{
 	
-	/*
-	 * SuperClasse Sample per la creazione di specifici sample
-	 * Utilizzata per testare, in seguitò diventerà abstract e saranno create classi
-	 * specifiche per uno specifico sample.
-	 */
+	
 	
 	private long timestamp;
 	private float misure;	//per ora solo questo
 	private String Channel;
-	//private String _id;
+	private String _id;
 	
 	public Sample() {
 		this.timestamp= System.currentTimeMillis();
@@ -35,8 +31,18 @@ public class Sample implements Comparable<Sample>{
 		//this._id= "generic";
 	}
 
+	
 
-/*
+	public Sample(long timestamp, float misure, String channel, String _id) {
+		super();
+		this.timestamp = timestamp;
+		this.misure = misure;
+		Channel = channel;
+		this._id = _id;
+	}
+
+
+
 	public String get_id() {
 		return _id;
 	}
@@ -47,7 +53,7 @@ public class Sample implements Comparable<Sample>{
 		this._id = _id;
 	}
 
-*/
+
 
 	public void setMisure(float misure) {
 		this.misure = misure;
@@ -69,9 +75,6 @@ public class Sample implements Comparable<Sample>{
 		return misure;
 	}
 
-	public void setMisure(int misure) {
-		this.misure = misure;
-	}
 	
 	
 

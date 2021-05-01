@@ -97,6 +97,7 @@ public class ClassificationSint implements Comparable<ClassificationSint>{
 
 	public ClassificationSint(ArrayList<PlantClassification> classifications) {
 		this._id= this.RandomId();
+		//Variabili conteggio delle varie tipologie di immagini 
 		int carenza=0;
 		int eccesso=0;
 		int sane=0;

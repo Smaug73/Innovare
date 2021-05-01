@@ -27,10 +27,12 @@ import org.quartz.impl.StdSchedulerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.control.Classificator;
+import com.innovare.control.ConfigurationController;
 import com.innovare.control.IrrigationController;
 import com.innovare.control.LoggingController;
 import com.innovare.control.ModelController;
 import com.innovare.control.SampleCSVController;
+import com.innovare.control.SensorDataController;
 import com.innovare.model.ClassificationSint;
 import com.innovare.model.IrrigationState;
 import com.innovare.model.Irrigazione;
@@ -43,6 +45,7 @@ import com.innovare.utils.Utilities;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
@@ -103,10 +106,15 @@ public class MainVerticle extends AbstractVerticle {
 	private MqttClient irrigationCommandClient;
 	private MqttClient irrigationLog;
 	private MqttClient clientWS;
+	
 	private SampleCSVController csvController;
+	
 	private String irrigationState=null;
 	
 	private IrrigationController irrigationController=null;
+	
+	private ConfigurationController configurationController;
+	
 	private JobDetail job;
 	private Trigger trigger;
 	private Scheduler sch;
@@ -158,6 +166,29 @@ public class MainVerticle extends AbstractVerticle {
 	    
 	    }
 	  });
+	  
+	  
+	  
+	  //TEST====================================================================================================
+	  configurationController= new ConfigurationController();
+	  SensorDataController sc= new SensorDataController(mongoClient, configurationController.getChannelForClassification());
+	  try {
+			Future<HashMap<Integer, Sample>> result =sc.getSamples();
+			result.onComplete(res->{
+				HashMap<Integer, Sample> rr=res.result();
+				
+				for(Integer i:  rr.keySet())
+					System.out.println("Channel: "+i+" value: "+rr.get(i).toString() );
+			});
+			
+			
+		} catch (Exception e) {
+			System.err.println("FAIL");
+			e.printStackTrace();
+		}
+	  //=====================================================================================================
+	  
+	  
 	  
 	  /*
 	   * Creazione del modelController
@@ -675,7 +706,7 @@ public class MainVerticle extends AbstractVerticle {
             	    	    			routingContext
           			    	   	      .response()
           				              .setStatusCode(400)
-          				              .end("No-sample-find");
+          				              .end("GET-ALL-SAMPLE FAIL: No-sample-find");
             	    	    		}
             	    	    	});
             	    	    	
@@ -1010,7 +1041,7 @@ public class MainVerticle extends AbstractVerticle {
             	    	    			
             	    	    			Collections.sort((List<ClassificationSint>) csa);
             	    	    			ArrayList<ClassificationSint> arrayResp= new ArrayList<ClassificationSint>();
-            	    	    			System.out.println(csa.toString());
+            	    	    			System.out.println("DEBUG GET-LAST-CLASSIFICATIONS: "+csa.toString());
             	    	    			for(int i=0; i<4; i++) {
             	    	    				if((csa.size()-i)!=0)
             	    	    					arrayResp.add(csa.get(i));
