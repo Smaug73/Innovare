@@ -1,5 +1,7 @@
 package com.innovare.control;
 
+import com.innovare.model.Irrigazione;
+
 public abstract class Strategy {
 
 	/*
@@ -10,7 +12,13 @@ public abstract class Strategy {
 		
 	}
 
-	public void strategy() {}
+	/*
+	 * Metodo che decide se irrigare
+	 * Va definito
+	 */
+	public Irrigazione strategy() {
+		return null;
+	}
 	
 	
 }

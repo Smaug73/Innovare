@@ -113,13 +113,13 @@ public class MainVerticle extends AbstractVerticle {
 	
 	private IrrigationController irrigationController=null;
 	
-	private ConfigurationController configurationController;
+	public static ConfigurationController configurationController;
 	
 	private JobDetail job;
 	private Trigger trigger;
 	private Scheduler sch;
 	private Irrigazione irr=null;
-	private Timer timer=null;
+	
 	/*
 	 * AGGIUNGERE PRIORITY QUEUE DELLE CLASSIFICAZIONI, DEVE CONTENERE LE ULTIME 4 CLASSIFICAZIONI EFFETTUATE
 	 */
@@ -130,7 +130,7 @@ public class MainVerticle extends AbstractVerticle {
 	  configuration = new JsonArray();
 	  
 	  
-	  //Connessione a MongoDB
+	  //Connessione a MongoDB    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       System.out.println("Starting MongoConnection..");
 
 	  JsonObject config = Vertx.currentContext().config();
@@ -170,10 +170,13 @@ public class MainVerticle extends AbstractVerticle {
 	  
 	  
 	  //TEST====================================================================================================
+	  /*
+	   * CONFIGURATION CONTROLLER===============================================================================
+	   */
 	  configurationController= new ConfigurationController();
 	  SensorDataController sc= new SensorDataController(mongoClient, configurationController.getChannelForClassification());
 	  try {
-			Future<HashMap<Integer, Sample>> result =sc.getSamples();
+			Future<HashMap<Integer, Sample>> result =sc.getLastSamples();
 			result.onComplete(res->{
 				HashMap<Integer, Sample> rr=res.result();
 				
@@ -182,16 +185,16 @@ public class MainVerticle extends AbstractVerticle {
 			});
 			
 			
-		} catch (Exception e) {
+	  } catch (Exception e) {
 			System.err.println("FAIL");
 			e.printStackTrace();
-		}
+	  }
 	  //=====================================================================================================
 	  
 	  
 	  
 	  /*
-	   * Creazione del modelController
+	   * Creazione del MODEL CONTROLLER   =====================================================================================================
 	   */
 	  this.modelController= new ModelController();
 	  System.out.println(this.LOG+": modelController creato: "+this.modelController.toString());
@@ -234,13 +237,13 @@ public class MainVerticle extends AbstractVerticle {
 	  });
 	  
 	  /*
-	   * LOGGIN CONTROLLER
+	   * LOGGIN CONTROLLER   =====================================================================================================
 	   */
 	  this.loggingController= new LoggingController();
 	  System.out.println(this.LOG+": loggingController creato: "+this.loggingController.toString());
 	  
 	  /*
-	   * MQTT CLIENT 
+	   * MQTT CLIENT        =====================================================================================================
 	   * 
 	   */	  
 	  /*
@@ -277,11 +280,10 @@ public class MainVerticle extends AbstractVerticle {
 	    		  //JsonObject confJson= new JsonObject( c.payload().toString());
 	    		})
 	    		  .subscribe("gatewayLog", 2);	    
-		  
 	    });
 	  
 	  /*
-	   * MQTT CLIENT IRRIGAZIONE
+	   * MQTT CLIENT LOG IRRIGAZIONE    =====================================================================================================
 	   * 
 	   * Client per l'invio di comandi 
 	   */
@@ -289,7 +291,7 @@ public class MainVerticle extends AbstractVerticle {
 	  this.irrigationCommandClient= MqttClient.create(vertx);
 	  
 	  /*
-	   * Client per la ricezione del log dell'irrigazione.
+	   * Client per la ricezione del log dell'irrigazione. 
 	   */
 	  System.out.println("Creazione client mqtt per il log dell'irrigazione.");
 	  this.irrigationLog= MqttClient.create(vertx);
@@ -323,9 +325,12 @@ public class MainVerticle extends AbstractVerticle {
 	  
 	  
 	  /*
-	   * IRRIGATION-CONTROLLER avvio
+	   * IRRIGATION-CONTROLLER avvio	=====================================================================================================
 	   */
+	  //Avvio irrigation Controller
+	  irrigationControllerCreation(MongoClient.createShared(vertx, mongoconfig),this.configurationController.getTimeIrrigation());
 	  //this.irrigationController =new IrrigationController(MongoClient.createShared(vertx, mongoconfig),this.irrigationCommandClient);
+	  /*
 	    this.timer = new Timer();
 	    Calendar dateC = Calendar.getInstance();
 	    dateC.set(
@@ -337,7 +342,7 @@ public class MainVerticle extends AbstractVerticle {
 	    dateC.set(Calendar.SECOND, 0);
 	    dateC.set(Calendar.MILLISECOND, 0);
 	    this.irrigationController= new IrrigationController(MongoClient.createShared(vertx, mongoconfig),this.irrigationCommandClient);
-	    System.out.println("----DEBUG---- irrigationController  ");
+	    System.out.println("DEBUG: irrigationController  started");
 	    // Schedule to run 
 	    /*timer.schedule(
 	      this.irrigationController,
@@ -345,18 +350,21 @@ public class MainVerticle extends AbstractVerticle {
 	      120000*5
 	     );
 	  	*/
+	    /*
+	     * Andiamo a definire tra quanto tempo partira' la prima irrigazione e la frequanza dell'irrigazione
+	     *
 	    this.timer.schedule(
 	    		this.irrigationController,
 	    		this.irrigationController.delayFromNewIrrigation(this.irrigationController.getStartingTimeIrrigation()),
-	    		this.irrigationController.delayDay
+	    		//this.irrigationController.delayDay
+	    		this.irrigationController.delayOneMinutetTest  //TEST
 	    );
+	    */
 	    
 	    
 	    
 	    
-	    
-	    //////////////////////////////////////////////
-	    
+	    ///=====================================================================================================    
 	    /*
 	     * DEFINIZIONE CHIAMATE REST
 	     * 
@@ -1596,23 +1604,45 @@ public class MainVerticle extends AbstractVerticle {
         	    	    			      	    	    			
         	    	    			
         	    	    			//Dopo aver impostato l'irrigazione resettare il timer e il timer task e crearne uno nuovo
-        	    	    			this.timer.cancel();
+        	    	    			//this.timer.cancel();
         	    	    			
         	    	    			//Un timer task non e' riutilizzabile quindi una volta cancellato va ricostruito
-        	    	    			this.irrigationController= new IrrigationController(MongoClient.createShared(vertx, mongoconfig),this.irrigationCommandClient);
+        	    	    			//this.irrigationController= new IrrigationController(MongoClient.createShared(vertx, mongoconfig),this.irrigationCommandClient);
         	    	    			//Impostiamo il nuovo tempo di irrigazione
-        	    	    			this.irrigationController.setStartingTimeIrrigation(newIrrigationTime);
+        	    	    			//this.irrigationController.setStartingTimeIrrigation(newIrrigationTime);
+        	    	    			/*
+        	    	    			 * Attendiamo fino al corretto completamento dello scheduling del nuovo orario
+        	    	    			 */
+        	    	    			Future<Boolean> result=this.irrigationController.setNewDelayAndTimer(newIrrigationTime);
+        	    	    			result.onComplete( res->{
+        	    	    				if(res.succeeded()) {
+        	    	    					routingContext
+        	     	  		    	   	       .response()
+        	     	  			               .setStatusCode(200)
+        	     	  			               .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+        	     	  			               .end(this.irrigationController.getStartingTimeIrrigation().toString());
+        	    	    				}else {
+        	    	    					routingContext
+        		    		    	   	      .response()
+        		    			              .setStatusCode(400)
+        		    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+        		    			              .end("Request error");
+        	    	    				}
+        	    	    				
+        	    	    				
+        	    	    			});
         	    	    			
         	    	    			//Ricreiamo il timer
-        	    	    			this.timer=new Timer();
+        	    	    			//this.timer=new Timer();
         	    	    			      	    	    			
         	    	    			//Il calcolo dell'inizio della nuova irrigazione viene effettuato dall'irrigationController
+        	    	    			/*
         	    	    			this.timer.schedule(this.irrigationController, 
         	    	    					this.irrigationController.delayFromNewIrrigation(newIrrigationTime),
         	    	    					this.irrigationController.delayDay);
         	    	    			
         	    	    			
-        	    	    			System.out.println("--debug tempo da attendere:  "+this.irrigationController.delayFromNewIrrigation(newIrrigationTime)/(60*60*1000));
+        	    	    			//System.out.println("--debug tempo da attendere:  "+this.irrigationController.delayFromNewIrrigation(newIrrigationTime)/(60*60*1000));
         	    	    			
         	    	    			//Restituiamo risposta
         	    	    			routingContext
@@ -1620,7 +1650,7 @@ public class MainVerticle extends AbstractVerticle {
      	  			               .setStatusCode(200)
      	  			               .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
      	  			               .end(this.irrigationController.getStartingTimeIrrigation().toString());
-
+        	    	    			 */
         	    	    			
     	    	    			}
     	    	    			catch(DateTimeException err) {
@@ -1790,18 +1820,21 @@ public class MainVerticle extends AbstractVerticle {
   }
   
   
+
+  
   public static void main(String[] args) {
 	  /*
 	   * Per evitare problemi riguardanti la latenza del servizio di classificazione
 	   * aumentiamo il tempo di attesa per un event loop thread handler	
 	   */
+	  //configurationController= new ConfigurationController();
 	  VertxOptions options = new VertxOptions();
 	  options.setMaxEventLoopExecuteTime(60);
 	  options.setMaxEventLoopExecuteTimeUnit(TimeUnit.SECONDS);
 	  
 	  Vertx vertx = Vertx.vertx(options);
 	  vertx.deployVerticle(new MainVerticle());
-	    
+	  
   }
   
 
@@ -1899,6 +1932,36 @@ public class MainVerticle extends AbstractVerticle {
 	    });
   }
   */
+  
+  
+  
+  
+  /*
+   * Creazione dell'irrigationController per il controllo dell'irrigazione
+   */
+  private void irrigationControllerCreation(MongoClient mongoClient,LocalTime irrigationStartTime) {
+	  
+	 	Timer timer = new Timer();
+	    Calendar dateC = Calendar.getInstance();
+	    dateC.set(
+	      Calendar.DAY_OF_WEEK,
+	      Calendar.SUNDAY
+	    );
+	    dateC.set(Calendar.HOUR, 0);
+	    dateC.set(Calendar.MINUTE, 0);
+	    dateC.set(Calendar.SECOND, 0);
+	    dateC.set(Calendar.MILLISECOND, 0);
+	    
+	    
+	    //this.irrigationController= new IrrigationController(MongoClient.createShared(vertx, mongoconfig),this.irrigationCommandClient);
+	    this.irrigationController= new IrrigationController(mongoClient,MqttClient.create(vertx),timer,irrigationStartTime);
+	    //Iniziamo lo scheduling
+	    this.irrigationController.start();
+	    
+	    
+  }
+  
+  
   
   
   

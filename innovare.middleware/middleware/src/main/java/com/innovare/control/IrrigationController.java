@@ -6,6 +6,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Timer;
 import java.util.TimerTask;
 
 import org.quartz.CronScheduleBuilder;
@@ -24,51 +25,110 @@ import org.quartz.impl.StdSchedulerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.innovare.middleware.MainVerticle;
 import com.innovare.model.ClassificationSint;
 import com.innovare.model.Irrigazione;
 import com.innovare.utils.Utilities;
 import com.innovare.model.Status;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.mqtt.MqttClient;
+
 
 import java.time.temporal.ChronoUnit;
 
 /*
  * Si occupa del controllo dell'innaffiamento
  */
-public class IrrigationController extends TimerTask implements Job{
+public class IrrigationController extends TimerTask {
 
+	public static final int maxHour=23;
+	public static final int maxMinute=60;
+	
+	public static final int defaultHour=12;
+	public static final int defaultMinute=0;
+	
+	public static final float defaultPortata=0;
 	
 	public static final long delayDay= 24*60*60*1000l;
 	public static final long delayOneMinutetTest= 60*1000l;//Un minuto di delay
 	public static final long delayStartDEFAULT=1000*20l; // 20 Secondi
-	
-	private LocalTime StartingTimeIrrigation= LocalTime.of(14, 0);
-	
 	private static final String LOGIRR="LOG-IRRIGATION-CONTROLLER: ";
-	//Orario di start dell'irrigazione giornaliera
-	private LocalTime startIrrigationTime= LocalTime.of(Utilities.hourStartIrrigation, Utilities.minuteStartIrrigation);
+	
+	private String state=Utilities.stateOff;
+	private Irrigazione irr=null;
+	
+	//private LocalTime StartingTimeIrrigation= LocalTime.of(14, 0);
+	private LocalTime StartingTimeIrrigation;
 	private MongoClient mongoClient;
 	private MqttClient irrigationCommandClient;
+	private long delayFromIrrigation;
+	
+	//Timer per l'irrigazione 
+	private Timer timer=null;
+	
+	
+	//Orario di start dell'irrigazione giornaliera
+	//private LocalTime startIrrigationTime= LocalTime.of(Utilities.hourStartIrrigation, Utilities.minuteStartIrrigation);
 	private JobDetail job;
 	private Trigger trigger;
 	private Scheduler sch;
 	
-	private Irrigazione irr=null;
 	
-	private String state=Utilities.stateOff;
 	
-	private long timeWaitIrrigation=0;
+	//private long timeWaitIrrigation=0;
 	
-	public IrrigationController(MongoClient mongC,MqttClient irrigationComClient) {
+	
+	
+	public IrrigationController(MongoClient mongC,MqttClient irrigationComClient,Timer t,LocalTime StartingTimeIrrigation) {
 		this.mongoClient=mongC;
 		this.irrigationCommandClient= irrigationComClient;
+		this.timer=t;
+		this.StartingTimeIrrigation= StartingTimeIrrigation;
+		this.delayFromIrrigation= this.delayFromNewIrrigation(StartingTimeIrrigation);
 	}
 	
+	/*
+	 * Scheduliamo attraverso il timer l'irrigazione
+	 */
+	public void start() {
+		this.timer.schedule(
+	    		this,
+	    		this.delayFromNewIrrigation(this.getStartingTimeIrrigation()),
+	    		//this.irrigationController.delayDay
+	    		//this.irrigationController.delayOneMinutetTest  //TEST
+	    		this.delayFromIrrigation
+	    );
+		System.out.println("DEBUG IRRIGATION-CONTROLLER: irrigazione schedulata");
+	}
+	
+	
+	/*
+	 * Metodo per reimpostare nuovo orario di irrigazione
+	 */
+	public Future<Boolean> setNewDelayAndTimer(LocalTime lc) {
+		
+		Promise<Boolean> newSetDone= Promise.promise();
+		
+		//Dopo aver impostato l'irrigazione resettare il timer e il timer task e crearne uno nuovo
+		this.timer.cancel();
+		
+		//Ricreiamo il timer
+		this.timer=new Timer();
+		
+		this.delayFromIrrigation=this.delayFromNewIrrigation(lc);
+		
+		newSetDone.complete(true);
+		
+		return newSetDone.future();
+	}
+	
+	/*
 	public void startSchedulingIrrigation() {
 		
 		try {
@@ -95,8 +155,9 @@ public class IrrigationController extends TimerTask implements Job{
 		}
 		
 	}
+	*/
 	
-	
+	/*
 	@Override
 	public void execute(JobExecutionContext context) throws JobExecutionException {
 		
@@ -116,13 +177,13 @@ public class IrrigationController extends TimerTask implements Job{
 		this.mongoClient.find("ClassificazioniSintetiche",q, res-> {
     		/*
     		 * Successo nel trovare i sample nel db
-    		 */
+    		 *
 			System.out.println(LOGIRR+System.currentTimeMillis()+" Ricerca ultima classificazione effettuata...");
 			Irrigazione newIrr;
     		if(res.succeeded()) {
     			/*
     			 * Prendiamo solo l'ultima
-    			 */
+    			 *
     			ClassificationSint lastClassification;
     			ArrayList<ClassificationSint> csa= new ArrayList<ClassificationSint>();
     			ClassificationSint csObj;
@@ -159,7 +220,7 @@ public class IrrigationController extends TimerTask implements Job{
     			else {
     				/*
     				 * Nessuna classificazione acquisita precedentemente, irrigazione normale
-    				 */
+    				 *
     				System.out.println(LOGIRR+"Nessuna classificazione precedente.");
     				newIrr= new Irrigazione(Status.NORMALE);
     				
@@ -174,7 +235,7 @@ public class IrrigationController extends TimerTask implements Job{
     		}
     		/*
     		 * Caso di fallimento
-    		 */
+    		 *
     		else {
     			System.out.println(LOGIRR+"Nessun db mongo di classificazioni trovato...");
     			System.out.println(LOGIRR+"Creazione irrigazione NORMALE.");
@@ -189,7 +250,7 @@ public class IrrigationController extends TimerTask implements Job{
     		timeWaitIrrigation=newIrr.getFineIrrig()-newIrr.getInizioIrrig();
     		/*
     		 * Avvio irrigazione, controllo prima se non e' in corso un'altra irrigazione
-    		 */
+    		 *
     		if(this.state== Utilities.stateOff)
     			startIrrigation(timeWaitIrrigation);
     		else
@@ -204,14 +265,14 @@ public class IrrigationController extends TimerTask implements Job{
     		
     		/*
     		 * Stop-Irrigazione
-    		 */
+    		 *
     		//stopIrrigation();
     		
     		//Attendiamo il tempo per riattivare il thread per l'irrigazione
     	});		
 		
 	}
-	
+	*/
 	
 	/*
 	 * Thread per la gestione dell'irrigazione giornaliera
@@ -227,10 +288,17 @@ public class IrrigationController extends TimerTask implements Job{
 				//se e' in eseguzione usciamo
 				System.out.println(LOGIRR+System.currentTimeMillis()+" Irrigazione gia' in eseguzione!");
 				return ;
-			}else
+			}
+			//Controlliamo se il client MQTT e' connesso correttamente al gateway
+			//Se non connesso ci fermiamo, altrimenti possiamo proseguire con l'esecuzione
+			else if(!this.irrigationCommandClient.isConnected()) {
+				System.out.println(LOGIRR+" ERRORE: irrigazioneClient non connesso al gateway, controllare connessione tra le componenti...");
+				return;
+			}
+			else
 				System.out.println(LOGIRR+System.currentTimeMillis()+" Irrigazione non in eseguzione...");
 			
-			System.out.println(LOGIRR+System.currentTimeMillis()+" flag  Avvio job di Irrigazione...");	
+			System.out.println(LOGIRR+System.currentTimeMillis()+" Avvio job di Irrigazione...");	
 			JsonObject q= new JsonObject();
 			//Controlliamo l'ultima classificazione effettuata
 			this.mongoClient.find("ClassificazioniSintetiche",q, res-> {
@@ -260,12 +328,19 @@ public class IrrigationController extends TimerTask implements Job{
 	    			Collections.sort((List<ClassificationSint>) csa);
 	    			//ArrayList<ClassificationSint> arrayResp= new ArrayList<ClassificationSint>();
 	    			
-	    			System.out.println(csa.toString());
+	    			System.out.println(LOGIRR+" Classificazioni trovate: "+csa.toString());
 	    			if(csa.size()>=1) {
 	    				lastClassification=csa.get(0);
 	    				System.out.println(LOGIRR+"Ultima classificazione effettuata: "+lastClassification);
 	    				//Generiamo una nuova Irrigazione
-	    				newIrr= new Irrigazione(lastClassification.getMaxPercForIrrigation());
+	    				
+	    				/*
+	    				 * AGGIUNTA STRATEGIA DI IRRIGAZIONE PER DECIDERE QUANTO IRRIGARE======================================================================
+	    				 */
+	    				IrrigationStrategy strategy= new IrrigationStrategy();
+	    				newIrr = strategy.strategy(lastClassification);
+	    				
+	    				//newIrr= new Irrigazione(lastClassification.getMaxPercForIrrigation());
 	    				
 	    				System.out.println(LOGIRR+"Nuova Irrigazione: "+newIrr);
 	    				//Dopo averla creata l'irrigazione va memorizzata nel dataBase Mongo
@@ -280,7 +355,7 @@ public class IrrigationController extends TimerTask implements Job{
 	    				/*
 	    				 * Nessuna classificazione acquisita precedentemente, irrigazione normale
 	    				 */
-	    				System.out.println(LOGIRR+"Nessuna classificazione precedente.");
+	    				System.out.println(LOGIRR+" Nessuna classificazione precedente.");
 	    				newIrr= new Irrigazione(Status.NORMALE);
 	    				
 	    				System.out.println(LOGIRR+"Nuova Irrigazione: "+newIrr);
@@ -296,16 +371,16 @@ public class IrrigationController extends TimerTask implements Job{
 	    		 * Caso di fallimento
 	    		 */
 	    		else {
-	    			System.out.println(LOGIRR+"Nessun db mongo di classificazioni trovato...");
-	    			System.out.println(LOGIRR+"Creazione irrigazione NORMALE.");
+	    			System.out.println(LOGIRR+" Fallimento ricerca classificazioni in mongoDB ...");
+	    			System.out.println(LOGIRR+" Creazione irrigazione NORMALE.");
 	    			newIrr= new Irrigazione(Status.NORMALE);
 	    		}
 	    		
 	    		/*
 	    		 * Avvio irrigazione
 	    		 */
-	    		timeWaitIrrigation=newIrr.getFineIrrig()-newIrr.getInizioIrrig();
-	    		startIrrigation(timeWaitIrrigation);
+	    		//timeWaitIrrigation=newIrr.getFineIrrig()-newIrr.getInizioIrrig();
+	    		startIrrigation(newIrr);
 	    		
 	    		
 	    		
@@ -327,32 +402,49 @@ public class IrrigationController extends TimerTask implements Job{
 	}
 	*/
 	
-	public void startIrrigation(long time) {
+	public void startIrrigation(Irrigazione irr) {
 		
-		this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, t ->{
-			System.out.println("DEBUG IRRIGAZIONE AUTOMATICA--- INVIO STATE-ON AL GATEWAY");
+		//Tempo di irrigazione
+		long time=irr.getFineIrrig()-irr.getInizioIrrig();
+		
+		/*
+		 * Ci colleghiamo con il server MQTT
+		 */
+		this.irrigationCommandClient.connect(1883, MainVerticle.configurationController.gatewayIP , t ->{
+			System.out.println("DEBUG IRRIGAZIONE AUTOMATICA --- INVIO STATE-ON AL GATEWAY");
 			
+			//Handler di attesa della risposta positiva da parte del gateway
 			this.irrigationCommandClient.publishHandler(r-> {
+				
 				//Attendiamo risposta dal gateway
 				if(r.payload().toString().contains(Utilities.stateOn)) {
 					
-					this.irrigationCommandClient.disconnect();
+					//this.irrigationCommandClient.disconnect();
+					
 					//IMPOSTO LO STATO DELL'IRRIGAZIONE A ON
 					this.state=Utilities.stateOn;
-					System.out.println("DEBUG IRRIGAZIONE AUTOMATICA--- Invio comando start effettuato con successo.");
+					System.out.println("DEBUG IRRIGAZIONE AUTOMATICA--- start effettuato con successo.");
 					
 					//Attendiamo fino alla fine dell'irrigazione
-			    	try {
-						Thread.sleep(time);
-					} catch (InterruptedException e) {
-						System.err.println("DEBUG IRRIGAZIONE AUTOMATICA--- Errore nella sleep del thread IrrigationController");
-						e.printStackTrace();
-					}
+			    	//try {
+					//	Thread.sleep(time);
+					//} catch (InterruptedException e) {
+					//	System.err.println("DEBUG IRRIGAZIONE AUTOMATICA--- Errore nella sleep del thread IrrigationController");
+					//	e.printStackTrace();
+					//}
 		    		
 		    	
 		    		 //Avviamo Stop-Irrigazione
-		    		stopIrrigation();
+		    		//stopIrrigation();
 	    			  
+					
+	    		}else
+	    			//Risposta irrigazione		===============================
+	    			if(r.payload().toString().contains(Utilities.stateOff)) {
+	    			//Caso terminazione irrigazione
+	    			this.irrigationCommandClient.disconnect();
+	    			System.err.println("DEBUG IRRIGAZIONE AUTOMATICA--- Fine irrigazione");
+	    			
 	    		}
 				else if(r.payload().toString().contains("ERROR")) {
 					//Caso errore
@@ -361,11 +453,12 @@ public class IrrigationController extends TimerTask implements Job{
 	    	    	System.out.println("DEBUG IRRIGAZIONE AUTOMATICA--- Stato attuale: errore attivazione.");
 	    		}
 	
-			}).subscribe("Irrigation-LOG", 2);
+				//Utilizziamo un canale differente
+			}).subscribe("Irrigation-RESPONSE", 2);
 			
-			//Invio comando di azionamento dell'irrigazione
+			//Invio comando di azionamento dell'irrigazione passando l'irrigazione in formato json al Gateway
 			this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
-  	    		  Buffer.buffer(Utilities.stateOn),
+  	    		  Buffer.buffer(JsonObject.mapFrom(irr).toString()),
 						  MqttQoS.AT_LEAST_ONCE,
 						  false,
 						  false);	
@@ -412,60 +505,91 @@ public class IrrigationController extends TimerTask implements Job{
 	//Questo metodo viene chiamato quando non si sa subito il tempo di durata dell'irrigazione
 	//Viene eseguito dalla chiamata rest di start dell'irrigazione
 	public void startIrrigationDirect() {
-		//cambiamo stato di irrigazione
-		this.state=Utilities.stateOn;
-		
-		//Creiamo nuova irrigazione
-		this.irr= new Irrigazione(System.currentTimeMillis());
-		
-		//Invio il comando di irrigazione al gateway
-		this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, t ->{
-			System.out.println("DEBUG IRRIGAZIONE--- INVIO STATE-ON AL GATEWAY");
-			this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
-    	    		  Buffer.buffer(Utilities.stateOn),
-						  MqttQoS.AT_LEAST_ONCE,
-						  false,
-						  false);
-			//attendiamo l'effettivo invio del comando
-			this.irrigationCommandClient.publishCompletionHandler(id ->{
-				this.irrigationCommandClient.disconnect();
+		//Controlliamo che non sia gia' in esecuzione l'irrigazione
+		if(this.state!=Utilities.stateOn) {		
+			//Invio il comando di irrigazione al gateway
+			this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, t ->{
 				
+				this.irrigationCommandClient.publishHandler(resp->{
+					if(resp.payload().toString().contains("DONE")) {
+						this.state=Utilities.stateOn;
+						System.out.println("Irrigazione avviata!");
+						//Creiamo nuova irrigazione
+						this.irr= new Irrigazione(System.currentTimeMillis());
+						
+					}
+					else if(resp.payload().toString().contains("FAIL")) {
+						System.out.println("Errore avvio irrigazione");
+					}
+					this.irrigationCommandClient.disconnect();
+				}).subscribe("Irrigation-RESPONSE", 2);
+				
+				System.out.println("DEBUG IRRIGAZIONE--- INVIO STATE-ON AL GATEWAY");
+				this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
+	    	    		  Buffer.buffer(Utilities.stateOn),
+							  MqttQoS.AT_LEAST_ONCE,
+							  false,
+							  false);
+				
+				//attendiamo l'effettivo invio del comando
+				//this.irrigationCommandClient.publishCompletionHandler(id ->{
+					//this.irrigationCommandClient.disconnect();
+					
 				System.out.println("Invio comando start effettuato.");	    	
 			});
-	
-		  });
+			
+		}else {
+			System.out.println("Irrigazione gia' avviata");
+		}
+		
 	}
 	
 	public void stopIrrigationDirect() {
-		this.state=Utilities.stateOff;
-		this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, v ->{
-			System.out.println("DEBUG IRRIGAZIONE--- INVIO STATE-OFF AL GATEWAY");
-			this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
-    	    		  Buffer.buffer(Utilities.stateOff),
-						  MqttQoS.AT_LEAST_ONCE,
-						  false,
-						  false);
-			//attendiamo l'effettivo invio del comando
-			this.irrigationCommandClient.publishCompletionHandler(id ->{
-				this.irrigationCommandClient.disconnect();
+		
+		if(this.state!=Utilities.stateOff)
+			this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, v ->{
+				System.out.println("DEBUG IRRIGAZIONE--- INVIO STATE-OFF AL GATEWAY");
 				
-				System.out.println("Invio comando stop effettuato.");	
-				
-				//Salviamo l'irrigazione
-				if(this.irr!=null) {
-					this.irr.setFineIrrig(System.currentTimeMillis());
-					float qualt= (this.irr.getFineIrrig()-this.irr.getInizioIrrig())*Utilities.capacita;
-					this.irr.setQuantita(qualt);
-					try {
-						this.memorizationIrrigation(irr);
-						System.err.println("Irrigazione memorizzata");
-					} catch (JsonProcessingException e) {
-						System.err.println("Impossibile memorizzare irrigazione: JsonProcessingException");
-						System.err.println(e.getMessage());
+				this.irrigationCommandClient.publishHandler(resp->{
+					if(resp.payload().toString().contains("DONE")) {
+						this.state=Utilities.stateOff;
+						System.out.println("Irrigazione fermata!");
+						//Salviamo l'irrigazione
+						if(this.irr!=null) {
+							this.irr.setFineIrrig(System.currentTimeMillis());
+							float qualt= (this.irr.getFineIrrig()-this.irr.getInizioIrrig())*Utilities.capacita;
+							this.irr.setQuantita(qualt);
+							try {
+								this.memorizationIrrigation(irr);
+								System.err.println("Irrigazione memorizzata");
+							} catch (JsonProcessingException e) {
+								System.err.println("Impossibile memorizzare irrigazione: JsonProcessingException");
+								System.err.println(e.getMessage());
+							}
+						}
+						
+					}else if(resp.payload().toString().contains("FAIL")) {
+						System.out.println("Errore stop irrigazione!");
 					}
-				}
-			});		
-		  });
+					
+					//Disconnessione
+					this.irrigationCommandClient.disconnect();
+					
+				}).subscribe("Irrigation-RESPONSE", 2);
+				
+				this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
+	    	    		  Buffer.buffer(Utilities.stateOff),
+							  MqttQoS.AT_LEAST_ONCE,
+							  false,
+							  false);
+				System.out.println("Invio comando stop effettuato.");	
+					
+					
+				});		
+			  
+		else {
+			System.out.println("Irrigazione gia' fermata");
+		}
 	}
 	
 	private void memorizationIrrigation(Irrigazione irr) throws JsonProcessingException {
@@ -508,9 +632,6 @@ public class IrrigationController extends TimerTask implements Job{
 	}
 	
 	
-	
-	
-
 	public String getState() {
 		return state;
 	}
@@ -526,6 +647,36 @@ public class IrrigationController extends TimerTask implements Job{
 	public void setStartingTimeIrrigation(LocalTime defaultStartingTimeIrrigation) {
 		this.StartingTimeIrrigation = defaultStartingTimeIrrigation;
 	}
+	
+	
+	
+	
+	
+	/*
+	 * Da definire
+	 */
+	class IrrigationStrategy extends Strategy{
+		
+		
+		public Irrigazione strategy(ClassificationSint cs) {
+			return new Irrigazione(cs.getMaxPercForIrrigation());
+		}
+		
+		
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	
 	

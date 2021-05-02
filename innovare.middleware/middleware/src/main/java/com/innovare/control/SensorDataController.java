@@ -44,7 +44,7 @@ public class SensorDataController {
 	/*
 	 * Il metodo ritornera' il risultato di tutte le chiamate eseguite su mongo
 	 */
-	public Future<HashMap<Integer, Sample>> getSamples() throws Exception{
+	public Future<HashMap<Integer, Sample>> getLastSamples() throws Exception{
 		
 		Promise<HashMap<Integer, Sample>> resultPromise = Promise.promise();
 		

@@ -28,11 +28,12 @@ public class TestIrrigationController {
 		System.out.println("Tempo convertito : "+nuovo.toString());
 		System.out.println("Tempo convertito : "+nuovo.toSecondOfDay()*1000);
 		
-		
+		/*
 		IrrigationController irr=new IrrigationController(mongC,irrigationComClient);
 		System.out.println("Calcolo distanza temporale: "+irr.delayFromNewIrrigation(nuovo));
 		
 		System.out.println("Calcolo distanza temporale: in ore: "+(irr.delayFromNewIrrigation(nuovo)/1000)/3600);
+		*/
 	}
 	
 	

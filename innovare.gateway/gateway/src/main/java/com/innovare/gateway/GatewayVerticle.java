@@ -16,6 +16,7 @@ import com.innovare.control.WeatherStationController;
 import com.innovare.model.Channel;
 import com.innovare.model.ConfigurationItem;
 import com.innovare.model.IrrigationController;
+import com.innovare.model.Irrigazione;
 import com.innovare.model.MisuraTest;
 import com.innovare.model.Property;
 import com.innovare.model.Role;
@@ -72,6 +73,7 @@ public class GatewayVerticle extends AbstractVerticle {
   private ConfigurationItem cfi;
   private WeatherStationController weatherStationC;
   private ConfigurationController confController;
+  
   
   
   @Override
@@ -141,16 +143,16 @@ public class GatewayVerticle extends AbstractVerticle {
 	     * IRRIGAZIONE
 	     */
     	System.out.println("Creazione Irrigazione Controller..");
-	    this.irrigation= new IrrigationController(this.confController);
+	    this.irrigation= new IrrigationController(this.confController,vertx);
 	    /*
 	     * Il controller per il comando deve ricevere, quindi si iscriverà al relativo topic
-	     */
+	     *
 	    this.irrigation.setCommandClient( MqttClient.create(vertx));
 	    this.irrigation.getCommandClient().connect(1883, this.confController.getIpMiddleLayer(), p -> {
 	    	System.out.println("IRRIGATION-MQTT: Client mqtt per i comandi dell'irrigazione connesso..");
 	    	/*
 		     *Il client mqtt per la ricezione di comandi si iscriverà al relativo topic 
-		     */
+		     *
 		    this.irrigation.getCommandClient().publishHandler(c ->{
 		    	System.out.println("IRRIGATION-MQTT: Comando ricevuto: "+c.payload().toString());
 		    	String comando=c.payload().toString();
@@ -165,13 +167,18 @@ public class GatewayVerticle extends AbstractVerticle {
 		    	else
 		    		if(comando.equalsIgnoreCase(IrrigationController.stateOff))
 		    			irrigation.stopIrrigation();
+		    	else
+		    		//Caso nel quale e' una irrigazione programmata
+		    		if(comando.contains("inizioIrrig")) {
+		    			
+		    		}
 		    })
 		    .subscribe("Irrigation-COMMAND", 2);	    
 		});
 	    
 	    this.irrigation.setLogClient(MqttClient.create(vertx));
 	    System.out.println("Client mqtt per il log dell'irrigazione creato..");
-	    
+	    */
   
   }
   

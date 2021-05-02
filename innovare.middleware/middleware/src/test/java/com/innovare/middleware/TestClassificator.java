@@ -175,7 +175,7 @@ public class TestClassificator {
 		SensorDataController sc= new SensorDataController(mongoClient, cc.getChannelForClassification());
 		
 		try {
-			Future<HashMap<Integer, Sample>> result =sc.getSamples();
+			Future<HashMap<Integer, Sample>> result =sc.getLastSamples();
 			result.onComplete(res->{
 				HashMap<Integer, Sample> rr=res.result();
 				System.out.println("OK");
