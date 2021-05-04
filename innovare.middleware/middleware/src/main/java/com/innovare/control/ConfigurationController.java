@@ -96,14 +96,14 @@ public class ConfigurationController {
 								
 							}catch(DateTimeException ed) {
 								System.err.println("ERRORE CONFIRATION-FILE middlelayer: "+ed.getMessage());
-								System.err.println("ERRORE CONFIRATION-FILE middlelayer: configurazione con valori di base: 14:00");
-								this.timeIrrigation= LocalTime.of(IrrigationController.defaultHour,IrrigationController.defaultMinute);
+								System.err.println("ERRORE CONFIRATION-FILE middlelayer: configurazione con valori di base: 14:00:00");
+								this.timeIrrigation= LocalTime.of(IrrigationController.defaultHour,IrrigationController.defaultMinute,IrrigationController.defaultSecond);
 								
 							}
 							catch(Exception e) {
 								System.err.println("ERRORE CONFIRATION-FILE middlelayer: "+e.getMessage());
-								System.err.println("ERRORE CONFIRATION-FILE middlelayer: configurazione con valori di base: 14:00");
-								this.timeIrrigation= LocalTime.of(IrrigationController.defaultHour,IrrigationController.defaultMinute);
+								System.err.println("ERRORE CONFIRATION-FILE middlelayer: configurazione con valori di base: 14:00:00");
+								this.timeIrrigation= LocalTime.of(IrrigationController.defaultHour,IrrigationController.defaultMinute,IrrigationController.defaultSecond);
 								//this.timeIrrigation[0]= IrrigationController.defaultHour;//ora
 								//this.timeIrrigation[1]= IrrigationController.defaultMinute;//minuti
 							}
@@ -151,11 +151,13 @@ public class ConfigurationController {
 								
 							}
 							System.out.println("CONFIGURATION-FILE middlelayer: gateway Ip : "+this.gatewayIP);
-							sc.nextLine();
+							if(sc.hasNextLine())
+								sc.nextLine();
 							break;
 							
 						default:
-							sc.nextLine();
+							if(sc.hasNextLine())
+								sc.nextLine();
 					}	
 				else
 					if(sc.hasNext())

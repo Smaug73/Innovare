@@ -1311,46 +1311,31 @@ public class MainVerticle extends AbstractVerticle {
     	    	    
     	    	    
     	    	    /*
-    	    	     * START IRRIGATION
+    	    	     * START IRRIGATION DIRECT
     	    	     */
     	    	    routerFactory.addHandlerByOperationId("startIrrigation", routingContext ->{	
     	    	    	if(this.loggingController.isUserLogged()) {
     	    	    		System.out.println("Invio comando di start dell'irrigazione...");
     	    	    		
     	    	    		if(this.irrigationController.getState() != Utilities.stateOn) {
+ 
+    	    	    			Future<Boolean> result=this.irrigationController.startIrrigationDirect();
     	    	    			
-    	    	    			//Creiamo un client MQTT che attenda la risposta del gateway
-    	    	    			MqttClient startResponse= MqttClient.create(vertx);
-    	    	    			startResponse.connect(1883, Utilities.ipMqtt, t ->{
-    	    	    				//Dopo aver effettuato la connessione
-    	    	    				//Impostiamo il clien affinche' riceva dal canale mqtt dell'irrigazione
-    	    	    				startResponse.publishHandler(r->{
-    	    	    					
-    	    	    					if(r.payload().toString().contains(Utilities.stateOn)) {
-    	    	    		    			  this.irrigationController.setState(Utilities.stateOn);
-    	    	    		    			  System.out.println("---DEBUG IRRIGAZIONE-LOG---- stato irrigazione modificato ON");
-    	    	    		    			  routingContext
-    	    	    		    			  .response()
-    	    	    		    			  .setStatusCode(200)
-    	    	    		    			  .end("Stato attuale: irrigazione attivata.");
-    	    	    		    			  System.out.println("Stato attuale: irrigazione attivata.");
-    	    	    		    			  
-    	    	    		    		}
-    	    	    					else if(r.payload().toString().contains("ERROR")) {
-    	    	    						//Caso errore
-    	    	    						System.out.println("---DEBUG IRRIGAZIONE-LOG---- ERROR: irrigazione non avviata");
-    	    	    						routingContext
-	    	        						.response()
-	    	        						.setStatusCode(400)
-	    	        						.end("Stato attuale: errore attivazione.");
-    	                	    	    	System.out.println("Stato attuale: errore attivazione.");
-    	    	    		    		}
-	    					
-    	    	    				}).subscribe("Irrigation-LOG", 2);
-   	    	       	    				
+    	    	    			result.onSuccess( c->{
+    	    	    				routingContext
+	  	    		    			  .response()
+	  	    		    			  .setStatusCode(200)
+	  	    		    			  .end("Stato attuale: irrigazione attivata.");
+	  	    		    			System.out.println("Stato attuale: irrigazione attivata.");
     	    	    			});
- 	    	    			
-    	    	    			this.irrigationController.startIrrigationDirect();
+    	    	    			result.onFailure(f->{
+    	    	    				System.out.println("---DEBUG IRRIGAZIONE-LOG---- ERROR: irrigazione non avviata");
+    	    						routingContext
+	        						.response()
+	        						.setStatusCode(400)
+	        						.end("Stato attuale: errore attivazione.");
+                	    	    	System.out.println("Stato attuale: errore attivazione.");
+    	    	    			});
     	    	    				
 	    	    	    	}else {
   	    	    			
@@ -1375,7 +1360,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	    
     	    	    
     	    	    /*
-    	    	     * STOP IRRIGATION
+    	    	     * STOP IRRIGATION DIRECT
     	    	     */
     	    	    routerFactory.addHandlerByOperationId("stopIrrigation", routingContext ->{	
     	    	    	if(this.loggingController.isUserLogged()) {
@@ -1383,39 +1368,23 @@ public class MainVerticle extends AbstractVerticle {
     	    	    		if(this.irrigationController.getState() != Utilities.stateOff) {
     	    	    			
     	    	    			System.out.println("Invio comando di stop dell'irrigazione...");
-    	    	    			
-    	    	    			//Creiamo un client MQTT che attenda la risposta del gateway
-    	    	    			MqttClient stopResponse= MqttClient.create(vertx);
-    	    	    			stopResponse.connect(1883, Utilities.ipMqtt, t ->{
-    	    	    				//Dopo aver effettuato la connessione
-    	    	    				//Impostiamo il clien affinche' riceva dal canale mqtt dell'irrigazione
-    	    	    				stopResponse.publishHandler(r->{
-    	    	    					
-    	    	    					if(r.payload().toString().contains(Utilities.stateOff)) {
-    	    	    		    			  this.irrigationController.setState(Utilities.stateOff);
-    	    	    		    			  System.out.println("---DEBUG IRRIGAZIONE-LOG---- stato irrigazione modificato OFF");
-    	    	    		    			  routingContext
-    	    	    							.response()
-    	    	    							.setStatusCode(200)
-    	    	    							.end("Stato attuale: irrigazione disattivata.");
-    	    	            	    	    	System.out.println("Stato attuale: irrigazione disattivata.");
-    	    	    		    			  
-    	    	    		    		}
-    	    	    					else if(r.payload().toString().contains("ERROR")) {
-    	    	    						//Caso errore
-    	    	    						System.out.println("---DEBUG IRRIGAZIONE-LOG---- ERROR: irrigazione non disattivata");
-    	    	    						routingContext
-    	        							.response()
-    	        							.setStatusCode(400)
-    	        							.end("Stato attuale: errore disattivazione.");
-    	                	    	    	System.out.println("Stato attuale: errore disattivazione.");
-    	    	    		    		}
-	    					
-    	    	    				}).subscribe("Irrigation-LOG", 2);
-   	    	       	    				
+	    	    			
+    	    	    			Future<Boolean> result=this.irrigationController.stopIrrigationDirect();
+    	    	    			result.onSuccess( c->{
+    	    	    				routingContext
+	  	    		    			  .response()
+	  	    		    			  .setStatusCode(200)
+	  	    		    			  .end("Stato attuale: irrigazione attivata.");
+	  	    		    			System.out.println("Stato attuale: irrigazione attivata.");
     	    	    			});
-    	    	    			
-    	    	    			this.irrigationController.stopIrrigationDirect();
+    	    	    			result.onFailure(f->{
+    	    	    				System.out.println("---DEBUG IRRIGAZIONE-LOG---- ERROR: irrigazione non avviata");
+    	    						routingContext
+	        						.response()
+	        						.setStatusCode(400)
+	        						.end("Stato attuale: errore attivazione.");
+                	    	    	System.out.println("Stato attuale: errore attivazione.");
+    	    	    			});
     	    	    				
 	    	    	    	}else {
 	    	    	    		//Caso nel quale l'irrigazione e' gia' disattivata
@@ -1423,7 +1392,7 @@ public class MainVerticle extends AbstractVerticle {
     							.response()
     							.setStatusCode(400)
     							.end("Stato attuale: irrigazione gia' in eseguzione");
-            	    	    	System.out.println("Stato attuale: irrigazione gia' in eseguzione");
+            	    	    	System.out.println("Stato attuale: irrigazione gia' spenta");
     	    	    		};
         	    	    	
         	    	    	

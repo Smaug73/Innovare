@@ -52,6 +52,7 @@ public class IrrigationController extends TimerTask {
 	
 	public static final int defaultHour=12;
 	public static final int defaultMinute=0;
+	public static final int defaultSecond=0;
 	
 	public static final float defaultPortata=0;
 	
@@ -91,6 +92,16 @@ public class IrrigationController extends TimerTask {
 		this.timer=t;
 		this.StartingTimeIrrigation= StartingTimeIrrigation;
 		this.delayFromIrrigation= this.delayFromNewIrrigation(StartingTimeIrrigation);
+		
+		
+		System.out.println("DelayFromLocation: "+this.delayFromIrrigation);
+		System.out.println("StartingTimeIrrigation: "+this.StartingTimeIrrigation);
+		
+		
+		//Connettiamo il client mqtt per i comandi verso l'irrigazione
+		this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, x ->{
+			System.out.println(this.LOGIRR+" Client per i comandi connesso correttamente.");
+		});
 	}
 	
 	/*
@@ -102,7 +113,8 @@ public class IrrigationController extends TimerTask {
 	    		this.delayFromNewIrrigation(this.getStartingTimeIrrigation()),
 	    		//this.irrigationController.delayDay
 	    		//this.irrigationController.delayOneMinutetTest  //TEST
-	    		this.delayFromIrrigation
+	    		//this.delayFromIrrigation
+	    		this.delayDay
 	    );
 		System.out.println("DEBUG IRRIGATION-CONTROLLER: irrigazione schedulata");
 	}
@@ -115,7 +127,7 @@ public class IrrigationController extends TimerTask {
 		
 		Promise<Boolean> newSetDone= Promise.promise();
 		
-		//Dopo aver impostato l'irrigazione resettare il timer e il timer task e crearne uno nuovo
+		//Dopo aver impostato l'irrigazione resettare il timer e il timer task per crearne uno nuovo
 		this.timer.cancel();
 		
 		//Ricreiamo il timer
@@ -283,8 +295,8 @@ public class IrrigationController extends TimerTask {
 		 * per generare la nuova irrigazione
 		 */
 		
-			//Controlliamo se non e' in eseguzione un'altra irrigazione
-			if(this.state==Utilities.stateOn) {
+			//Controlliamo se non e' in eseguzione un'altra irrigazione o se e' gia' stata inviata una richiesta di irrigazione
+			if(this.state==Utilities.stateOn || this.state==Utilities.stateLock) {
 				//se e' in eseguzione usciamo
 				System.out.println(LOGIRR+System.currentTimeMillis()+" Irrigazione gia' in eseguzione!");
 				return ;
@@ -407,16 +419,86 @@ public class IrrigationController extends TimerTask {
 		//Tempo di irrigazione
 		long time=irr.getFineIrrig()-irr.getInizioIrrig();
 		
+		
 		/*
 		 * Ci colleghiamo con il server MQTT
 		 */
-		this.irrigationCommandClient.connect(1883, MainVerticle.configurationController.gatewayIP , t ->{
-			System.out.println("DEBUG IRRIGAZIONE AUTOMATICA --- INVIO STATE-ON AL GATEWAY");
+		if(!irrigationCommandClient.isConnected())
+			this.irrigationCommandClient.connect(1883, MainVerticle.configurationController.gatewayIP , t ->{
+				System.out.println("DEBUG IRRIGAZIONE AUTOMATICA --- INVIO STATE-ON AL GATEWAY, in attesa risposta...");
+				
+				//Cambio lo stato da subito poiche' potrebbe arrivare una richiesta di irrigazione diretta
+				//Lo facciamo dopo la corretta connessione 
+				this.state= Utilities.stateLock;
+				
+				//Handler di attesa della risposta positiva da parte del gateway
+				this.irrigationCommandClient.publishHandler(r-> {
+					
+					//Attendiamo risposta positiva dal gateway
+					if(r.payload().toString().contains(Utilities.stateOn)) {
+						
+						//this.irrigationCommandClient.disconnect();
+						
+						//IMPOSTO LO STATO DELL'IRRIGAZIONE A ON
+						this.state=Utilities.stateOn;
+						System.out.println("DEBUG IRRIGAZIONE AUTOMATICA--- start effettuato con successo.");
+						
+						//Attendiamo fino alla fine dell'irrigazione
+				    	//try {
+						//	Thread.sleep(time);
+						//} catch (InterruptedException e) {
+						//	System.err.println("DEBUG IRRIGAZIONE AUTOMATICA--- Errore nella sleep del thread IrrigationController");
+						//	e.printStackTrace();
+						//}
+			    		
+			    	
+			    		 //Avviamo Stop-Irrigazione
+			    		//stopIrrigation();
+		    			  
+						
+		    		}else
+		    			//Risposta irrigazione		===============================
+		    			if(r.payload().toString().contains(Utilities.stateOff)) {
+		    				//Cambiamo Stato 
+		    				this.state= Utilities.stateOff;
+		    				
+			    			//Caso terminazione irrigazione
+			    			//this.irrigationCommandClient.disconnect();
+			    			System.err.println("DEBUG IRRIGAZIONE AUTOMATICA--- Fine irrigazione");
+			    			
+			    			
+		    			
+		    		}
+					else if(r.payload().toString().contains("ERROR")) {
+						//Cambiamo Stato 
+	    				this.state= Utilities.stateOff;
+	    				
+						//Caso errore
+						System.out.println("DEBUG IRRIGAZIONE AUTOMATICA--- ERROR: irrigazione non avviata");
+						//this.irrigationCommandClient.disconnect();
+		    	    	System.out.println("DEBUG IRRIGAZIONE AUTOMATICA--- Stato attuale: errore attivazione.");
+		    		}
+		
+					//Utilizziamo un canale differente
+				}).subscribe("Irrigation-RESPONSE", 2);
+				
+				//Invio comando di azionamento dell'irrigazione passando l'irrigazione in formato json al Gateway
+				this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
+	  	    		  Buffer.buffer(JsonObject.mapFrom(irr).toString()),
+							  MqttQoS.AT_LEAST_ONCE,
+							  false,
+							  false);	
+			});
+		else {
+			
+			//Cambio lo stato da subito poiche' potrebbe arrivare una richiesta di irrigazione diretta
+			//Lo facciamo dopo la corretta connessione 
+			this.state= Utilities.stateLock;
 			
 			//Handler di attesa della risposta positiva da parte del gateway
 			this.irrigationCommandClient.publishHandler(r-> {
 				
-				//Attendiamo risposta dal gateway
+				//Attendiamo risposta positiva dal gateway
 				if(r.payload().toString().contains(Utilities.stateOn)) {
 					
 					//this.irrigationCommandClient.disconnect();
@@ -441,17 +523,25 @@ public class IrrigationController extends TimerTask {
 	    		}else
 	    			//Risposta irrigazione		===============================
 	    			if(r.payload().toString().contains(Utilities.stateOff)) {
-	    			//Caso terminazione irrigazione
-	    			this.irrigationCommandClient.disconnect();
-	    			System.err.println("DEBUG IRRIGAZIONE AUTOMATICA--- Fine irrigazione");
+	    				//Cambiamo Stato 
+	    				this.state= Utilities.stateOff;
+	    				
+		    			//Caso terminazione irrigazione
+		    			//this.irrigationCommandClient.disconnect();
+		    			System.err.println("DEBUG IRRIGAZIONE AUTOMATICA--- Fine irrigazione");
+		    			
+		    			
 	    			
-	    		}
-				else if(r.payload().toString().contains("ERROR")) {
-					//Caso errore
-					System.out.println("DEBUG IRRIGAZIONE AUTOMATICA--- ERROR: irrigazione non avviata");
-					this.irrigationCommandClient.disconnect();
-	    	    	System.out.println("DEBUG IRRIGAZIONE AUTOMATICA--- Stato attuale: errore attivazione.");
-	    		}
+		    		}
+					else if(r.payload().toString().contains("ERROR")) {
+						//Cambiamo Stato 
+	    				this.state= Utilities.stateOff;
+	    				
+						//Caso errore
+						System.out.println("DEBUG IRRIGAZIONE AUTOMATICA--- ERROR: irrigazione non avviata");
+						//this.irrigationCommandClient.disconnect();
+		    	    	System.out.println("DEBUG IRRIGAZIONE AUTOMATICA--- Stato attuale: errore attivazione.");
+		    		}
 	
 				//Utilizziamo un canale differente
 			}).subscribe("Irrigation-RESPONSE", 2);
@@ -461,9 +551,9 @@ public class IrrigationController extends TimerTask {
   	    		  Buffer.buffer(JsonObject.mapFrom(irr).toString()),
 						  MqttQoS.AT_LEAST_ONCE,
 						  false,
-						  false);	
+						  false);
 			
-		});
+		}
 			  
 	}
 	
@@ -479,7 +569,7 @@ public class IrrigationController extends TimerTask {
 				if(r.payload().toString().contains(Utilities.stateOff)) {
 	    			  this.setState(Utilities.stateOff);
 	    			  System.out.println("DEBUG IRRIGAZIONE AUTOMATICA--- stato irrigazione modificato OFF");
-	    			  this.irrigationCommandClient.disconnect(); 
+	    			  //this.irrigationCommandClient.disconnect(); 
 	    			  
 	    		}
 				else if(r.payload().toString().contains("ERROR")) {
@@ -502,24 +592,61 @@ public class IrrigationController extends TimerTask {
 	
 	
 	
-	//Questo metodo viene chiamato quando non si sa subito il tempo di durata dell'irrigazione
-	//Viene eseguito dalla chiamata rest di start dell'irrigazione
-	public void startIrrigationDirect() {
+	/*
+	 * Metodo di avvio diretto dell'irrigazione, senza durata
+	 */
+	public Future<Boolean> startIrrigationDirect() {
+		
+		Promise<Boolean> resultStart= Promise.promise();
+		
 		//Controlliamo che non sia gia' in esecuzione l'irrigazione
-		if(this.state!=Utilities.stateOn) {		
-			//Invio il comando di irrigazione al gateway
-			this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, t ->{
-				
+		if(this.state!=Utilities.stateOn && this.state!=Utilities.stateLock) {		
+			
+			if(!this.irrigationCommandClient.isConnected())
+				//Invio il comando di irrigazione al gateway
+				this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, t ->{
+					
+					this.irrigationCommandClient.publishHandler(resp->{
+						if(resp.payload().toString().contains("DONE")) {
+							this.state=Utilities.stateOn;
+							System.out.println("Irrigazione avviata!");
+							//Creiamo nuova irrigazione
+							this.irr= new Irrigazione(System.currentTimeMillis());
+							resultStart.complete(true);
+						}
+						else if(resp.payload().toString().contains("FAIL")) {
+							System.out.println("Errore avvio irrigazione");
+							resultStart.fail("FAIL");
+						}
+						this.irrigationCommandClient.disconnect();
+					}).subscribe("Irrigation-RESPONSE", 2);
+					
+					System.out.println("DEBUG IRRIGAZIONE--- INVIO STATE-ON AL GATEWAY");
+					this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
+		    	    		  Buffer.buffer(Utilities.stateOn),
+								  MqttQoS.AT_LEAST_ONCE,
+								  false,
+								  false);
+					
+					//attendiamo l'effettivo invio del comando
+					//this.irrigationCommandClient.publishCompletionHandler(id ->{
+					//this.irrigationCommandClient.disconnect();
+						
+					System.out.println("Invio comando start effettuato.");	    	
+				});
+			//CASO GIA' CONNESSO============================================================================
+			else {
 				this.irrigationCommandClient.publishHandler(resp->{
 					if(resp.payload().toString().contains("DONE")) {
 						this.state=Utilities.stateOn;
 						System.out.println("Irrigazione avviata!");
 						//Creiamo nuova irrigazione
 						this.irr= new Irrigazione(System.currentTimeMillis());
-						
+						resultStart.complete(true);
 					}
 					else if(resp.payload().toString().contains("FAIL")) {
 						System.out.println("Errore avvio irrigazione");
+						resultStart.fail("FAIL");
 					}
 					this.irrigationCommandClient.disconnect();
 				}).subscribe("Irrigation-RESPONSE", 2);
@@ -531,65 +658,118 @@ public class IrrigationController extends TimerTask {
 							  false,
 							  false);
 				
-				//attendiamo l'effettivo invio del comando
-				//this.irrigationCommandClient.publishCompletionHandler(id ->{
-					//this.irrigationCommandClient.disconnect();
-					
-				System.out.println("Invio comando start effettuato.");	    	
-			});
+			}
 			
 		}else {
-			System.out.println("Irrigazione gia' avviata");
+			System.out.println("Irrigazione gia' avviata!");
+			resultStart.fail("FAIL");
 		}
+		
+		return resultStart.future();
 		
 	}
 	
-	public void stopIrrigationDirect() {
+	/*
+	 * Metodo stop irrigazione diretto. Utilizzabile nel caso di assenza tempo di irrigazione
+	 */
+	public Future<Boolean> stopIrrigationDirect() {
 		
-		if(this.state!=Utilities.stateOff)
-			this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, v ->{
-				System.out.println("DEBUG IRRIGAZIONE--- INVIO STATE-OFF AL GATEWAY");
-				
-				this.irrigationCommandClient.publishHandler(resp->{
-					if(resp.payload().toString().contains("DONE")) {
-						this.state=Utilities.stateOff;
-						System.out.println("Irrigazione fermata!");
-						//Salviamo l'irrigazione
-						if(this.irr!=null) {
-							this.irr.setFineIrrig(System.currentTimeMillis());
-							float qualt= (this.irr.getFineIrrig()-this.irr.getInizioIrrig())*Utilities.capacita;
-							this.irr.setQuantita(qualt);
-							try {
-								this.memorizationIrrigation(irr);
-								System.err.println("Irrigazione memorizzata");
-							} catch (JsonProcessingException e) {
-								System.err.println("Impossibile memorizzare irrigazione: JsonProcessingException");
-								System.err.println(e.getMessage());
+		Promise<Boolean> resultStop= Promise.promise();
+		
+		if(this.state!=Utilities.stateOff && this.state!=Utilities.stateLock)
+			
+				if(!this.irrigationCommandClient.isConnected())
+					this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, v ->{
+						
+						this.irrigationCommandClient.publishHandler(resp->{
+							if(resp.payload().toString().contains("DONE")) {
+								this.state=Utilities.stateOff;
+								System.out.println("Irrigazione fermata!");
+								//Salviamo l'irrigazione
+								if(this.irr!=null) {
+									this.irr.setFineIrrig(System.currentTimeMillis());
+									float qualt= (this.irr.getFineIrrig()-this.irr.getInizioIrrig())*Utilities.capacita;
+									this.irr.setQuantita(qualt);
+									try {
+										this.memorizationIrrigation(irr);
+										System.out.println(this.LOGIRR+"Irrigazione memorizzata");
+									} catch (JsonProcessingException e) {
+										System.err.println("Impossibile memorizzare irrigazione: JsonProcessingException");
+										System.err.println(e.getMessage());
+									}
+								}
+								
+								resultStop.complete(true);
+								
+							}else if(resp.payload().toString().contains("FAIL")) {
+								System.out.println("Errore stop irrigazione!");
+								resultStop.fail("FAIL");
 							}
+							
+							//Disconnessione
+							this.irrigationCommandClient.disconnect();
+							
+						}).subscribe("Irrigation-RESPONSE", 2);
+						
+						System.out.println("stopIrrigazione diretta-DEBUG: INVIO STATE-OFF AL GATEWAY");
+						
+						this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
+			    	    		  Buffer.buffer(Utilities.stateOff),
+									  MqttQoS.AT_LEAST_ONCE,
+									  false,
+									  false);
+						System.out.println("stopIrrigazione diretta-DEBUG: Invio comando stop effettuato.");		
+						});		
+				else {
+					//CASO GIA' CONNESSO============================================================================
+					this.irrigationCommandClient.publishHandler(resp->{
+						if(resp.payload().toString().contains("DONE")) {
+							this.state=Utilities.stateOff;
+							System.out.println("Irrigazione fermata!");
+							//Salviamo l'irrigazione
+							if(this.irr!=null) {
+								this.irr.setFineIrrig(System.currentTimeMillis());
+								float qualt= (this.irr.getFineIrrig()-this.irr.getInizioIrrig())*Utilities.capacita;
+								this.irr.setQuantita(qualt);
+								try {
+									this.memorizationIrrigation(irr);
+									System.out.println(this.LOGIRR+"Irrigazione memorizzata");
+								} catch (JsonProcessingException e) {
+									System.err.println("Impossibile memorizzare irrigazione: JsonProcessingException");
+									System.err.println(e.getMessage());
+								}
+							}
+							
+							resultStop.complete(true);
+							
+						}else if(resp.payload().toString().contains("FAIL")) {
+							System.out.println("Errore stop irrigazione!");
+							resultStop.fail("FAIL");
 						}
 						
-					}else if(resp.payload().toString().contains("FAIL")) {
-						System.out.println("Errore stop irrigazione!");
-					}
+						//Disconnessione
+						this.irrigationCommandClient.disconnect();
+						
+					}).subscribe("Irrigation-RESPONSE", 2);
 					
-					//Disconnessione
-					this.irrigationCommandClient.disconnect();
+					System.out.println("stopIrrigazione diretta-DEBUG: INVIO STATE-OFF AL GATEWAY");
 					
-				}).subscribe("Irrigation-RESPONSE", 2);
-				
-				this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
-	    	    		  Buffer.buffer(Utilities.stateOff),
-							  MqttQoS.AT_LEAST_ONCE,
-							  false,
-							  false);
-				System.out.println("Invio comando stop effettuato.");	
-					
-					
-				});		
+					this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
+		    	    		  Buffer.buffer(Utilities.stateOff),
+								  MqttQoS.AT_LEAST_ONCE,
+								  false,
+								  false);
+					System.out.println("stopIrrigazione diretta-DEBUG: Invio comando stop effettuato.");
+				}
 			  
+		
 		else {
-			System.out.println("Irrigazione gia' fermata");
+			System.out.println("Irrigazione gia' fermata o in corso irrigazione automatica.");
+			resultStop.fail("FAIL");
 		}
+		
+		return resultStop.future();
+		
 	}
 	
 	private void memorizationIrrigation(Irrigazione irr) throws JsonProcessingException {
