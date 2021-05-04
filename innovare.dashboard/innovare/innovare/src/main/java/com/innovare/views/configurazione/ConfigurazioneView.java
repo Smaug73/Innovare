@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -51,14 +50,10 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.FlexLayout.FlexDirection;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
-import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
-import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.component.timepicker.TimePicker;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.UploadI18N;
@@ -131,7 +126,7 @@ public class ConfigurazioneView extends Div {
 	// Recupera i dati da mostrare: i configuration item, i modelli disponibili per la classificazione, 
 	// lo stato dell'irrigazione e le info sull'ultima irrigazione (quella attuale se l'irrigazione è in corso)
 	private void getData() {
-/*
+
  		configurationItems = new ArrayList<ConfigurationItem>();
     	ConfigurationItem item = new ConfigurationItem();
     	item.setId("Gateway");
@@ -157,7 +152,7 @@ public class ConfigurazioneView extends Div {
     	models.add(model);
 
 		irrigationTime = LocalTime.now();
-*/
+/*
 		
 		configurationItems = HttpHandler.getAllConfigurationItems();
 		isIrrigationOn = HttpHandler.getCurrentIrrigationState();
@@ -169,7 +164,7 @@ public class ConfigurazioneView extends Div {
 		models = HttpHandler.getAllModels();
 		lastIrrigation = HttpHandler.getLastIrrigation();
 		irrigationTime = HttpHandler.getIrrigTime();
-
+*/
 
 	}
 
@@ -404,10 +399,9 @@ public class ConfigurazioneView extends Div {
 			
 			isIrrigationOn = HttpHandler.getCurrentIrrigationState();
 			//isIrrigationOn = "ON";
-			
 			if(isIrrigationOn != null) {
 				if(on_off.getText().equalsIgnoreCase("START")) {
-					if(isIrrigationOn.equalsIgnoreCase("ON")) {
+					if(!isIrrigationOn.equalsIgnoreCase("ON")) {
 						newIrrigation = HttpHandler.startIrrigation();
 						on_off.setText("STOP");
 						//newIrrigation = new Irrigazione(System.currentTimeMillis(), System.currentTimeMillis() ,Float.parseFloat("58.34") );	
@@ -486,22 +480,32 @@ public class ConfigurazioneView extends Div {
 		timePicker.setValue(irrigationTime);
 		timePicker.setStep(Duration.ofMinutes(30));
 		
-		timePicker.addValueChangeListener(event -> {
+		timePicker.addValueChangeListener(new ValueChangeListener() {
+			boolean isCallNeeded = true;
+			@Override
+			public void valueChanged(ValueChangeEvent event) {
+				if(isCallNeeded) {
+					if(HttpHandler.setIrrigTime(((LocalTime) event.getValue()).getHour() + ":" + ((LocalTime) event.getValue()).getMinute()) != 200) {
+						irrigationTime = (LocalTime) event.getOldValue();
+						isCallNeeded = false;
+						timePicker.setValue(irrigationTime);
+					}
+				}
+				else {
+					isCallNeeded = true;
+				}
+			}
+			
+		});
+/*		timePicker.addValueChangeListener(event -> {
 			// Deve essere fatta una chiamata http per settare il nuovo orario
 			if(HttpHandler.setIrrigTime(event.getValue().getHour() + ":" + event.getValue().getMinute()) != 200) {
-				try {
-					irrigationTime = event.getOldValue();
-					timePicker.setValue(irrigationTime);
-				}
-				catch(NullPointerException e) {
-					Notification notif = Notification.show("Impossibile definire un nuovo orario. Controlla la tua connessione");
-					notif.setPosition(Position.MIDDLE);
-					
-				}
+				irrigationTime = event.getOldValue();
+				//timePicker.setValue(irrigationTime);
 			}
 		});
 		
-		
+*/		
 		FlexBoxLayout card = new FlexBoxLayout(label, timePicker);
 		card.setFlexDirection(FlexLayout.FlexDirection.ROW);
 		card.setBackgroundColor(LumoStyles.Color.BASE_COLOR);

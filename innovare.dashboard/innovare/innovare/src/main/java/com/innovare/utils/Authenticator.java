@@ -10,6 +10,9 @@ import java.net.http.HttpResponse;
 import org.apache.http.client.utils.URIBuilder;
 
 import com.innovare.model.Role;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.Notification.Position;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.server.VaadinSession;
 
 public class Authenticator {
@@ -42,7 +45,8 @@ public class Authenticator {
 				vaadinSession.setAttribute(ATTRIBUTE_IS_AUTH , true);
 			return true;
 					} catch (IOException e) {
-				e.printStackTrace();
+				Notification notif = Notification.show("Controlla la tua connessione");
+				notif.setPosition(Position.BOTTOM_END);
 				return false;
 			} catch (InterruptedException e) {
 				e.printStackTrace();
@@ -74,7 +78,10 @@ public class Authenticator {
 				}
 				return true;
 			} catch (IOException e) {
-				e.printStackTrace();
+				//e.printStackTrace();
+				Notification notif = Notification.show("Controlla la tua connessione");
+				notif.setPosition(Position.BOTTOM_END);
+				notif.addThemeVariants(NotificationVariant.LUMO_ERROR);
 				return false;
 			} catch (InterruptedException e) {
 				e.printStackTrace();
