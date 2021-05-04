@@ -20,6 +20,9 @@ import com.innovare.model.ConfigurationItem;
 import com.innovare.model.Irrigazione;
 import com.innovare.model.Model;
 import com.innovare.model.Sample;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.notification.Notification.Position;
 
 public class HttpHandler {
 	private final static String HOST = "localhost:8888";
@@ -66,7 +69,9 @@ public class HttpHandler {
 			return response;
 
 		} catch (IOException e) {
-			e.printStackTrace();
+			Notification notif = Notification.show("Controlla la tua connessione");
+			notif.setPosition(Position.BOTTOM_END);
+			notif.addThemeVariants(NotificationVariant.LUMO_ERROR);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		} catch (URISyntaxException e) {

@@ -84,7 +84,7 @@ public class ContentView extends MainView{
 		naviMenu.addNaviItem(storico, "Umidità Ambientale", HumAmbView.class);
 		naviMenu.addNaviItem(storico, "Piogge", RainView.class);
 		naviMenu.addNaviItem(storico, "Venti", WindView.class);
-		naviMenu.addNaviItem(storico, "Temperatura Del Suolo", InfoSuoloView.class);
+		naviMenu.addNaviItem(storico, "Informazioni Suolo", InfoSuoloView.class);
 		naviMenu.addNaviItem(storico, "Livelli UV", UVView.class);
 		naviMenu.addNaviItem(storico, "Radiazione Solare", SolarRadiationView.class);
 
