@@ -45,6 +45,7 @@ import com.innovare.utils.Utilities;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -750,7 +751,7 @@ public class MainVerticle extends AbstractVerticle {
         	    	    		/*
         	    	    		 * Avviamo una nuova classificazione
         	    	    		 */
-        	    	    		Classificator c= new Classificator(dataSet);
+        	    	    		Classificator c= new Classificator(dataSet,this.vertx);
         	    	    		try {
         	    	    			//Genero una nuova classificatione
             	    	    		c.newClassification(modelName);
@@ -836,9 +837,9 @@ public class MainVerticle extends AbstractVerticle {
         	    	    	}
         	    	    	else {
         	    	    		/*
-        	    	    		 * Avviamo una nuova classificazione
-        	    	    		 */
-        	    	    		Classificator c= new Classificator(dataSet);
+        	    	    		 * Avviamo una nuova classificazione============================================================================= OLD =========================================
+        	    	    		 *
+        	    	    		Classificator c= new Classificator(dataSet,this.vertx);
         	    	    		try {
         	    	    			//Genero una nuova classificatione sintetica
             	    	    		ClassificationSint cs=c.unZipAndClassification(this.modelController.getSelectedModel().getName());
@@ -859,7 +860,7 @@ public class MainVerticle extends AbstractVerticle {
             	    	    			 * ic.createIrrigation(....
             	    	    			 * 
             	    	    			 * L'IRRIGAZIONE VA DI CONSEGUENZA SALVATA NEL DATABASE MONGO
-            	    	    			 */
+            	    	    			 *
             	    	    			
         								//Memorizzio nel database tutte le classificazioni
             	    	    			//JsonArray newClassificationsJson= new JsonArray(jsonClassifications);
@@ -904,7 +905,82 @@ public class MainVerticle extends AbstractVerticle {
         					              .setStatusCode(400)
         					              .end("Modello selezionato non esistente");
         						}     	    	    
-        	    	    		   	    	    	
+        	    	    		 */
+        	    	    		//================================================================================================================= NEW ===================================
+        	    	    		
+        	    	    		Classificator c= new Classificator(dataSet,this.vertx);
+        	    	    		Future<ClassificationSint> resultClassification= c.asincronousClassification(this.modelController.getSelectedModel().getName());
+        	    	    		resultClassification.onComplete(succ->{
+        	    	    			
+        	    	    			//Caso di classificazione eseguita correttamente
+        	    	    			if(succ.succeeded()) {
+        	    	    				ClassificationSint classification= succ.result();
+            	    	    			//Genero il json della classificazione
+            	    	    			String jsonClassifications;
+										try {
+											//Converto la classificazione in Json
+											jsonClassifications = new ObjectMapper().writeValueAsString(classification);
+											//Invio il json al front-end
+	            	    	    			routingContext
+	        								.response()
+	        								.setStatusCode(200)
+	        								.end(jsonClassifications);
+	            	    	    			
+	            	    	    			//Memorizzio nel database tutte le classificazioni
+	            	    	    			//JsonArray newClassificationsJson= new JsonArray(jsonClassifications);
+	            	    	    			JsonObject singleClassification= new JsonObject(jsonClassifications);
+	            	    	    			System.out.println("--DEBUG-- "+singleClassification.toString());
+	            	    	    			mongoClient.insert("ClassificazioniSintetiche", singleClassification , res ->{
+	  						    			  if(res.succeeded())
+	  						    				  System.out.println("Classificazione sintetica salvata correttamente nel DB.");
+	  						    			  else
+	  						    				  System.err.println("ERRORE salvataggio ClassificazioniSintetiche");  
+	            	    	    			});
+											
+	            	    	    			//Salviamo nel db le classificazioni delle singole immagini
+	            	    	    			String imagesClassifications= c.getJsonStringLastClassification();
+	            	    	    			//Memorizzio nel database tutte le classificazioni
+	            	    	    			JsonArray newClassificationsJson= new JsonArray(imagesClassifications);
+	            	    	    			JsonObject singleImageClassification;
+	        								for(int i=0;i< newClassificationsJson.size() ; i++) {
+	        									singleImageClassification = newClassificationsJson.getJsonObject(i);
+	        					    			mongoClient.insert("classifications", singleImageClassification , res ->{
+	        						    			  if(res.succeeded())
+	        						    				  System.out.println("Singola classificazione salvata correttamente nel DB.");
+	        						    			  else
+	        						    				  System.err.println("ERRORE salvataggio classifications");  
+	        						    		});
+	        								}
+											
+										} catch (JsonProcessingException e) {
+											System.err.println("ERRORE CHIAMATA CLASSIFICATION-SINT: errore conversione classificazione in json.");
+											e.printStackTrace();
+											routingContext
+	        				    	   	      .response()
+	        					              .setStatusCode(400)
+	        					              .end("Errore json convertito");
+										} catch (FileNotFoundException e) {
+											System.err.println("ERRORE CHIAMATA CLASSIFICATION-SINT: errore salvataggio classificazione singole immagini");
+											e.printStackTrace();
+										}
+										
+										
+        								
+        	    	    			}else {
+        	    	    				//Caso esecuzione non eseguita correttamente
+        	    	    				System.err.println("ERRORE CHIAMATA CLASSIFICATION-SINT: errore esecuzione classificazione.");
+        	    	    				routingContext
+	      				    	   	      .response()
+	      					              .setStatusCode(400)
+	      					              .end("Errore esecuzione classificazione");
+        	    	    			}
+        	    	    			
+        	    	    			
+        	    	    		});
+        	    	    		
+        	    	    		
+        	    	    		
+        	    	    		
         	    	    	}
     	    	    	}
     	    	    	else {
@@ -1280,11 +1356,20 @@ public class MainVerticle extends AbstractVerticle {
 							ModelController mc= new ModelController();
 							try {
 							
-								mc.unZipModel(modelNameZip);
-								routingContext
-								.response()
-								.setStatusCode(200)
-								.end();
+								Future<Boolean> unzipRes=mc.unZipModel(modelNameZip);
+								unzipRes.onSuccess(h->{
+									routingContext
+									.response()
+									.setStatusCode(200)
+									.end();
+								});
+								unzipRes.onFailure(zf->{
+									routingContext
+	    							.response()
+	    							.setStatusCode(400)
+	    							.end();
+								});
+								
 							} catch (FileNotFoundException | ZipException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
@@ -1582,24 +1667,19 @@ public class MainVerticle extends AbstractVerticle {
         	    	    			/*
         	    	    			 * Attendiamo fino al corretto completamento dello scheduling del nuovo orario
         	    	    			 */
-        	    	    			Future<Boolean> result=this.irrigationController.setNewDelayAndTimer(newIrrigationTime);
-        	    	    			result.onComplete( res->{
-        	    	    				if(res.succeeded()) {
-        	    	    					routingContext
-        	     	  		    	   	       .response()
-        	     	  			               .setStatusCode(200)
-        	     	  			               .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-        	     	  			               .end(this.irrigationController.getStartingTimeIrrigation().toString());
-        	    	    				}else {
-        	    	    					routingContext
-        		    		    	   	      .response()
-        		    			              .setStatusCode(400)
-        		    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-        		    			              .end("Request error");
-        	    	    				}
-        	    	    				
-        	    	    				
-        	    	    			});
+        	    	    			System.out.println("SET-IRRIGATION CALL...");
+        	    	    			/*
+        	    	    			 * Bisogna ricreare il controller poiche' il timerTask non e' riutilizzabile
+        	    	    			 */
+        	    	    			this.irrigationController.canceleIrrigationTask();
+        	    	    			//Avvio irrigation Controller
+        	    	    			irrigationControllerCreation(MongoClient.createShared(vertx, mongoconfig),newIrrigationTime);
+
+        	    	    			routingContext
+	     	  		    	   	       .response()
+	     	  			               .setStatusCode(200)
+	     	  			               .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+	     	  			               .end(this.irrigationController.getStartingTimeIrrigation().toString());
         	    	    			
         	    	    			//Ricreiamo il timer
         	    	    			//this.timer=new Timer();
@@ -1800,6 +1880,11 @@ public class MainVerticle extends AbstractVerticle {
 	  VertxOptions options = new VertxOptions();
 	  options.setMaxEventLoopExecuteTime(60);
 	  options.setMaxEventLoopExecuteTimeUnit(TimeUnit.SECONDS);
+	  
+	  //Impostiamo il numero di worker massimi di questa verticle
+	  options.setWorkerPoolSize(2);
+	  
+	  
 	  
 	  Vertx vertx = Vertx.vertx(options);
 	  vertx.deployVerticle(new MainVerticle());

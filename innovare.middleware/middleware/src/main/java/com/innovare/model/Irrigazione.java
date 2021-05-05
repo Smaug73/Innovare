@@ -36,7 +36,7 @@ public class Irrigazione {
 		Timestamp now= new Timestamp(System.currentTimeMillis());
 		this.inizioIrrig=now.getTime();
 		//fine fra 10 secondi per test
-		this.fineIrrig=this.inizioIrrig+(120*1000);
+		this.fineIrrig=this.inizioIrrig+(10*1000);
 		this.quantita=100;
 	}
 	

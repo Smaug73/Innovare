@@ -122,10 +122,13 @@ public class IrrigationController extends TimerTask {
 	
 	/*
 	 * Metodo per reimpostare nuovo orario di irrigazione
-	 */
+	 *
 	public Future<Boolean> setNewDelayAndTimer(LocalTime lc) {
 		
 		Promise<Boolean> newSetDone= Promise.promise();
+		
+		//Imposto il nuovo orario
+		this.StartingTimeIrrigation= lc;
 		
 		//Dopo aver impostato l'irrigazione resettare il timer e il timer task per crearne uno nuovo
 		this.timer.cancel();
@@ -133,11 +136,18 @@ public class IrrigationController extends TimerTask {
 		//Ricreiamo il timer
 		this.timer=new Timer();
 		
-		this.delayFromIrrigation=this.delayFromNewIrrigation(lc);
+		//Schedulo il nuovo timer
+		this.start();
 		
 		newSetDone.complete(true);
 		
 		return newSetDone.future();
+	}
+	*/
+	
+	public void canceleIrrigationTask() {
+		//Cancelliamo il task di irrigazione
+		this.timer.cancel();
 	}
 	
 	/*
@@ -169,122 +179,7 @@ public class IrrigationController extends TimerTask {
 	}
 	*/
 	
-	/*
-	@Override
-	public void execute(JobExecutionContext context) throws JobExecutionException {
-		
-		System.out.println(LOGIRR+System.currentTimeMillis()+" IRRIGATION FLAG");
-		
-		//Controlliamo se non e' in eseguzione un'altra irrigazione
-		if(this.state==Utilities.stateOn) {
-			System.out.println(LOGIRR+System.currentTimeMillis()+" Irrigazione gia' in eseguzione!");
-			return ;
-		}else
-			System.out.println(LOGIRR+System.currentTimeMillis()+" Irrigazione non in eseguzione...");
-		
-		
-		System.out.println(LOGIRR+System.currentTimeMillis()+"  Avvio job di Irrigazione...");
-		JsonObject q= new JsonObject();
-		//Controlliamo l'ultima classificazione effettuata
-		this.mongoClient.find("ClassificazioniSintetiche",q, res-> {
-    		/*
-    		 * Successo nel trovare i sample nel db
-    		 *
-			System.out.println(LOGIRR+System.currentTimeMillis()+" Ricerca ultima classificazione effettuata...");
-			Irrigazione newIrr;
-    		if(res.succeeded()) {
-    			/*
-    			 * Prendiamo solo l'ultima
-    			 *
-    			ClassificationSint lastClassification;
-    			ArrayList<ClassificationSint> csa= new ArrayList<ClassificationSint>();
-    			ClassificationSint csObj;
-    			for(JsonObject jo: res.result()) {
-    				try {
-						csObj= new ObjectMapper().readValue(jo.toString(), ClassificationSint.class);
-						csa.add(csObj);
-						
-					} catch (JsonProcessingException e) {
-						System.err.println(LOGIRR+"Errore conversione json.");
-						e.printStackTrace();
-					}		
-    			}
-    			
-    			Collections.sort((List<ClassificationSint>) csa);
-    			//ArrayList<ClassificationSint> arrayResp= new ArrayList<ClassificationSint>();
-    			
-    			System.out.println(LOGIRR+csa.toString());
-    			if(csa.size()>=1) {
-    				lastClassification=csa.get(0);
-    				System.out.println(LOGIRR+"Ultima classificazione effettuata: "+lastClassification);
-    				//Generiamo una nuova Irrigazione
-    				newIrr= new Irrigazione(lastClassification.getMaxPercForIrrigation());
-    				
-    				System.out.println(LOGIRR+"Nuova Irrigazione: "+newIrr);
-    				//Dopo averla creata l'irrigazione va memorizzata nel dataBase Mongo
-    				try {
-						memorizationIrrigation(newIrr);
-					} catch (JsonProcessingException e) {
-						
-						e.printStackTrace();
-					}
-    			}
-    			else {
-    				/*
-    				 * Nessuna classificazione acquisita precedentemente, irrigazione normale
-    				 *
-    				System.out.println(LOGIRR+"Nessuna classificazione precedente.");
-    				newIrr= new Irrigazione(Status.NORMALE);
-    				
-    				System.out.println(LOGIRR+"Nuova Irrigazione: "+newIrr);
-    				//Dopo averla creata l'irrigazione va memorizzata nel dataBase Mongo
-    				try {
-						memorizationIrrigation(newIrr);
-					} catch (JsonProcessingException e) {					
-						e.printStackTrace();
-					}	
-    			}  			
-    		}
-    		/*
-    		 * Caso di fallimento
-    		 *
-    		else {
-    			System.out.println(LOGIRR+"Nessun db mongo di classificazioni trovato...");
-    			System.out.println(LOGIRR+"Creazione irrigazione NORMALE.");
-    			newIrr= new Irrigazione(Status.NORMALE);
-    		}
-    		
-    		
-    		
-    		
-    		//Attesa irrigazione
-    		//Mettiamo in sleep il thread
-    		timeWaitIrrigation=newIrr.getFineIrrig()-newIrr.getInizioIrrig();
-    		/*
-    		 * Avvio irrigazione, controllo prima se non e' in corso un'altra irrigazione
-    		 *
-    		if(this.state== Utilities.stateOff)
-    			startIrrigation(timeWaitIrrigation);
-    		else
-    			System.out.println(LOGIRR+"Irrigazione gia' in corso, non verra' iniziata altra irrigazione.");
-    		
-    		/*try {
-				Thread.sleep(newIrr.getFineIrrig()-newIrr.getInizioIrrig());
-			} catch (InterruptedException e) {
-				System.err.println("Errore nella sleep del thread IrrigationController");
-				e.printStackTrace();
-			}
-    		
-    		/*
-    		 * Stop-Irrigazione
-    		 *
-    		//stopIrrigation();
-    		
-    		//Attendiamo il tempo per riattivare il thread per l'irrigazione
-    	});		
-		
-	}
-	*/
+	
 	
 	/*
 	 * Thread per la gestione dell'irrigazione giornaliera
@@ -350,33 +245,23 @@ public class IrrigationController extends TimerTask {
 	    				 * AGGIUNTA STRATEGIA DI IRRIGAZIONE PER DECIDERE QUANTO IRRIGARE======================================================================
 	    				 */
 	    				IrrigationStrategy strategy= new IrrigationStrategy();
-	    				newIrr = strategy.strategy(lastClassification);
+	    				this.irr = strategy.strategy(lastClassification);
 	    				
 	    				//newIrr= new Irrigazione(lastClassification.getMaxPercForIrrigation());
 	    				
-	    				System.out.println(LOGIRR+"Nuova Irrigazione: "+newIrr);
-	    				//Dopo averla creata l'irrigazione va memorizzata nel dataBase Mongo
-	    				try {
-							memorizationIrrigation(newIrr);
-						} catch (JsonProcessingException e) {
-							
-							e.printStackTrace();
-						}
+	    				System.out.println(LOGIRR+"Nuova Irrigazione: "+this.irr);
+	    				
+	    				//L'irrigazione verra' memorizzata solo quando terminera' effettivamente
 	    			}
 	    			else {
 	    				/*
 	    				 * Nessuna classificazione acquisita precedentemente, irrigazione normale
 	    				 */
 	    				System.out.println(LOGIRR+" Nessuna classificazione precedente.");
-	    				newIrr= new Irrigazione(Status.NORMALE);
+	    				this.irr= new Irrigazione(Status.NORMALE);
 	    				
-	    				System.out.println(LOGIRR+"Nuova Irrigazione: "+newIrr);
-	    				//Dopo averla creata l'irrigazione va memorizzata nel dataBase Mongo
-	    				try {
-							memorizationIrrigation(newIrr);
-						} catch (JsonProcessingException e) {					
-							e.printStackTrace();
-						}	
+	    				System.out.println(LOGIRR+"Nuova Irrigazione: "+this.irr);
+	    				
 	    			}  			
 	    		}
 	    		/*
@@ -385,14 +270,14 @@ public class IrrigationController extends TimerTask {
 	    		else {
 	    			System.out.println(LOGIRR+" Fallimento ricerca classificazioni in mongoDB ...");
 	    			System.out.println(LOGIRR+" Creazione irrigazione NORMALE.");
-	    			newIrr= new Irrigazione(Status.NORMALE);
+	    			this.irr= new Irrigazione(Status.NORMALE);
 	    		}
 	    		
 	    		/*
 	    		 * Avvio irrigazione
 	    		 */
 	    		//timeWaitIrrigation=newIrr.getFineIrrig()-newIrr.getInizioIrrig();
-	    		startIrrigation(newIrr);
+	    		startIrrigation(this.irr);
 	    		
 	    		
 	    		
@@ -467,17 +352,34 @@ public class IrrigationController extends TimerTask {
 			    			System.err.println("DEBUG IRRIGAZIONE AUTOMATICA--- Fine irrigazione");
 			    			
 			    			
+			    			//Al termine del processo di irrigazione, memorizziamo l'irrigazione, con l'effettiva durata
+			    			this.irr.setFineIrrig(System.currentTimeMillis());
+							float qualt= (this.irr.getFineIrrig()-this.irr.getInizioIrrig())*Utilities.capacita;
+							this.irr.setQuantita(qualt);
+							try {
+								this.memorizationIrrigation(irr);
+								System.out.println(this.LOGIRR+"Irrigazione memorizzata");
+							} catch (JsonProcessingException e) {
+								System.err.println("Impossibile memorizzare irrigazione: JsonProcessingException");
+								System.err.println(e.getMessage());
+							}
+							
+							//Rendiamo null la variabile irrigazione
+							this.irr=null;
+			    			
 		    			
-		    		}
-					else if(r.payload().toString().contains("ERROR")) {
-						//Cambiamo Stato 
-	    				this.state= Utilities.stateOff;
-	    				
-						//Caso errore
-						System.out.println("DEBUG IRRIGAZIONE AUTOMATICA--- ERROR: irrigazione non avviata");
-						//this.irrigationCommandClient.disconnect();
-		    	    	System.out.println("DEBUG IRRIGAZIONE AUTOMATICA--- Stato attuale: errore attivazione.");
-		    		}
+			    		}else if(r.payload().toString().contains("ERROR")) {
+							//Cambiamo Stato 
+		    				this.state= Utilities.stateOff;
+		    				
+		    				//Rendiamo null l'irrigazione
+							this.irr=null;
+		    				
+							//Caso errore
+							System.out.println("DEBUG IRRIGAZIONE AUTOMATICA--- ERROR: irrigazione non avviata");
+							//this.irrigationCommandClient.disconnect();
+			    	    	System.out.println("DEBUG IRRIGAZIONE AUTOMATICA--- Stato attuale: errore attivazione.");
+			    		}
 		
 					//Utilizziamo un canale differente
 				}).subscribe("Irrigation-RESPONSE", 2);
@@ -506,18 +408,7 @@ public class IrrigationController extends TimerTask {
 					//IMPOSTO LO STATO DELL'IRRIGAZIONE A ON
 					this.state=Utilities.stateOn;
 					System.out.println("DEBUG IRRIGAZIONE AUTOMATICA--- start effettuato con successo.");
-					
-					//Attendiamo fino alla fine dell'irrigazione
-			    	//try {
-					//	Thread.sleep(time);
-					//} catch (InterruptedException e) {
-					//	System.err.println("DEBUG IRRIGAZIONE AUTOMATICA--- Errore nella sleep del thread IrrigationController");
-					//	e.printStackTrace();
-					//}
-		    		
-		    	
-		    		 //Avviamo Stop-Irrigazione
-		    		//stopIrrigation();
+
 	    			  
 					
 	    		}else
@@ -530,12 +421,30 @@ public class IrrigationController extends TimerTask {
 		    			//this.irrigationCommandClient.disconnect();
 		    			System.err.println("DEBUG IRRIGAZIONE AUTOMATICA--- Fine irrigazione");
 		    			
+		    			//Al termine del processo di irrigazione, memorizziamo l'irrigazione, con l'effettiva durata
+		    			this.irr.setFineIrrig(System.currentTimeMillis());
+						float qualt= (this.irr.getFineIrrig()-this.irr.getInizioIrrig())*Utilities.capacita;
+						this.irr.setQuantita(qualt);
+						try {
+							this.memorizationIrrigation(irr);
+							System.out.println(this.LOGIRR+"Irrigazione memorizzata");
+						} catch (JsonProcessingException e) {
+							System.err.println("Impossibile memorizzare irrigazione: JsonProcessingException");
+							System.err.println(e.getMessage());
+						}
+						
+						//Rendiamo null la variabile irrigazione
+						this.irr=null;
+		    			
 		    			
 	    			
 		    		}
 					else if(r.payload().toString().contains("ERROR")) {
 						//Cambiamo Stato 
 	    				this.state= Utilities.stateOff;
+	    				
+	    				//Rendiamo null la variabile irrigazione
+						this.irr=null;
 	    				
 						//Caso errore
 						System.out.println("DEBUG IRRIGAZIONE AUTOMATICA--- ERROR: irrigazione non avviata");
@@ -557,38 +466,6 @@ public class IrrigationController extends TimerTask {
 			  
 	}
 	
-	
-	
-	
-	public void stopIrrigation() {
-		//this.state=Utilities.stateOff;
-		this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, v ->{
-			
-			this.irrigationCommandClient.publishHandler(r->{
-				
-				if(r.payload().toString().contains(Utilities.stateOff)) {
-	    			  this.setState(Utilities.stateOff);
-	    			  System.out.println("DEBUG IRRIGAZIONE AUTOMATICA--- stato irrigazione modificato OFF");
-	    			  //this.irrigationCommandClient.disconnect(); 
-	    			  
-	    		}
-				else if(r.payload().toString().contains("ERROR")) {
-					//Caso errore
-					System.out.println("---DEBUG IRRIGAZIONE-LOG---- ERROR: irrigazione non disattivata");
-					//ERRORE NEL DISATTIVARE IMPIANTO DI IRRIGAZIONE
-	    		}
-	
-			}).subscribe("Irrigation-LOG", 2);
-					
-			System.out.println("DEBUG IRRIGAZIONE--- INVIO STATE-OFF AL GATEWAY");
-			this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
-    	    		  Buffer.buffer(Utilities.stateOff),
-						  MqttQoS.AT_LEAST_ONCE,
-						  false,
-						  false);
-			
-		  });
-	}
 	
 	
 	
@@ -699,12 +576,18 @@ public class IrrigationController extends TimerTask {
 									}
 								}
 								
+								
+								
 								resultStop.complete(true);
 								
 							}else if(resp.payload().toString().contains("FAIL")) {
 								System.out.println("Errore stop irrigazione!");
 								resultStop.fail("FAIL");
+								
 							}
+							
+							//Riportiamo la variabile irr a null
+							this.irr=null;
 							
 							//Disconnessione
 							this.irrigationCommandClient.disconnect();
@@ -746,6 +629,9 @@ public class IrrigationController extends TimerTask {
 							System.out.println("Errore stop irrigazione!");
 							resultStop.fail("FAIL");
 						}
+						
+						//Riportiamo la variabile irr a null
+						this.irr=null;
 						
 						//Disconnessione
 						this.irrigationCommandClient.disconnect();

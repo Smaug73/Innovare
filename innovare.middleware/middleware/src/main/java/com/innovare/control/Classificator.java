@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 import java.nio.file.Path;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -16,6 +17,10 @@ import com.innovare.model.ClassificationSint;
 import com.innovare.model.PlantClassification;
 import com.innovare.utils.Utilities;
 
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
+import io.vertx.core.WorkerExecutor;
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 
@@ -23,20 +28,29 @@ import net.lingala.zip4j.exception.ZipException;
  * Si occupa della creazione della classificazione delle immagini interagendo con lo script python.
  * Il classificatore generera' un file json all'interno della stessa cartella delle immagini generate
  * con il nome di "classifications.json"
+ * 
+ * 
+ * ATTENZIONE: La struttura della directory con dentro le foto deve essere del tipo:  nomeDirectory/Thermal_Optical/ * /* / *.jpg 
+ * Immagini con estenzione rigorosamente .jpg 
+ * 
  */
 
 // python3 segmenter.py --create_hash_symlinks --image_processing_limit 5 -v --srcdir /home/stefano/InnovareZip/testDataset/ --dstdir /home/stefano/InnovareImages/ 
 //Aggiungere normalizazione nel comando, come src dir va passata la cartella che contiene tutti i dataset unzippati(nel nostro caso deve essere solo uno) 
 public class Classificator {
 	
+	private static final String LOG="DEBUG-CLASSIFICATOR:";
+	
 	private String imagesDirName;
+	private Vertx vertx;
 	//private String scriptPath=System.getProperty("user.home")+System.getProperty("file.separator")+"InnovareScript"+System.getProperty("file.separator");
 	//private String destination=System.getProperty("user.home")+System.getProperty("file.separator")+"InnovareImages"+System.getProperty("file.separator");
 	//private String zipSourcePath=System.getProperty("user.home")+System.getProperty("file.separator")+"InnovareZip"+System.getProperty("file.separator");
 	//private String modelPath=System.getProperty("user.home")+System.getProperty("file.separator")+"InnovareModels"+System.getProperty("file.separator");
 	
-	public Classificator(String imagesDirName) {
+	public Classificator(String imagesDirName,Vertx v) {
 		super();
+		this.vertx=v;
 		if(imagesDirName.substring(imagesDirName.length()-4, imagesDirName.length()).equalsIgnoreCase(".zip"))
 			this.imagesDirName = imagesDirName.substring(0, imagesDirName.length()-4);
 		else 
@@ -138,6 +152,130 @@ public class Classificator {
 			System.err.println("Errore processo python con path:"+Utilities.scriptPath+"ClassificationScript.py e nome modello:"+modelName);
 			e.printStackTrace();
 			return new ClassificationSint();
+		}
+				
+	}
+	
+	
+	/*
+	 * Esecuzione asincrona del processo di classificazione
+	 */
+	public Future<ClassificationSint> asincronousClassification(String modelName){
+		
+		Promise<ClassificationSint> classificationP= Promise.promise();
+		/*
+		 * Preleviamo un worker per l'esecuzione del processo esterno
+		 * Questo per evitare di bloccare l'eventLoop
+		 * Lo configuriamo al momento, in modo da prelevare i parametri di configurazione
+		 */
+		int poolSize = 10;
+
+		// 2 minutes
+		long maxExecuteTime = 2;
+		TimeUnit maxExecuteTimeUnit = TimeUnit.MINUTES;
+
+		WorkerExecutor executor = vertx.createSharedWorkerExecutor("my-worker-pool", poolSize, maxExecuteTime, maxExecuteTimeUnit);
+		
+		executor.executeBlocking(promise -> {
+			try {
+				//Avviamo la parte di codice bloccante da dover eseguire
+				ClassificationSint classifResult=this.unZipAndClassificationAsincronous(modelName);
+				
+				//Completata la classificazione verifichiamo il risultato
+				if(classifResult!=null)
+					promise.complete(classifResult);
+				else
+					promise.fail(this.LOG+" Errore esecuzione classificazione");
+				
+			}catch(FileNotFoundException e) {
+				
+				promise.fail(this.LOG+" Errore esecuzione classificazione");
+			}
+			
+			
+			
+		}, res -> {
+			if(res.succeeded()) {
+				System.out.println(this.LOG+" Classificazione eseguita con successo!");
+				classificationP.complete((ClassificationSint) res.result());
+			}else {
+				classificationP.fail(this.LOG+" Errore esecuzione classificazione");
+			}
+		  
+		});
+		
+		
+		return classificationP.future();
+	}
+	
+	
+	
+	/*
+	 * Classificazione utilizzata dal Thread worker in modo asincrono
+	 */
+	public ClassificationSint unZipAndClassificationAsincronous(String modelName) throws FileNotFoundException{
+		//Verifichiamo che il modello selezionato esista
+		if(!this.existDirOrFile(Utilities.modelPath+modelName))
+			throw new FileNotFoundException("Il modello selezionato non esiste.");
+		
+		//Avvio il processo di classificazione 
+		ArrayList<PlantClassification> classifications = new ArrayList<PlantClassification>();
+		
+		try {
+			//Unzippo il file zip nella directory dalla quale segmentero' le immagini
+			this.unZipFile();
+			
+			//Prima di avviare il segmenter viene creata la cartella interna a InnovareSegmentDS che conterrà le immagini segmentate del volo
+			this.createDirOrFile(Utilities.segmentDataSetPath+System.getProperty("file.separator")+this.imagesDirName);
+			//Avvio il segmenter
+			System.out.println("python3 "+Utilities.scriptPath+"segmenter.py --create_hash_symlinks --image_processing_limit 5 -v --srcdir "+Utilities.datasetPath+this.imagesDirName+System.getProperty("file.separator")+" --dstdir "+Utilities.segmentDataSetPath+this.imagesDirName+System.getProperty("file.separator"));
+			Process processSeg= Runtime.getRuntime().exec("python3 "+Utilities.scriptPath+"segmenter.py --create_hash_symlinks --image_processing_limit 5 -v --srcdir "+Utilities.datasetPath+this.imagesDirName+" --dstdir "+Utilities.segmentDataSetPath+this.imagesDirName);
+			//Attendiamo la fine della segmentazione
+			int processSegOutput=processSeg.waitFor();
+			OutputStream outPSeg= processSeg.getOutputStream();
+			System.out.println(outPSeg.toString());
+			
+			//Finita la segmentazione avviamo la classificazione
+			System.out.println("python3 "+Utilities.scriptPath+"ClassificationScript.py "+Utilities.modelPath+modelName+" "+Utilities.segmentDataSetPath+this.imagesDirName+System.getProperty("file.separator"));
+			Process process= Runtime.getRuntime().exec("python3 "+Utilities.scriptPath+"ClassificationScript.py "+Utilities.modelPath+modelName+" "+Utilities.segmentDataSetPath+this.imagesDirName+System.getProperty("file.separator"));
+			
+			//Attendiamo la fine del processo di classificazione
+			int processOutput=process.waitFor();
+			OutputStream outP= process.getOutputStream();
+			System.out.println(outP.toString());
+			
+			if(processOutput == 0) {
+				/* 
+				 * Terminato il processo leggiamo il file di classificazione generato e lo 
+				 * deparsiamo in una classe i cui elementi dovranno essere salvati all'interno del database
+				 * Se il processo non e' andato a buon fine lanciamo una eccezione, lo stesso vale se il 
+				 * file che doveva essere generato non e' stato generato.
+				 */	
+				File jsonFile= new File(Utilities.segmentDataSetPath+this.imagesDirName+"/classification.json");
+				Scanner reader= new Scanner(jsonFile);
+				String jsonStrings="";
+				//Leggiamo tutto il json
+				while(reader.hasNextLine()) {
+					jsonStrings= jsonStrings+reader.nextLine().toString();
+				}
+				reader.close();
+				//Dopo aver letto il json lo convertiamo in una classe
+				classifications= new ObjectMapper().readValue(jsonStrings, new TypeReference<ArrayList<PlantClassification>>(){});
+				return new ClassificationSint(classifications);
+			}
+			else throw new InterruptedException();
+			
+			
+			
+		}
+		catch (IOException e) {
+			System.err.println("Errore processo python con path:"+Utilities.scriptPath+"ClassificationScript.py e nome modello:"+modelName);
+			e.printStackTrace();
+			return null;
+		} catch (InterruptedException e) {
+			System.err.println("Errore processo python con path:"+Utilities.scriptPath+"ClassificationScript.py e nome modello:"+modelName);
+			e.printStackTrace();
+			return null;
 		}
 				
 	}

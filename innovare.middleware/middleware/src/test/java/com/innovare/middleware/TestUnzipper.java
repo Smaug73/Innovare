@@ -25,7 +25,7 @@ public class TestUnzipper {
 	private ArrayList<PlantClassification> classifications;
 	
 	@Test
-	public void testDecompressione() {
+	/*public void testDecompressione() {
 		//Creo un nuovo Classificator
 		boolean succ=false;
 		
@@ -38,7 +38,7 @@ public class TestUnzipper {
 			e.printStackTrace();
 		}
 		assertTrue(succ);	
-	}
+	}*/
 
 	@AfterAll
 	public static void eliminateFiles() {

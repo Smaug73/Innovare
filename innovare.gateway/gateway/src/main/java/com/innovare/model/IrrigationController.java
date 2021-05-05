@@ -288,7 +288,7 @@ public class IrrigationController extends Thread{
 				//Modifico stato irrigazione
 				this.stato=this.stateOn;
 				
-				System.out.println("IrrigationControllerLOG: processo eseguito con successo!");
+				System.out.println("IrrigationControllerLOG: state On processo eseguito con successo!");
 				/*
 				//Se il processo e' stato eseguito con successo bisogna comunicarlo al middlelayer
 				if(this.logClient!=null) {
@@ -442,7 +442,7 @@ public class IrrigationController extends Thread{
 			
 			//Controlliamo se il processo e' stato eseguito correttamente
 			if(processOutput==0) {
-				System.out.println("IrrigationControllerLOG: processo eseguito con successo!");
+				System.out.println("IrrigationControllerLOG: state OFF, processo eseguito con successo!");
 				
 				//Modifichiamo stato
 				this.stato=this.stateOff;
