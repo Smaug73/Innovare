@@ -152,7 +152,7 @@ public class ConfigurazioneView extends Div {
     	models.add(model);
 
 		irrigationTime = LocalTime.now();
-/*
+//
 		
 		configurationItems = HttpHandler.getAllConfigurationItems();
 		isIrrigationOn = HttpHandler.getCurrentIrrigationState();
@@ -164,7 +164,7 @@ public class ConfigurazioneView extends Div {
 		models = HttpHandler.getAllModels();
 		lastIrrigation = HttpHandler.getLastIrrigation();
 		irrigationTime = HttpHandler.getIrrigTime();
-*/
+//
 
 	}
 
@@ -485,7 +485,8 @@ public class ConfigurazioneView extends Div {
 			@Override
 			public void valueChanged(ValueChangeEvent event) {
 				if(isCallNeeded) {
-					if(HttpHandler.setIrrigTime(((LocalTime) event.getValue()).getHour() + ":" + ((LocalTime) event.getValue()).getMinute()) != 200) {
+					//if(HttpHandler.setIrrigTime(((LocalTime) event.getValue()).getHour() + ":" + ((LocalTime) event.getValue()).getMinute() ) != 200) {
+					if( HttpHandler.setIrrigTime( LocalTime.of( ((LocalTime)event.getValue()).getHour(), ((LocalTime) event.getValue()).getMinute(), 0).toString() )  != 200  ) {
 						irrigationTime = (LocalTime) event.getOldValue();
 						isCallNeeded = false;
 						timePicker.setValue(irrigationTime);

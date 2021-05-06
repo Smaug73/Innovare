@@ -20,8 +20,9 @@ public class SampleCSVController extends Thread{
 
 	MongoClient mongoClient=null;
 	//tempo di attesa del polling sulla cartella per la lettura del file csv
-	public static long waitTime=10000l;
+	public static long waitTime=60000l*60;
 	
+	//Lista sensori attivi
 	private ArrayList<Integer> channelNumberCSV= new ArrayList<Integer>();
 	HashMap<String, ArrayList<Sample> > newSamples;
 	public int startingChannel=16;
@@ -42,7 +43,8 @@ public class SampleCSVController extends Thread{
 				
 				//Mettiamo in sleep il thread
 				try {
-					this.sleep(waitTime);
+					//Tempo di attesa prima di iniziare
+					this.sleep(10000);
 				} catch (InterruptedException e) {
 					System.err.println("Errore nella sleep del thread SampleCSVController");
 					e.printStackTrace();
@@ -82,7 +84,7 @@ public class SampleCSVController extends Thread{
 				
 				//Mettiamo in sleep il thread
 				try {
-					this.sleep(600000);
+					this.sleep(waitTime);
 				} catch (InterruptedException e) {
 					System.err.println("Errore nella sleep del thread WeatherStationController");
 					e.printStackTrace();
@@ -103,22 +105,23 @@ public class SampleCSVController extends Thread{
 		
 		//Al suo interno ci deve essere un solo file che dovra' essere letto
 		if(dirCSV.isDirectory()) {
-			System.out.println("DEBUG dir:"+dirCSV.getName());
+			//System.out.println("DEBUG dir:"+dirCSV.getName());
 			File[] child= dirCSV.listFiles();
 			//Caso nel quale non c'e' nessun nuovo file da leggere
 			if(child.length==0) {
-				System.out.println("DEBUG CSV READER: Nessun nuovo fil trovato.");
+				System.out.println("DEBUG CSV READER: Nessun nuovo file trovato.");
 				throw new FileNotFoundException(); 
 			}
 			
 			if(child.length>1) {
 				System.err.println("ERRORE: presenza di un file");
+				//Prendiamo solo il piu' recente
 				csvFile= findNewer(child);
 			}
 			else
 				csvFile= child[0];
 			
-			System.out.println("DEBUG file:"+csvFile.getName());
+			System.out.println("DEBUG CSV READER- file trovato:"+csvFile.getName());
 			//Trovato il file lo leggiamo e lo deparsiamo.
 			
 				FileReader fr= new FileReader(csvFile.getAbsolutePath());
@@ -136,19 +139,20 @@ public class SampleCSVController extends Thread{
 				int posizioneValor=-1;
 				int posizioneChannel=-1;
 				int dist=-1;
-				//Inizio prendendo i valori di mio interessa
+				//Inizio prendendo i valori di mio interesse
 				for(int j=0; j<allData.get(0).length; j++) {
 					//Vedo quanti sono i sensori attivi
 					if(allData.get(0)[j].contains("ch")) {
 						if(posizioneChannel==-1)
 							posizioneChannel=j;
-						//controllo se ha un valore 0 oppure 1 per vedere se e' attivo e aggiungiamo il sensore
+						//controllo se ha un valore 0 oppure 1 per vedere se e' attivo e aggiungiamo il sensore creando l'array all'interno della mappa
 						if(allData.get(1)[j].contains("1")) {
 							samplesMaps.put(allData.get(0)[j], new ArrayList<Sample>());
 							//Aggiungiamo alla lista dei sensori
 							this.channelNumberCSV.add(this.startingChannel+channelIdInt);
 							sensorNumber++;
 						}	
+						//Incrementandolo al di fuori dell'if, conteremo i sensori totali, tenendo conto anche dei non attivi
 						channelIdInt++;//Incrementiamo l'id int del canale che stiamo leggendo
 					}
 					
@@ -181,7 +185,8 @@ public class SampleCSVController extends Thread{
 				for (int j=1; j<allData.size(); j++) {
 					for(int i=0; i<samplesMaps.keySet().size(); i++) {
 						//prendo l'arraylist di un certo sensore e aggiungo il nuovo sample prendendo i dati dalle posizioni del csv
-						samplesMaps.get(samplesMaps.keySet().toArray()[i]).add(new Sample(Long.parseLong(allData.get(j)[0]),Float.valueOf(allData.get(j)[i+posizioneValor]),Utilities.channelCSV));		
+						samplesMaps.get(samplesMaps.keySet().toArray()[i])
+						.add(new Sample(Long.parseLong(allData.get(j)[0]),Float.valueOf(allData.get(j)[i+posizioneValor]),Utilities.channelCSV));		
 					}		
 		        }
 				

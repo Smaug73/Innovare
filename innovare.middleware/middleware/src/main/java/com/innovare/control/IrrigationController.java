@@ -727,6 +727,8 @@ public class IrrigationController extends TimerTask {
 		public Irrigazione strategy(ClassificationSint cs) {
 			return new Irrigazione(cs.getMaxPercForIrrigation());
 		}
+
+		
 		
 		
 	}

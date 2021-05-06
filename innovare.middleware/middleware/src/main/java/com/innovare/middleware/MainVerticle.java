@@ -1270,6 +1270,7 @@ public class MainVerticle extends AbstractVerticle {
         	    	    			 * Caso nel quale esiste un modello già selezionato
         	    	    			 */
         	    	    			//Verifico che il modello sia nel filesystem e aggiorno il controller
+        	    	    			this.modelController.foundModel(modelName);
         							this.modelController.setModelSelected(modelName);
 
         	    	    			JsonObject oldmodel= new JsonObject().put("name", this.modelController.getSelectedModel().getName());

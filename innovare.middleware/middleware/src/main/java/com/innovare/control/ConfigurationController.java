@@ -131,7 +131,16 @@ public class ConfigurationController {
 						case "irrigationDelay":
 							//Leggiamo il tempo in minuti e lo convertiamo in long
 							try {
-								this.setDelayFromNextIrrigationFromInt(sc.nextInt());
+								int delaySet= sc.nextInt();
+								
+								// test case
+								if(delaySet==1) {
+									this.delayIrrigation= IrrigationController.delayDay;
+									System.out.println("CONFIGURATION-FILE middlelayer: delayIrrigation : "+this.delayIrrigation);
+									break;
+								}else
+									this.setDelayFromNextIrrigationFromInt(sc.nextInt());
+								
 							}catch(Exception e) {
 								System.err.println("ERRORE CONFIGURATION-FILE middlelayer: errore lettura irrigationDelay , configurazione valori di base: "+IrrigationController.delayOneMinutetTest);
 								this.delayIrrigation= IrrigationController.delayOneMinutetTest;
