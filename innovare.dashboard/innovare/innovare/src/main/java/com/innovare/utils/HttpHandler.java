@@ -7,6 +7,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 
 import org.apache.http.client.utils.URIBuilder;
@@ -219,12 +220,17 @@ public class HttpHandler {
 	private static LocalTime getIrrigTime(HttpResponse<String> response) {
 		String time;
 		try {
-			time = new ObjectMapper().readValue(response.body(), new TypeReference<String>(){});
-			return LocalTime.parse(time, DateTimeFormatter.ISO_LOCAL_TIME);
-		} catch (JsonMappingException e) {
-			e.printStackTrace();
-		} catch (JsonProcessingException e) {
-			e.printStackTrace();
+			//time = new ObjectMapper().readValue(response.body(), new TypeReference<String>(){});
+			//return LocalTime.parse(time, DateTimeFormatter.ISO_LOCAL_TIME);
+			return LocalTime.parse(response.body());
+		}
+		//} catch (JsonMappingException e) {
+		//	e.printStackTrace();
+		//} catch (JsonProcessingException e) {
+		//	e.printStackTrace();
+		//}
+		catch (DateTimeParseException e) {
+						e.printStackTrace();
 		}
 		return null;
 	}

@@ -1617,7 +1617,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	    routerFactory.addHandlerByOperationId("irrigationTime", routingContext ->{	
     	    	    	if(this.loggingController.isUserLogged()) {	    	    		
     	    	    
-    	    	    		System.out.println("IRRIGATION-TIME...");
+    	    	    		System.out.println("GET-IRRIGATION-TIME...:"+this.irrigationController.getStartingTimeIrrigation().toString());
     	    	    		if(this.irrigationController != null)
 	    	    	    		routingContext
 	  		    	   	       .response()
@@ -1654,9 +1654,12 @@ public class MainVerticle extends AbstractVerticle {
     	    	    			try {
     	    	    				
     	    	    				//Converto il tempo acquisito come parametro in LocalTime dell'irrigationController
+    	    	    				System.out.println("SET-IRRIGATION-TIME");
     	    	    				System.out.println(routingContext.request().getParam("irrigationTime"));
         	    	    			LocalTime newIrrigationTime =LocalTime.parse(routingContext.request().getParam("irrigationTime"));
-        	    	    			      	    	    			
+        	    	    			//Per evitare bug mancanza secondi
+        	    	    			newIrrigationTime= LocalTime.of(newIrrigationTime.getHour(), newIrrigationTime.getMinute(), 0);
+        	    	    			System.out.println("New Irrigation time: "+newIrrigationTime.getHour()+" "+newIrrigationTime.getMinute()+" "+newIrrigationTime.getSecond());
         	    	    			
         	    	    			//Dopo aver impostato l'irrigazione resettare il timer e il timer task e crearne uno nuovo
         	    	    			//this.timer.cancel();
