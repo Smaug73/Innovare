@@ -1405,13 +1405,25 @@ public class MainVerticle extends AbstractVerticle {
     	    	    		
     	    	    		if(this.irrigationController.getState() != Utilities.stateOn) {
  
-    	    	    			Future<Boolean> result=this.irrigationController.startIrrigationDirect();
+    	    	    			Future<Irrigazione> result=this.irrigationController.startIrrigationDirect();
     	    	    			
     	    	    			result.onSuccess( c->{
-    	    	    				routingContext
-	  	    		    			  .response()
-	  	    		    			  .setStatusCode(200)
-	  	    		    			  .end("Stato attuale: irrigazione attivata.");
+    	    	    				//Convertiamo l'irrigazione
+    	    	    				try {
+										String irrigationJson= new ObjectMapper().writeValueAsString(c);
+										routingContext
+		  	    		    			  .response()
+		  	    		    			  .setStatusCode(200)
+		  	    		    			  .end(irrigationJson);
+										System.out.println("Irrigazione OFF : "+irrigationJson);
+									} catch (JsonProcessingException e) {
+										// TODO Auto-generated catch block
+										e.printStackTrace();
+										routingContext
+		        						.response()
+		        						.setStatusCode(400)
+		        						.end("Errore parsing Irrigazione");
+									}
 	  	    		    			System.out.println("Stato attuale: irrigazione attivata.");
     	    	    			});
     	    	    			result.onFailure(f->{
@@ -1455,13 +1467,25 @@ public class MainVerticle extends AbstractVerticle {
     	    	    			
     	    	    			System.out.println("Invio comando di stop dell'irrigazione...");
 	    	    			
-    	    	    			Future<Boolean> result=this.irrigationController.stopIrrigationDirect();
+    	    	    			Future<Irrigazione> result=this.irrigationController.stopIrrigationDirect();
     	    	    			result.onSuccess( c->{
-    	    	    				routingContext
-	  	    		    			  .response()
-	  	    		    			  .setStatusCode(200)
-	  	    		    			  .end("Stato attuale: irrigazione attivata.");
-	  	    		    			System.out.println("Stato attuale: irrigazione attivata.");
+    	    	    				//Convertiamo l'irrigazione
+    	    	    				try {
+										String irrigationJson= new ObjectMapper().writeValueAsString(c);
+										routingContext
+		  	    		    			  .response()
+		  	    		    			  .setStatusCode(200)
+		  	    		    			  .end(irrigationJson);
+										System.out.println("Irrigazione OFF : "+irrigationJson);
+									} catch (JsonProcessingException e) {
+										// TODO Auto-generated catch block
+										e.printStackTrace();
+										routingContext
+		        						.response()
+		        						.setStatusCode(400)
+		        						.end("Errore parsing Irrigazione");
+									}
+	  	    		    			System.out.println("Stato attuale: irrigazione OFF.");
     	    	    			});
     	    	    			result.onFailure(f->{
     	    	    				System.out.println("---DEBUG IRRIGAZIONE-LOG---- ERROR: irrigazione non avviata");
@@ -1571,36 +1595,67 @@ public class MainVerticle extends AbstractVerticle {
     	    	    
     	    	    		System.out.println("Invio ultima irrigazione...");
     	    	    		
-    	    	    		JsonObject irrigazioniQuery= new JsonObject();
-    	    	    		this.mongoClient.find("Irrigazioni",irrigazioniQuery , res -> {
-    	    	    		    if (res.succeeded()) {
-    	    	    		    	
-    	    	    		    	//cerchiamo l'ultima irrigazione effettuata
-    	    	    		    	  long max=0;
-    	    	    		    	  JsonObject lastIrrigation=new JsonObject();
-    	    	    			      for (JsonObject json : res.result()) {
-    	    	    			    	if(json.containsKey("inizioIrrig") && (json.getLong("inizioIrrig")>max)) {
-    	    	    			    		lastIrrigation=json;
-    	    	    			    	}
-    	    	    			        //System.out.println("Last irrigation: "+lastIrrigation.encodePrettily());
-    	    	    			        //System.out.println("Connessione effettuata con successo al db!");
-    	    	    			      }
-    	    	    			      System.out.println("Last irrigation: "+lastIrrigation.encodePrettily());
-    	    	    			      routingContext
-    	    		    	   	      .response()
-    	    			              .setStatusCode(200)
-    	    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-    	    			              .end(lastIrrigation.toString());
-    	    	    			    } else {
-    	    	    			      res.cause().printStackTrace();
-    	    	    			      routingContext
-    	    		    	   	      .response()
-    	    			              .setStatusCode(400)
-    	    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-    	    			              .end("No last irrigation.");
-    	    	    			    }
-    	    	    			  });
-    	    	    			    		
+    	    	    		if(this.irrigationController.getState()==Utilities.stateOn) {
+    	    	    			if(this.irrigationController!=null) {
+    	    	    				try {
+										String irrigationJson= new ObjectMapper().writeValueAsString(this.irrigationController.getIrr());
+										routingContext
+	      	    		    	   	      .response()
+	      	    			              .setStatusCode(200)
+	      	    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+	      	    			              .end(irrigationJson);
+									} catch (JsonProcessingException e) {
+										
+										e.printStackTrace();
+										routingContext
+		  	    		    	   	      .response()
+		  	    			              .setStatusCode(400)
+		  	    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+		  	    			              .end("");
+									} 
+    	    	    			}else {
+    	    	    				
+  	    	    			      routingContext
+  	    		    	   	      .response()
+  	    			              .setStatusCode(400)
+  	    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+  	    			              .end("");
+    	    	    			}
+    	    	    		}
+    	    	    		else {
+    	    	    			JsonObject irrigazioniQuery= new JsonObject();
+        	    	    		this.mongoClient.find("Irrigazioni",irrigazioniQuery , res -> {
+        	    	    		    if (res.succeeded()) {
+        	    	    		    	
+        	    	    		    	//cerchiamo l'ultima irrigazione effettuata
+        	    	    		    	  long max=0;
+        	    	    		    	  JsonObject lastIrrigation=new JsonObject();
+        	    	    			      for (JsonObject json : res.result()) {
+        	    	    			    	if(json.containsKey("inizioIrrig") && (json.getLong("inizioIrrig")>max)) {
+        	    	    			    		lastIrrigation=json;
+        	    	    			    	}
+        	    	    			        //System.out.println("Last irrigation: "+lastIrrigation.encodePrettily());
+        	    	    			        //System.out.println("Connessione effettuata con successo al db!");
+        	    	    			      }
+        	    	    			      System.out.println("Last irrigation: "+lastIrrigation.encodePrettily());
+        	    	    			      routingContext
+        	    		    	   	      .response()
+        	    			              .setStatusCode(200)
+        	    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+        	    			              .end(lastIrrigation.toString());
+        	    	    			    } else {
+        	    	    			      res.cause().printStackTrace();
+        	    	    			      routingContext
+        	    		    	   	      .response()
+        	    			              .setStatusCode(400)
+        	    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+        	    			              .end("No last irrigation.");
+        	    	    			    }
+        	    	    		});
+        	    	    			
+    	    	    		}
+    	    	    		
+    	    	    		    		
     	    	    	}
     	    	    	else {
     	    	    		routingContext

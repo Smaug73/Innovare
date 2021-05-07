@@ -249,7 +249,7 @@ public class WeatherStationController extends Thread{
 									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],Float.valueOf(com.innovare.model.Direction.SE.getNum())));
 								  	break;	
 								default: 
-									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],0));
+									this.channelsSample.put(token[j], new Sample(this.timestamp,token[j],-1));
 								  	break;
 							}	
 						}

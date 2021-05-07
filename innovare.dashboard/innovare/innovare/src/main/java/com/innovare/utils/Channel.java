@@ -20,8 +20,11 @@ public enum Channel {
 	SOLAR_RAD(10, "rtSolarRad", -1),
 	DAY_RAIN(11, "rtDayRain", -1),
 	MONTH_RAIN(12, "rtMonthRain", -1),
-	YEAR_RAIN(13, "rtYearRain", -1);
-
+	YEAR_RAIN(13, "rtYearRain", -1),
+	WIND_DIR_ROSE(14,"rtWindDirRose", -1);
+	
+	
+	
 	private int value;
 	private String name;
 	private float invalidValue;

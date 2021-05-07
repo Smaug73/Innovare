@@ -16,13 +16,13 @@ public class ConfigurationController {
 	
 	//Il tempo di irrigazione massimo viene espresso in long  
 	//ma viene prelevato dal file di configurazione in minuti
-	public long irrigationMaxTime;
+	public static long irrigationMaxTime=120000;
 	
 	//Array contenente ora e minuti si inizio dell'irrigazione in una giornata
 	public LocalTime timeIrrigation;
 	
 	//Portata irrigazione
-	public float portataIrrigation;
+	public static float portataIrrigation=10;
 	
 	//Delay dalla prossima irrigazione
 	public long delayIrrigation;
@@ -227,6 +227,31 @@ public class ConfigurationController {
 	private void setDelayFromNextIrrigationFromInt(int timeI) {
 		this.delayIrrigation= Long.parseLong(Integer.toString(timeI*1000));
 	}
+
+
+
+	public float getPortataIrrigation() {
+		return portataIrrigation;
+	}
+
+
+
+	public void setPortataIrrigation(float portataIrrigation) {
+		this.portataIrrigation = portataIrrigation;
+	}
+
+
+
+	public long getDelayIrrigation() {
+		return delayIrrigation;
+	}
+
+
+
+	public void setDelayIrrigation(long delayIrrigation) {
+		this.delayIrrigation = delayIrrigation;
+	}
+	
 	
 	
 }

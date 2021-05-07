@@ -2,11 +2,13 @@ package com.innovare.model;
 
 import java.sql.Timestamp;
 
+import com.innovare.control.ConfigurationController;
+
 public class Irrigazione {
 
 	private long inizioIrrig;
 	private long fineIrrig;
-	private float quantita;
+	private float quantita= 600;
 	
 	
 	
@@ -14,6 +16,7 @@ public class Irrigazione {
 	
 	public Irrigazione(long timeStart) {
 		this.inizioIrrig=timeStart;
+		this.fineIrrig=ConfigurationController.irrigationMaxTime+this.inizioIrrig;
 	}
 	
 	public Irrigazione(Status s) {
@@ -36,8 +39,10 @@ public class Irrigazione {
 		Timestamp now= new Timestamp(System.currentTimeMillis());
 		this.inizioIrrig=now.getTime();
 		//fine fra 10 secondi per test
-		this.fineIrrig=this.inizioIrrig+(10*1000);
-		this.quantita=100;
+		//this.fineIrrig=this.inizioIrrig+(10*1000);
+		//this.quantita=100;
+		long durataTot=(long) (this.quantita/ConfigurationController.portataIrrigation)*1000;
+		this.fineIrrig=this.inizioIrrig+durataTot;
 	}
 	
 	public Irrigazione(long inizioIrrig, long fineIrrig, float quantita) {

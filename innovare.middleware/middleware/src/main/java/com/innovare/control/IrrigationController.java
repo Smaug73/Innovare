@@ -472,9 +472,9 @@ public class IrrigationController extends TimerTask {
 	/*
 	 * Metodo di avvio diretto dell'irrigazione, senza durata
 	 */
-	public Future<Boolean> startIrrigationDirect() {
+	public Future<Irrigazione> startIrrigationDirect() {
 		
-		Promise<Boolean> resultStart= Promise.promise();
+		Promise<Irrigazione> resultStart= Promise.promise();
 		
 		//Controlliamo che non sia gia' in esecuzione l'irrigazione
 		if(this.state!=Utilities.stateOn && this.state!=Utilities.stateLock) {		
@@ -489,7 +489,7 @@ public class IrrigationController extends TimerTask {
 							System.out.println("Irrigazione avviata!");
 							//Creiamo nuova irrigazione
 							this.irr= new Irrigazione(System.currentTimeMillis());
-							resultStart.complete(true);
+							resultStart.complete(this.irr);
 						}
 						else if(resp.payload().toString().contains("FAIL")) {
 							System.out.println("Errore avvio irrigazione");
@@ -519,7 +519,7 @@ public class IrrigationController extends TimerTask {
 						System.out.println("Irrigazione avviata!");
 						//Creiamo nuova irrigazione
 						this.irr= new Irrigazione(System.currentTimeMillis());
-						resultStart.complete(true);
+						resultStart.complete(this.irr);
 					}
 					else if(resp.payload().toString().contains("FAIL")) {
 						System.out.println("Errore avvio irrigazione");
@@ -549,9 +549,9 @@ public class IrrigationController extends TimerTask {
 	/*
 	 * Metodo stop irrigazione diretto. Utilizzabile nel caso di assenza tempo di irrigazione
 	 */
-	public Future<Boolean> stopIrrigationDirect() {
+	public Future<Irrigazione> stopIrrigationDirect() {
 		
-		Promise<Boolean> resultStop= Promise.promise();
+		Promise<Irrigazione> resultStop= Promise.promise();
 		
 		if(this.state!=Utilities.stateOff && this.state!=Utilities.stateLock)
 			
@@ -565,7 +565,7 @@ public class IrrigationController extends TimerTask {
 								//Salviamo l'irrigazione
 								if(this.irr!=null) {
 									this.irr.setFineIrrig(System.currentTimeMillis());
-									float qualt= (this.irr.getFineIrrig()-this.irr.getInizioIrrig())*Utilities.capacita;
+									float qualt= ((this.irr.getFineIrrig()-this.irr.getInizioIrrig())*ConfigurationController.portataIrrigation)/1000;
 									this.irr.setQuantita(qualt);
 									try {
 										this.memorizationIrrigation(irr);
@@ -578,7 +578,7 @@ public class IrrigationController extends TimerTask {
 								
 								
 								
-								resultStop.complete(true);
+								resultStop.complete(this.irr);
 								
 							}else if(resp.payload().toString().contains("FAIL")) {
 								System.out.println("Errore stop irrigazione!");
@@ -623,7 +623,7 @@ public class IrrigationController extends TimerTask {
 								}
 							}
 							
-							resultStop.complete(true);
+							resultStop.complete(this.irr);
 							
 						}else if(resp.payload().toString().contains("FAIL")) {
 							System.out.println("Errore stop irrigazione!");
@@ -718,6 +718,14 @@ public class IrrigationController extends TimerTask {
 	
 	
 	
+	public Irrigazione getIrr() {
+		return irr;
+	}
+
+
+
+
+
 	/*
 	 * Da definire
 	 */

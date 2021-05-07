@@ -151,7 +151,7 @@ public class HomeView extends Div {
 		lastMeasureHum = HttpHandler.getLastSample(Channel.OUTSIDE_HUM).getMisure();
 		lastMeasureHeat = HttpHandler.getLastSample(Channel.SOLAR_RAD).getMisure();
 		lastMeasureWindSpeed = HttpHandler.getLastSample(Channel.WIND_SPEED).getMisure();
-		lastMeasureWindDirection = HttpHandler.getLastSample(Channel.WIND_DIR).getMisure();
+		lastMeasureWindDirection = HttpHandler.getLastSample(Channel.WIND_DIR_ROSE).getMisure();
 
 		sensors = new HashMap<Integer, Sensor>();
 		channels = HttpHandler.getActiveChannels();
