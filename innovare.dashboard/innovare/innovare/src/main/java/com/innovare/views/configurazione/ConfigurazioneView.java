@@ -84,6 +84,9 @@ public class ConfigurazioneView extends Div {
 
 	private FlexBoxLayout cardLastIrrigation;
 	private FlexBoxLayout cardIrrigationState;
+	
+	private String state;
+	private String colorState;
 
 	public ConfigurazioneView() throws IOException, InterruptedException, URISyntaxException, ParseException {
 		setId("config-view");
@@ -126,7 +129,7 @@ public class ConfigurazioneView extends Div {
 	// Recupera i dati da mostrare: i configuration item, i modelli disponibili per la classificazione, 
 	// lo stato dell'irrigazione e le info sull'ultima irrigazione (quella attuale se l'irrigazione è in corso)
 	private void getData() {
-
+/*
  		configurationItems = new ArrayList<ConfigurationItem>();
     	ConfigurationItem item = new ConfigurationItem();
     	item.setId("Gateway");
@@ -152,7 +155,7 @@ public class ConfigurazioneView extends Div {
     	models.add(model);
 
 		irrigationTime = LocalTime.now();
-//
+*/
 		
 		configurationItems = HttpHandler.getAllConfigurationItems();
 		isIrrigationOn = HttpHandler.getCurrentIrrigationState();
@@ -164,7 +167,7 @@ public class ConfigurazioneView extends Div {
 		models = HttpHandler.getAllModels();
 		lastIrrigation = HttpHandler.getLastIrrigation();
 		irrigationTime = HttpHandler.getIrrigTime();
-//
+
 
 	}
 
@@ -357,8 +360,7 @@ public class ConfigurazioneView extends Div {
 	}
 
 	private Component createIrrigationStateCard() {
-		String state;
-		String colorState;
+		
 		//RadioButtonGroup<String> on_off = new RadioButtonGroup<>();
 		//on_off.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
 		//on_off.setItems("ON", "OFF");
@@ -416,7 +418,7 @@ public class ConfigurazioneView extends Div {
 					}
 				}
 				
-/*				if(newIrrigation != null) {
+				if(newIrrigation != null) {
 					lastIrrigation = newIrrigation;
 					if(isIrrigationOn.equals("ON")) {
 						state = IrrigationState.ACCESO.getName();
@@ -431,7 +433,8 @@ public class ConfigurazioneView extends Div {
 						colorState = TextColor.DISABLED.getValue();
 					}
 				}
-*/				
+				
+				
 				cardLastIrrigation.removeAll();
 				cardLastIrrigation = (FlexBoxLayout) createLastIrrigationCard();
 				
