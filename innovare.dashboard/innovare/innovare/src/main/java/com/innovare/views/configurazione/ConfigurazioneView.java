@@ -405,7 +405,8 @@ public class ConfigurazioneView extends Div {
 				if(on_off.getText().equalsIgnoreCase("START")) {
 					if(!isIrrigationOn.equalsIgnoreCase("ON")) {
 						newIrrigation = HttpHandler.startIrrigation();
-						on_off.setText("STOP");
+						//on_off.setText("STOP");
+						
 						//newIrrigation = new Irrigazione(System.currentTimeMillis(), System.currentTimeMillis() ,Float.parseFloat("58.34") );	
 						
 					}
@@ -413,13 +414,29 @@ public class ConfigurazioneView extends Div {
 				else {
 					if(!isIrrigationOn.equalsIgnoreCase("OFF")) {
 						newIrrigation = HttpHandler.stopIrrigation();
-						on_off.setText("START");
+						//on_off.setText("START");
+						
 						//newIrrigation = new Irrigazione(System.currentTimeMillis(), System.currentTimeMillis() ,Float.parseFloat("58.34") );	
 					}
 				}
 				
 				if(newIrrigation != null) {
 					lastIrrigation = newIrrigation;
+					
+					if(on_off.getText().equalsIgnoreCase("START")) {
+						isIrrigationOn="ON";
+						on_off.setText("STOP");
+						state = IrrigationState.ACCESO.getName();
+						colorState = IrrigationState.ACCESO.getColor();
+					}	
+					else {
+						isIrrigationOn="OFF";
+						on_off.setText("START");
+						state = IrrigationState.SPENTO.getName();
+						colorState = IrrigationState.SPENTO.getColor();
+					}
+					
+					/*
 					if(isIrrigationOn.equals("ON")) {
 						state = IrrigationState.ACCESO.getName();
 						colorState = IrrigationState.ACCESO.getColor();
@@ -431,12 +448,18 @@ public class ConfigurazioneView extends Div {
 					else {
 						state = Constants.erroreConnessione;
 						colorState = TextColor.DISABLED.getValue();
-					}
+					}*/
+				}else {
+					state = Constants.erroreConnessione;
+					colorState = TextColor.DISABLED.getValue();
 				}
 				
 				
 				cardLastIrrigation.removeAll();
 				cardLastIrrigation = (FlexBoxLayout) createLastIrrigationCard();
+				
+				cardIrrigationState.removeAll();
+				cardIrrigationState= (FlexBoxLayout) createIrrigationStateCard();
 				
 			}
 			else {
