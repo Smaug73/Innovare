@@ -12,6 +12,10 @@ public class ConfigurationController {
 	public static long tempoCampionamentoWS= Utilities.tempoCampionamentoWeatherStationTest;
 	public static boolean testingIrrigazione= false;
 	
+	//Il tempo di irrigazione massimo viene espresso in long  
+	//ma viene prelevato dal file di configurazione in minuti
+	public static long irrigationMaxTime=120000;
+	
 	public ConfigurationController(){
 		//verifichiamo l'esistenza del file di configurazione e lo leggiamo
 		//altrimenti lasciamo i valori nel loro stato predefinito in Utilities
@@ -40,6 +44,17 @@ public class ConfigurationController {
 								sc.nextLine();
 							break;
 							
+						case "irrigationMaxTime":
+							//Leggiamo il tempo in minuti e lo convertiamo in long
+							try {
+								this.setMaxTimeIrrigationFromInt(sc.nextInt());
+							}catch(Exception e) {
+								System.err.println("ERRORE CONFIGURATION-FILE middlelayer: errore lettura irrigationMaxTime , configurazione valori di base: 60 minuti");
+								this.setMaxTimeIrrigationFromInt(60);
+							}
+							System.out.println("CONFIGURATION-FILE middlelayer: irrigationMaxTime : "+this.irrigationMaxTime);
+							sc.nextLine();
+							break;
 							
 						default:
 							sc.nextLine();
@@ -69,7 +84,10 @@ public class ConfigurationController {
 		return tempoCampionamentoWS;
 	}
 	
-	
+	private void setMaxTimeIrrigationFromInt(int timeI) {
+		//Conversione dei minuti in millisecondi
+		this.irrigationMaxTime= Long.parseLong(Integer.toString(timeI*1000*60));
+	}
 	
 	
 }

@@ -519,13 +519,20 @@ public class IrrigationController extends TimerTask {
 						System.out.println("Irrigazione avviata!");
 						//Creiamo nuova irrigazione
 						this.irr= new Irrigazione(System.currentTimeMillis());
-						resultStart.complete(this.irr);
+						
+						//Settiamo il command client in ascolto per eventuale spegnimento 
+						//dovuto a tempo massimo di irrigazione
+						Future<Boolean> forcedCloseList=this.listenForIrrigationForceClose();
+						forcedCloseList.onComplete(h->{
+							resultStart.complete(this.irr);
+						});
+						//resultStart.complete(this.irr);
 					}
 					else if(resp.payload().toString().contains("FAIL")) {
 						System.out.println("Errore avvio irrigazione");
 						resultStart.fail("FAIL");
 					}
-					this.irrigationCommandClient.disconnect();
+					//this.irrigationCommandClient.disconnect();
 				}).subscribe("Irrigation-RESPONSE", 2);
 				
 				System.out.println("DEBUG IRRIGAZIONE--- INVIO STATE-ON AL GATEWAY");
@@ -547,11 +554,63 @@ public class IrrigationController extends TimerTask {
 	}
 	
 	/*
+	 * Setting per ascoltare eventuale chiusura forzata dell'irrigazione
+	 */
+	private Future<Boolean> listenForIrrigationForceClose(){
+		
+		System.out.println(this.LOGIRR+" irrigation forced close setting!");
+		
+		Promise<Boolean> resultStop= Promise.promise();
+		
+		this.irrigationCommandClient.publishHandler(resp->{
+			if(resp.payload().toString().contains("DONE")) {
+				System.out.println(this.LOGIRR+"IRRIGATION FORCED CLOSE!");
+				this.state=Utilities.stateOff;
+				System.out.println("Irrigazione fermata!");
+				//Salviamo l'irrigazione
+				if(this.irr!=null) {
+					this.irr.setFineIrrig(System.currentTimeMillis());
+					float qualt= ((this.irr.getFineIrrig()-this.irr.getInizioIrrig())*ConfigurationController.portataIrrigation)/1000;
+					this.irr.setQuantita(qualt);
+					try {
+						this.memorizationIrrigation(irr);
+						System.out.println(this.LOGIRR+"Irrigazione memorizzata");
+					} catch (JsonProcessingException e) {
+						System.err.println("Impossibile memorizzare irrigazione: JsonProcessingException");
+						System.err.println(e.getMessage());
+					}
+				}
+				
+				//resultStop.complete(true);
+				
+			}else if(resp.payload().toString().contains("FAIL")) {
+				System.out.println("Errore stop irrigazione!");
+				//resultStop.fail("FAIL");
+			}
+			
+			//Riportiamo la variabile irr a null
+			this.irr=null;
+			
+			//Disconnessione
+			this.irrigationCommandClient.disconnect();
+			
+		}).subscribe("Irrigation-RESPONSE", 2);
+		
+		resultStop.complete(true);
+		return resultStop.future();
+	}
+	
+	
+	
+	/*
 	 * Metodo stop irrigazione diretto. Utilizzabile nel caso di assenza tempo di irrigazione
 	 */
 	public Future<Irrigazione> stopIrrigationDirect() {
 		
 		Promise<Irrigazione> resultStop= Promise.promise();
+		
+		//Forziamo disconnessione canale di Command rimasto in ascolto per eventuale chiusura forzata dal tempo massimo di irrigazione
+		//this.irrigationCommandClient.disconnect();
 		
 		if(this.state!=Utilities.stateOff && this.state!=Utilities.stateLock)
 			
@@ -612,7 +671,7 @@ public class IrrigationController extends TimerTask {
 							//Salviamo l'irrigazione
 							if(this.irr!=null) {
 								this.irr.setFineIrrig(System.currentTimeMillis());
-								float qualt= (this.irr.getFineIrrig()-this.irr.getInizioIrrig())*Utilities.capacita;
+								float qualt= ((this.irr.getFineIrrig()-this.irr.getInizioIrrig())*ConfigurationController.portataIrrigation)/1000;
 								this.irr.setQuantita(qualt);
 								try {
 									this.memorizationIrrigation(irr);

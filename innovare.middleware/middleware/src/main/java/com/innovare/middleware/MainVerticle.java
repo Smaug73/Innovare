@@ -1415,7 +1415,7 @@ public class MainVerticle extends AbstractVerticle {
 		  	    		    			  .response()
 		  	    		    			  .setStatusCode(200)
 		  	    		    			  .end(irrigationJson);
-										System.out.println("Irrigazione OFF : "+irrigationJson);
+										System.out.println("Irrigazione ON : "+irrigationJson);
 									} catch (JsonProcessingException e) {
 										// TODO Auto-generated catch block
 										e.printStackTrace();

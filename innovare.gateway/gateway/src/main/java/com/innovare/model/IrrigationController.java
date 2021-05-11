@@ -73,8 +73,26 @@ public class IrrigationController extends Thread{
 		    	if(comando.equalsIgnoreCase(IrrigationController.stateOn)) {
 		    		Future<Boolean> resultS=startIrrigation();
 		    		resultS.onComplete(h->{
-		    			if(h.succeeded())
+		    			if(h.succeeded()) {
 		    				this.startResponseMqtt(true);
+		    				//nel caso di successo impostiamo il tempo massimo dopo il quale
+		    				//l'irrigazione deve fermarsi attraverso timer vertx
+		    				this.vertx.setTimer(ConfigurationController.irrigationMaxTime, f->{
+		    					//Fermiamo l'irrigazione se non e' stata gia' fermata
+		    					if(this.stato!=Utilities.stateOff) {
+		    						Future<Boolean> resultF=stopIrrigation();
+			    					resultF.onComplete(t->{
+						    			if(t.succeeded())
+						    				//this.startResponseMqtt(true);
+						    				System.out.println("STOP FORCED");
+						    			else
+						    				//this.startResponseMqtt(false);
+						    				System.out.println("ERROR TRY STOP FORCED");
+					    			});
+		    					}
+		    					
+		    				});
+		    			}
 		    			else
 		    				this.startResponseMqtt(false);
 		    		});
