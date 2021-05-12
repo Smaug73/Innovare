@@ -1,0 +1,25 @@
+#gitignore for vertx
+
+# Cache of project
+.gradletasknamecache
+
+# Vertx Cache
+.vertx/
+
+build
+target
+out
+*.iml
+*.ipr
+*.iws
+.vertx
+.DS_Store
+project/.DS_Store
+project/*/.DS_Store
+.metadata
+tmlog*.log
+tm.out
+logs/
+tmp/
+build/
+src/main/resources/
