@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -158,6 +159,21 @@ public class HomeView extends Div {
 		if(channels == null) {
 			channels = new ArrayList<Integer>();
 		}
+		
+		// Si filtrano i canali in modo da prendere solo quelli relativi al suolo
+		Channel[] other_channels = Channel.values();
+		for (Iterator<Integer> iterator = channels.iterator(); iterator.hasNext(); ) {
+			Integer value = iterator.next();
+						
+			for(Channel ch : other_channels) {
+				if (value == ch.getValue()) {
+					iterator.remove();
+				}
+			}
+		}
+		
+			
+		
 		for(Integer channel : channels) {
 			Sample sample = HttpHandler.getLastSample(channel);
 			Sensor sensor = new Sensor("Sensore Canale " + channel, sample);
