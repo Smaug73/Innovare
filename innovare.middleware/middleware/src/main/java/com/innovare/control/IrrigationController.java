@@ -423,7 +423,7 @@ public class IrrigationController extends TimerTask {
 		    			
 		    			//Al termine del processo di irrigazione, memorizziamo l'irrigazione, con l'effettiva durata
 		    			this.irr.setFineIrrig(System.currentTimeMillis());
-						float qualt= (this.irr.getFineIrrig()-this.irr.getInizioIrrig())*Utilities.capacita;
+						float qualt= (this.irr.getFineIrrig()-this.irr.getInizioIrrig())*ConfigurationController.portataIrrigation/1000;
 						this.irr.setQuantita(qualt);
 						try {
 							this.memorizationIrrigation(irr);
