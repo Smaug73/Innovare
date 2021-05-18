@@ -33,6 +33,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.control.Classificator;
 import com.innovare.control.ConfigurationController;
 import com.innovare.control.IrrigationController;
+import com.innovare.control.Logger;
 import com.innovare.control.ModelController;
 import com.innovare.control.SampleCSVController;
 import com.innovare.control.SensorDataController;
@@ -156,7 +157,7 @@ public class TestClassificator {
 	
 	/*
 	 *Testing SensorDataController
-	 */
+	 
 	@Test
 	public void testSensorDataController() {
 		ConfigurationController cc= new ConfigurationController();
@@ -189,7 +190,15 @@ public class TestClassificator {
 			e.printStackTrace();
 		}
 	}
+	*/
 	
+	@Test
+	public void testLogger() throws FileNotFoundException {
+		Logger.getLogger().print("TestString1");
+		Logger.getLogger().print("TestString2");
+		Logger.getLogger().print("TestString3");
+		Logger.getLogger().print("TestString4");
+	}
 	
 	/*
 	@Test
