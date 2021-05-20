@@ -46,8 +46,9 @@ public class Logger {
 	}
 	
 	//Scriviamo una stringa all'interno del file di log
-	public synchronized void print(String s) throws FileNotFoundException {
-		this.ps.append(s+"\n");
+	public synchronized void print(String s) {
+		Timestamp tm= new Timestamp(System.currentTimeMillis());
+		this.ps.append(tm.toString()+" "+s+"\n");
 	}
 	
 }

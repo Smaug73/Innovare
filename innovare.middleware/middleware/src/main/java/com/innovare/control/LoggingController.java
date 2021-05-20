@@ -18,10 +18,14 @@ public class LoggingController {
 	
 	
 	public boolean isUserLogged() {
-		if (this.loggedUser!=null)
+		if (this.loggedUser!=null) {
+			//Logger.getLogger().print("Utente loggato");
 			return true;
-		else 
+		}
+		else {
+			Logger.getLogger().print("Errore, utente non loggato");
 			return false;
+		}
 	}
 	
 	public boolean isUserAdmin() {

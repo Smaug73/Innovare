@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.model.Sample;
+import com.mongodb.client.MongoClients;
 
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -16,6 +17,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.mongo.FindOptions;
 import io.vertx.ext.mongo.MongoClient;
 import io.vertx.core.Promise;
+
 
 
 public class SensorDataController {
@@ -153,7 +155,6 @@ public class SensorDataController {
 		return  resultPromise.future();
 		
 	}
-	
 	
 	
 	

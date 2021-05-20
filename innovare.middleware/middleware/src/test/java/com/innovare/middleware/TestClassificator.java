@@ -37,6 +37,7 @@ import com.innovare.control.Logger;
 import com.innovare.control.ModelController;
 import com.innovare.control.SampleCSVController;
 import com.innovare.control.SensorDataController;
+import com.innovare.control.SensorDataControllerSync;
 import com.innovare.model.ClassificationSint;
 import com.innovare.model.PlantClassification;
 import com.innovare.model.Sample;
@@ -190,7 +191,7 @@ public class TestClassificator {
 			e.printStackTrace();
 		}
 	}
-	*/
+	
 	
 	@Test
 	public void testLogger() throws FileNotFoundException {
@@ -198,6 +199,24 @@ public class TestClassificator {
 		Logger.getLogger().print("TestString2");
 		Logger.getLogger().print("TestString3");
 		Logger.getLogger().print("TestString4");
+	}
+	*/
+	
+	@Test
+	public void testSensorDataControllerSync() throws JsonMappingException, JsonProcessingException {
+		
+		SensorDataControllerSync sd= new SensorDataControllerSync();
+		
+		Sample ls=sd.getLastSamplesFromMongoSynch(1);
+		System.out.println("Last sample: "+ls.toString());
+		
+		//Attenzione utilizzare cast long altrimenti va in overflow e errore sul calcolo
+		Timestamp tm = new Timestamp(System.currentTimeMillis()-(long)(1000*60*60*24)*7);
+		System.out.println("Sample from "+tm.toString()+" : ");
+		ArrayList<Sample> samples=sd.getAllSamplesFromTimeFrame((long) (1000*60*60*24*120), 1);
+		for(Sample s: samples)
+			System.out.println(s.toString());
+		
 	}
 	
 	/*

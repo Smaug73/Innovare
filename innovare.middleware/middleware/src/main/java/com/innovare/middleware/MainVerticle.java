@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.control.Classificator;
 import com.innovare.control.ConfigurationController;
 import com.innovare.control.IrrigationController;
+import com.innovare.control.Logger;
 import com.innovare.control.LoggingController;
 import com.innovare.control.ModelController;
 import com.innovare.control.SampleCSVController;
@@ -133,7 +134,8 @@ public class MainVerticle extends AbstractVerticle {
 	  
 	  //Connessione a MongoDB    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       System.out.println("Starting MongoConnection..");
-
+      Logger.getLogger().print("Starting MongoConnection..");
+      
 	  JsonObject config = Vertx.currentContext().config();
 
 	    String uri = config.getString("mongo_uri");
@@ -147,6 +149,8 @@ public class MainVerticle extends AbstractVerticle {
 	      db = "innovare";
 	    }
 	    System.out.println(db);
+	    Logger.getLogger().print(db);
+	    
 	    JsonObject mongoconfig = new JsonObject()
 	        .put("connection_string", uri)
 	        .put("db_name", db);
@@ -161,6 +165,7 @@ public class MainVerticle extends AbstractVerticle {
 	      for (JsonObject json : res.result()) {
 	        System.out.println(json.encodePrettily());
 	        System.out.println("Connessione effettuata con successo al db!");
+	        Logger.getLogger().print("Connessione effettuata con successo al db!");
 	      }
 	    } else {
 	      res.cause().printStackTrace();
@@ -199,12 +204,13 @@ public class MainVerticle extends AbstractVerticle {
 	   */
 	  this.modelController= new ModelController();
 	  System.out.println(this.LOG+": modelController creato: "+this.modelController.toString());
-	  
+	  Logger.getLogger().print(this.LOG+": modelController creato: "+this.modelController.toString());
 	  /*
 	   *Recuperiamo il modello selezionato in precedenza 
 	   */
 	  JsonObject querySelectedModel = new JsonObject();
 	  System.out.println(this.LOG+" Avvio ricerca modello selezionato.");
+	  Logger.getLogger().print(this.LOG+" Avvio ricerca modello selezionato.");
 	  mongoClient.find("selectedModel", querySelectedModel, res -> {
 	    if (res.succeeded()) {
 		    	
@@ -215,6 +221,7 @@ public class MainVerticle extends AbstractVerticle {
 		       */
 		    	JsonObject jsonSelectedModel=res.result().get(0);
 		    	System.out.println(this.LOG+"Modello selezionato predentemente: "+jsonSelectedModel.encodePrettily());
+		    	Logger.getLogger().print(this.LOG+"Modello selezionato predentemente: "+jsonSelectedModel.encodePrettily());
 		    	Model selectedModel;
 				try {
 					selectedModel = new ObjectMapper().readValue(jsonSelectedModel.toString(), Model.class);
@@ -222,10 +229,12 @@ public class MainVerticle extends AbstractVerticle {
 				} catch (JsonProcessingException e) {
 					System.err.println("Errore parsing json del modello selezionato");
 					System.err.println("Verra impostato a null il modello selezionato.");
+					Logger.getLogger().print("Errore parsing json del modello selezionato, verra' impostato a null il modello selezionato.");
 					e.printStackTrace();
 				} catch (FileNotFoundException e) {
 					System.err.println("Il modello che è stato selezionato in precedenza non è più disponibile nel fileSystem!");
 					System.err.println("Verra impostato a null il modello selezionato.");
+					Logger.getLogger().print("Il modello che è stato selezionato in precedenza non è più disponibile nel fileSystem!Verra' impostato a null il modello selezionato.");
 					e.printStackTrace();
 				}
 	    	}
@@ -242,7 +251,7 @@ public class MainVerticle extends AbstractVerticle {
 	   */
 	  this.loggingController= new LoggingController();
 	  System.out.println(this.LOG+": loggingController creato: "+this.loggingController.toString());
-	  
+	  Logger.getLogger().print(this.LOG+": loggingController creato: "+this.loggingController.toString());
 	  /*
 	   * MQTT CLIENT        =====================================================================================================
 	   * 
@@ -263,10 +272,13 @@ public class MainVerticle extends AbstractVerticle {
 	    		  //System.out.println("Content(as string) of the message: " + c.payload().toString());
 	    		  //System.out.println("QoS: " + c.qosLevel());	
 	    		  System.out.println("LOG-GATEWAY: "+c.payload().toString());
+	    		  Logger.getLogger().print("LOG-GATEWAY: "+c.payload().toString());
 	    		  
 	    		  if(c.payload().toString().startsWith("channelNumber:")) {
 	    			  String num=c.payload().toString().substring(14);
 	    			  System.out.println("Numero di channel: "+num);
+	    			  Logger.getLogger().print("Numero di channel: "+num);
+	    			  
 	    			  this.numberOfChannel= Integer.parseInt(num);
 	    			  //Avvio creazione client per la ricezione dei valori dei canali
 	    			  //this.mqttClientCreation(); //DEBUGGGGG TEST NUOVO CLIENT
@@ -277,6 +289,7 @@ public class MainVerticle extends AbstractVerticle {
 	    		  if(c.payload().toString().contains("id")) {
 	    			 this.configuration.add(new JsonObject(c.payload().toString()));
 	    			 System.out.println("LOG-GATEWAY: Aggiunto "+c.payload().toString()+" alle configurazioni.");
+	    			 Logger.getLogger().print("LOG-GATEWAY: Aggiunto "+c.payload().toString()+" alle configurazioni.");
 	    		  }
 	    		  //JsonObject confJson= new JsonObject( c.payload().toString());
 	    		})
@@ -289,26 +302,31 @@ public class MainVerticle extends AbstractVerticle {
 	   * Client per l'invio di comandi 
 	   */
 	  System.out.println("Creazione client mqtt per i comandi di irrigazione.");
+	  Logger.getLogger().print("Creazione client mqtt per i comandi di irrigazione.");
 	  this.irrigationCommandClient= MqttClient.create(vertx);
 	  
 	  /*
 	   * Client per la ricezione del log dell'irrigazione. 
 	   */
 	  System.out.println("Creazione client mqtt per il log dell'irrigazione.");
+	  Logger.getLogger().print("Creazione client mqtt per il log dell'irrigazione.");
 	  this.irrigationLog= MqttClient.create(vertx);
 	  this.irrigationLog.connect(1883, Utilities.ipMqtt, s ->{
 		  irrigationLog.publishHandler(c -> {
 	    		  
-	    		  System.out.println(Utilities.irrigationLogMqttChannel+":"+c.payload().toString());	
+	    		  System.out.println(Utilities.irrigationLogMqttChannel+":"+c.payload().toString());
+	    		  Logger.getLogger().print(Utilities.irrigationLogMqttChannel+":"+c.payload().toString());
 	    		  //Modifichiamo lo stato dell'irrigazione corrente
 	    		  if(c.payload().toString().contains(Utilities.stateOn)) {
 	    			  this.irrigationState=Utilities.stateOn;
 	    			  System.out.println("---DEBUG IRRIGAZIONE---- stato irrigazione modificato ON");
+	    			  Logger.getLogger().print("---DEBUG IRRIGAZIONE---- stato irrigazione modificato ON");
 	    		  }
 	    		  else
 	    			  if(c.payload().toString().contains(Utilities.stateOff)) {
 	    				  this.irrigationState=Utilities.stateOff;
 	    				  System.out.println("---DEBUG IRRIGAZIONE---- stato irrigazione modificato OFF");
+	    				  Logger.getLogger().print("---DEBUG IRRIGAZIONE---- stato irrigazione modificato OFF");
 	    			  }
 	    		  
 	    		  //JsonObject confJson= new JsonObject( c.payload().toString());
@@ -372,7 +390,7 @@ public class MainVerticle extends AbstractVerticle {
 	     */
 	    
 	  //Impostazioni per l'api rest per la comunicazione con la DASHBOARD
-    OpenAPI3RouterFactory.create(this.vertx, "resources/InnovareMiddleware.yaml", ar -> {
+	  OpenAPI3RouterFactory.create(this.vertx, "resources/InnovareMiddleware.yaml", ar -> {
     	  if (ar.succeeded()) {
     		  
     		//Router per la richiesta della configuratone attuale  
@@ -422,6 +440,7 @@ public class MainVerticle extends AbstractVerticle {
         	    			 if(this.loggingController.logIn(res.result().toString())) {
         	    				 try {
     								System.out.println("Conferma login effettuato per utente: user: "+this.loggingController.getUserLogged().toString());
+    								Logger.getLogger().print("Conferma login effettuato per utente: user: "+this.loggingController.getUserLogged().toString());
     								routingContext
 								 	.response()
 								 	.setStatusCode(200)
@@ -429,6 +448,7 @@ public class MainVerticle extends AbstractVerticle {
     							 }catch(NoUserLogException e) {
     								// TODO Auto-generated catch block
     								System.out.println("Errore toString user loggato");
+    								Logger.getLogger().print("Errore toString user loggato");
     								 routingContext
 	       	   		    	   	      .response()
 	       	   			              .setStatusCode(404)
@@ -447,6 +467,7 @@ public class MainVerticle extends AbstractVerticle {
         	    			
         	    		}else{
         	    			  System.out.println("Utente "+username+" "+password+" non esistente.");
+        	    			  Logger.getLogger().print("Utente "+username+" "+password+" non esistente.");
     		    	   	      //res.cause().printStackTrace();
     		    	   	      /*
     		    	   	       * Caso nel quale non esiste lo User
@@ -511,6 +532,7 @@ public class MainVerticle extends AbstractVerticle {
         	    	    	
         	    	    		JsonObject q= new JsonObject();
         	    	    		System.out.println("DEBUG LASTSAMPLE CHANNEL: "+channel);
+        	    	    		Logger.getLogger().print("DEBUG LASTSAMPLE CHANNEL: "+channel);
         	    	    		this.mongoClient.find("channel-"+channel,q, res-> {
 	        	    	      		/*
 	        	    	      		 * Successo nel trovare i sample nel db
@@ -527,6 +549,7 @@ public class MainVerticle extends AbstractVerticle {
 	    	    	    			    	}   
 	    	    	    			      }
 	    	    	    			      System.out.println("Canale: "+channel+" --- Last sample  "+lastSample.encodePrettily());
+	    	    	    			      Logger.getLogger().print("Canale: "+channel+" --- Last sample  "+lastSample.encodePrettily());
 	    	    	    			      /*
 	    	    	    			       * Invio dell'ultimo sample registrato
 	    	    	    			       * ATTENZIONE: eventualita' che il sample inviato sia un oggetto json 
@@ -583,6 +606,7 @@ public class MainVerticle extends AbstractVerticle {
         	    	    	/*
         	    	    	 * Fallimento se non il parametro non è stato inserito o non esiste il canale selezionato
         	    	    	 */
+    	    	    		Logger.getLogger().print("Chiamata REST lastsamples");
     	    	    		System.out.println("DEBUG----LASTSAMPLE");
         	    	    	if(channel==null)
         	    	    		routingContext
@@ -697,6 +721,7 @@ public class MainVerticle extends AbstractVerticle {
         	    	    		 */
         	    	    		JsonObject q= new JsonObject();
         	    	    		System.out.println("DEBUG ALL SAMPLE CHANNEL: "+channel);
+        	    	    		Logger.getLogger().print("Chiamata REST allsamples");
             	    	    	this.mongoClient.find("channel-"+channel,q, res-> {
             	    	    		/*
             	    	    		 * Successo nel trovare i sample nel db
@@ -707,6 +732,7 @@ public class MainVerticle extends AbstractVerticle {
         								.setStatusCode(200)
         								.end(res.result().toString());
             	    	    			System.out.println("DEBUG ALL SAMPLE: "+res.result().toString());
+            	    	    			Logger.getLogger().print("DEBUG ALL SAMPLE: "+res.result().toString());
             	    	    		}
             	    	    		/*
             	    	    		 * Caso di fallimento
@@ -739,6 +765,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	    	if(this.loggingController.isUserLogged()) {
     	    	    		String modelName= routingContext.request().getParam("modelName");
         	    	    	String dataSet= routingContext.request().getParam("dataset");
+        	    	    	Logger.getLogger().print("Chiamata REST newclassification");
         	    	    	/*
         	    	    	 * Fallimento se non il parametro non è stato inserito o non esiste il canale selezionato
         	    	    	 */
@@ -772,9 +799,10 @@ public class MainVerticle extends AbstractVerticle {
         								for(int i=0;i< newClassificationsJson.size() ; i++) {
         									singleClassification = newClassificationsJson.getJsonObject(i);
         					    			mongoClient.insert("classifications", singleClassification , res ->{
-        						    			  if(res.succeeded())
+        						    			  if(res.succeeded()) {
         						    				  System.out.println("Classificazione salvata correttamente nel DB.");
-        						    			  else
+        						    				  Logger.getLogger().print("Classificazione salvata correttamente nel DB.");
+        						    			  }else
         						    				  System.err.println("ERRORE salvataggio misura");  
         						    		});
         								}			
@@ -816,9 +844,11 @@ public class MainVerticle extends AbstractVerticle {
     	    	     * Richiesta di una nuova CLASSIFICATION SINT
     	    	     */
     	    	    routerFactory.addHandlerByOperationId("newclassificationSint", routingContext ->{
+    	    	    	Logger.getLogger().print("Chiamata REST newclassificationSint");
     	    	    	if(this.loggingController.isUserLogged()) {
         	    	    	String dataSet= routingContext.request().getParam("datasetName");
         	    	    	System.out.println("Dataset: "+dataSet);
+        	    	    	Logger.getLogger().print("Dataset: "+dataSet);
         	    	    	/*
         	    	    	 * Fallimento se il parametro non è stato inserito o non esiste il canale selezionato
         	    	    	 */
@@ -930,12 +960,17 @@ public class MainVerticle extends AbstractVerticle {
 	            	    	    			//JsonArray newClassificationsJson= new JsonArray(jsonClassifications);
 	            	    	    			JsonObject singleClassification= new JsonObject(jsonClassifications);
 	            	    	    			System.out.println("--DEBUG-- "+singleClassification.toString());
+	            	    	    			Logger.getLogger().print("--DEBUG-- "+singleClassification.toString());
+	            	    	    			
 	            	    	    			mongoClient.insert("ClassificazioniSintetiche", singleClassification , res ->{
-	  						    			  if(res.succeeded())
+	  						    			  if(res.succeeded()) {
 	  						    				  System.out.println("Classificazione sintetica salvata correttamente nel DB.");
-	  						    			  else
-	  						    				  System.err.println("ERRORE salvataggio ClassificazioniSintetiche");  
-	            	    	    			});
+	  						    				  Logger.getLogger().print("Classificazione sintetica salvata correttamente nel DB.");
+	  						    			  }else {
+	  						    				  System.err.println("ERRORE salvataggio ClassificazioniSintetiche");
+	  						    				  Logger.getLogger().print("ERRORE salvataggio ClassificazioniSintetiche");
+	  						    			  }
+	  						    			  });
 											
 	            	    	    			//Salviamo nel db le classificazioni delle singole immagini
 	            	    	    			String imagesClassifications= c.getJsonStringLastClassification();
@@ -945,15 +980,19 @@ public class MainVerticle extends AbstractVerticle {
 	        								for(int i=0;i< newClassificationsJson.size() ; i++) {
 	        									singleImageClassification = newClassificationsJson.getJsonObject(i);
 	        					    			mongoClient.insert("classifications", singleImageClassification , res ->{
-	        						    			  if(res.succeeded())
+	        						    			  if(res.succeeded()) {
 	        						    				  System.out.println("Singola classificazione salvata correttamente nel DB.");
-	        						    			  else
-	        						    				  System.err.println("ERRORE salvataggio classifications");  
+	        						    				  Logger.getLogger().print("Singola classificazione salvata correttamente nel DB.");
+	        						    			  }else {
+	        						    				  System.err.println("ERRORE salvataggio classifications");
+	        						    				  Logger.getLogger().print("ERRORE salvataggio classifications");
+	        						    			  }
 	        						    		});
 	        								}
 											
 										} catch (JsonProcessingException e) {
 											System.err.println("ERRORE CHIAMATA CLASSIFICATION-SINT: errore conversione classificazione in json.");
+											Logger.getLogger().print("ERRORE CHIAMATA CLASSIFICATION-SINT: errore conversione classificazione in json.");
 											e.printStackTrace();
 											routingContext
 	        				    	   	      .response()
@@ -961,6 +1000,7 @@ public class MainVerticle extends AbstractVerticle {
 	        					              .end("Errore json convertito");
 										} catch (FileNotFoundException e) {
 											System.err.println("ERRORE CHIAMATA CLASSIFICATION-SINT: errore salvataggio classificazione singole immagini");
+											Logger.getLogger().print("ERRORE CHIAMATA CLASSIFICATION-SINT: errore salvataggio classificazione singole immagini");
 											e.printStackTrace();
 										}
 										
@@ -969,6 +1009,7 @@ public class MainVerticle extends AbstractVerticle {
         	    	    			}else {
         	    	    				//Caso esecuzione non eseguita correttamente
         	    	    				System.err.println("ERRORE CHIAMATA CLASSIFICATION-SINT: errore esecuzione classificazione.");
+        	    	    				Logger.getLogger().print("ERRORE CHIAMATA CLASSIFICATION-SINT: errore esecuzione classificazione.");
         	    	    				routingContext
 	      				    	   	      .response()
 	      					              .setStatusCode(400)
@@ -999,8 +1040,10 @@ public class MainVerticle extends AbstractVerticle {
     	    	     * Richiesta le classificazioni di una certa data   GET-CLASSIFICATION-BY-DATE
     	    	     */
     	    	    routerFactory.addHandlerByOperationId("getClassificationsByDate", routingContext ->{
+    	    	    	Logger.getLogger().print("Chiamata REST getClassificationsByDate");
     	    	    	if(this.loggingController.isUserLogged()) {
     	    	    		String dateString= routingContext.request().getParam("date");
+    	    	    		
         	    	    	/*
         	    	    	 * Fallimento se il parametro non è stato inserito correttamente
         	    	    	 */
@@ -1021,6 +1064,7 @@ public class MainVerticle extends AbstractVerticle {
             	    	    		 * Successo nel trovare i sample nel db
             	    	    		 */
             	    	    		if(res.succeeded()) {
+            	    	    			Logger.getLogger().print(res.result().toString());
             	    	    			routingContext
         								.response()
         								.setStatusCode(200)
@@ -1030,6 +1074,7 @@ public class MainVerticle extends AbstractVerticle {
             	    	    		 * Caso di fallimento
             	    	    		 */
             	    	    		else {
+            	    	    			Logger.getLogger().print("No-sample-find");
             	    	    			routingContext
           			    	   	      .response()
           				              .setStatusCode(400)
@@ -1054,6 +1099,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	     * Richiesta le classificazioni di una certa data   GET-ALL-CLASSIFICATIONS
     	    	     */
     	    	    routerFactory.addHandlerByOperationId("getClassifications", routingContext ->{
+    	    	    	Logger.getLogger().print("Chiamata REST getClassifications");
     	    	    	if(this.loggingController.isUserLogged()) {
     	    	    		/*
     	    	    		 * Restituiamo tutte le classificazioni fatte.
@@ -1065,6 +1111,7 @@ public class MainVerticle extends AbstractVerticle {
             	    	    		 * Successo nel trovare i sample nel db
             	    	    		 */
             	    	    		if(res.succeeded()) {
+            	    	    			Logger.getLogger().print(res.result().toString());
             	    	    			routingContext
         								.response()
         								.setStatusCode(200)
@@ -1074,6 +1121,7 @@ public class MainVerticle extends AbstractVerticle {
             	    	    		 * Caso di fallimento
             	    	    		 */
             	    	    		else {
+            	    	    			Logger.getLogger().print("No-sample-find");
             	    	    			routingContext
           			    	   	      .response()
           				              .setStatusCode(400)
@@ -1097,6 +1145,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	     * Richiede le ultime 4 classificazioni   GET-LAST-CLASSIFICATIONS
     	    	     */
     	    	    routerFactory.addHandlerByOperationId("lastclassificazion", routingContext ->{
+    	    	    	Logger.getLogger().print("Chiamata REST lastclassificazion");
     	    	    	if(this.loggingController.isUserLogged()) {
     	    	    		/*
     	    	    		 * Restituiamo tutte le classificazioni fatte.
@@ -1126,6 +1175,8 @@ public class MainVerticle extends AbstractVerticle {
             	    	    			Collections.sort((List<ClassificationSint>) csa);
             	    	    			ArrayList<ClassificationSint> arrayResp= new ArrayList<ClassificationSint>();
             	    	    			System.out.println("DEBUG GET-LAST-CLASSIFICATIONS: "+csa.toString());
+            	    	    			Logger.getLogger().print("DEBUG GET-LAST-CLASSIFICATIONS: "+csa.toString());
+            	    	    			
             	    	    			for(int i=0; i<4; i++) {
             	    	    				if((csa.size()-i)!=0)
             	    	    					arrayResp.add(csa.get(i));
@@ -1175,7 +1226,8 @@ public class MainVerticle extends AbstractVerticle {
     	    	    /*
     	    	     * Richiede tutti i modelli presenti nel sistema GET-MODELS
     	    	     */
-    	    	    routerFactory.addHandlerByOperationId("getModels", routingContext ->{	
+    	    	    routerFactory.addHandlerByOperationId("getModels", routingContext ->{
+    	    	    	Logger.getLogger().print("Chiamata REST getModels");
     	    	    	if(this.loggingController.isUserLogged()) {
 	    	    	    		/*
 	    	    	    		 * Cerchiamo i modelli all'interno della directory 
@@ -1193,6 +1245,7 @@ public class MainVerticle extends AbstractVerticle {
 									e.printStackTrace();
 								}
 	    	    	    	}
+	    	    	    	Logger.getLogger().print(ja.toString());
 	    	    	    	routingContext
 							.response()
 							.setStatusCode(200)
@@ -1214,7 +1267,8 @@ public class MainVerticle extends AbstractVerticle {
     	    	    /*
     	    	     * Ritorna il modello delezionato:  SELECTED-MODEL
     	    	     */
-    	    	    routerFactory.addHandlerByOperationId("selectedModel", routingContext ->{	
+    	    	    routerFactory.addHandlerByOperationId("selectedModel", routingContext ->{
+    	    	    	Logger.getLogger().print("Chiamata REST selectedModel");
     	    	    	if(this.loggingController.isUserLogged()) {
     	    	    		/*
     	    	    		 * Restituisco il modello selezionato
@@ -1227,6 +1281,7 @@ public class MainVerticle extends AbstractVerticle {
     							.end("NO MODEL SELECTED");
         	    	    	else {
         	    	    		try {
+        	    	    			Logger.getLogger().print(new ObjectMapper().writeValueAsString(selectedModel));
     								routingContext
     								.response()
     								.setStatusCode(200)
@@ -1234,6 +1289,7 @@ public class MainVerticle extends AbstractVerticle {
     							} catch (JsonProcessingException e) {
     								// TODO Auto-generated catch block
     								e.printStackTrace();
+    								Logger.getLogger().print("ERROR:JSON SELECTED MODEL");
     								routingContext
     								.response()
     								.setStatusCode(400)
@@ -1254,14 +1310,16 @@ public class MainVerticle extends AbstractVerticle {
     	    	    /*
     	    	     * Scelta modello da utilizzare: SET-MODEL
     	    	     */
-    	    	    routerFactory.addHandlerByOperationId("setModel", routingContext ->{	
+    	    	    routerFactory.addHandlerByOperationId("setModel", routingContext ->{
+    	    	    	Logger.getLogger().print("Chiamata REST setModel");
     	    	    	if(this.loggingController.isUserLogged()) {
     	    	    		/*
     	    	    		 * Seleziono il modello da utilizzare come classificatore
     	    	    		 */
         	    	    	String modelName= routingContext.request().getParam("modelName");
         	    	    	try {
-        	    	    		System.out.println("Modello selezionato: "+modelName+"... ");			
+        	    	    		System.out.println("Modello selezionato: "+modelName+"... ");
+        	    	    		Logger.getLogger().print("Modello selezionato: "+modelName+"... ");
     							/*
     							 * Salviamo nel db come modello selezionato
     							 */
@@ -1279,12 +1337,14 @@ public class MainVerticle extends AbstractVerticle {
         	    	    			mongoClient.updateCollection("selectedModel", query, update, res -> {
         	    	    				  if (res.succeeded()) {
         	    	    				    System.out.println("Modello selezionato salvato nel db");
+        	    	    				    Logger.getLogger().print("Modello selezionato salvato nel db");
         	    	    				    routingContext
     	        							.response()
     	        							.setStatusCode(200)
     	        							.end();
         	    	    				  } else {
         	    	    				    res.cause().printStackTrace();
+        	    	    				    Logger.getLogger().print("ERROR: modello non salvato correttamente");
         	    	    				    routingContext
     	        							.response()
     	        							.setStatusCode(400)
@@ -1304,6 +1364,7 @@ public class MainVerticle extends AbstractVerticle {
         	    	    			mongoClient.save("selectedModel", newModelJson, res -> {
         	    	    					  if (res.succeeded()) {
         	    	    					    System.out.println("Modello selezionato salvato nel db");
+        	    	    					    Logger.getLogger().print("Modello selezionato salvato nel db");
         	    	    					    routingContext
         	        							.response()
         	        							.setStatusCode(200)
@@ -1326,6 +1387,7 @@ public class MainVerticle extends AbstractVerticle {
     							.end("ERROR: MODEL SELECTED NOT FOUND");
     						} catch (JsonProcessingException e) {
 								System.err.println("Errore aggiunta nuovo modello nel db.Il modello non verrà selezionato.");
+								Logger.getLogger().print("Errore aggiunta nuovo modello nel db.Il modello non verrà selezionato.");
 								e.printStackTrace();
 								routingContext
     							.response()
@@ -1347,13 +1409,15 @@ public class MainVerticle extends AbstractVerticle {
     	    	    /*
     	    	     * Scelta modello da utilizzare: NEW-MODEL
     	    	     */
-    	    	    routerFactory.addHandlerByOperationId("newModel", routingContext ->{	
+    	    	    routerFactory.addHandlerByOperationId("newModel", routingContext ->{
+    	    	    	Logger.getLogger().print("Chiamata REST newModel");
     	    	    	if(this.loggingController.isUserLogged()) {
     	    	    		/*
     	    	    		 * Aggiungo un nuovo modello di classificazione
     	    	    		 */
         	    	    	String modelNameZip= routingContext.request().getParam("fileName");
         	    	    	System.out.println("File Zip da estrarre: "+modelNameZip+"... ");
+        	    	    	Logger.getLogger().print("File Zip da estrarre: "+modelNameZip+"... ");
 							ModelController mc= new ModelController();
 							try {
 							
@@ -1372,7 +1436,7 @@ public class MainVerticle extends AbstractVerticle {
 								});
 								
 							} catch (FileNotFoundException | ZipException e) {
-								// TODO Auto-generated catch block
+								Logger.getLogger().print("ERROR: FILE ZIP NON VALIDO");
 								e.printStackTrace();
     							routingContext
     							.response()
@@ -1399,7 +1463,8 @@ public class MainVerticle extends AbstractVerticle {
     	    	    /*
     	    	     * START IRRIGATION DIRECT
     	    	     */
-    	    	    routerFactory.addHandlerByOperationId("startIrrigation", routingContext ->{	
+    	    	    routerFactory.addHandlerByOperationId("startIrrigation", routingContext ->{
+    	    	    	Logger.getLogger().print("Chiamata REST startIrrigation");
     	    	    	if(this.loggingController.isUserLogged()) {
     	    	    		System.out.println("Invio comando di start dell'irrigazione...");
     	    	    		
@@ -1416,6 +1481,7 @@ public class MainVerticle extends AbstractVerticle {
 		  	    		    			  .setStatusCode(200)
 		  	    		    			  .end(irrigationJson);
 										System.out.println("Irrigazione ON : "+irrigationJson);
+										Logger.getLogger().print("Irrigazione ON : "+irrigationJson);
 									} catch (JsonProcessingException e) {
 										// TODO Auto-generated catch block
 										e.printStackTrace();
@@ -1425,9 +1491,11 @@ public class MainVerticle extends AbstractVerticle {
 		        						.end("Errore parsing Irrigazione");
 									}
 	  	    		    			System.out.println("Stato attuale: irrigazione attivata.");
+	  	    		    			Logger.getLogger().print("Stato attuale: irrigazione attivata.");
     	    	    			});
     	    	    			result.onFailure(f->{
     	    	    				System.out.println("---DEBUG IRRIGAZIONE-LOG---- ERROR: irrigazione non avviata");
+    	    	    				Logger.getLogger().print("---DEBUG IRRIGAZIONE-LOG---- ERROR: irrigazione non avviata");
     	    						routingContext
 	        						.response()
 	        						.setStatusCode(400)
@@ -1460,13 +1528,15 @@ public class MainVerticle extends AbstractVerticle {
     	    	    /*
     	    	     * STOP IRRIGATION DIRECT
     	    	     */
-    	    	    routerFactory.addHandlerByOperationId("stopIrrigation", routingContext ->{	
+    	    	    routerFactory.addHandlerByOperationId("stopIrrigation", routingContext ->{
+    	    	    	Logger.getLogger().print("Chiamata REST stopIrrigation");
     	    	    	if(this.loggingController.isUserLogged()) {
     	    	    		
     	    	    		if(this.irrigationController.getState() != Utilities.stateOff) {
     	    	    			
     	    	    			System.out.println("Invio comando di stop dell'irrigazione...");
-	    	    			
+    	    	    			Logger.getLogger().print("Invio comando di stop dell'irrigazione...");
+    	    	    			
     	    	    			Future<Irrigazione> result=this.irrigationController.stopIrrigationDirect();
     	    	    			result.onSuccess( c->{
     	    	    				//Convertiamo l'irrigazione
@@ -1477,6 +1547,7 @@ public class MainVerticle extends AbstractVerticle {
 		  	    		    			  .setStatusCode(200)
 		  	    		    			  .end(irrigationJson);
 										System.out.println("Irrigazione OFF : "+irrigationJson);
+										Logger.getLogger().print("Irrigazione OFF : "+irrigationJson);
 									} catch (JsonProcessingException e) {
 										// TODO Auto-generated catch block
 										e.printStackTrace();
@@ -1486,9 +1557,11 @@ public class MainVerticle extends AbstractVerticle {
 		        						.end("Errore parsing Irrigazione");
 									}
 	  	    		    			System.out.println("Stato attuale: irrigazione OFF.");
+	  	    		    			Logger.getLogger().print("Stato attuale: irrigazione OFF.");
     	    	    			});
     	    	    			result.onFailure(f->{
     	    	    				System.out.println("---DEBUG IRRIGAZIONE-LOG---- ERROR: irrigazione non avviata");
+    	    	    				Logger.getLogger().print("---DEBUG IRRIGAZIONE-LOG---- ERROR: irrigazione non avviata");
     	    						routingContext
 	        						.response()
 	        						.setStatusCode(400)
@@ -1503,6 +1576,7 @@ public class MainVerticle extends AbstractVerticle {
     							.setStatusCode(400)
     							.end("Stato attuale: irrigazione gia' in eseguzione");
             	    	    	System.out.println("Stato attuale: irrigazione gia' spenta");
+            	    	    	Logger.getLogger().print("Stato attuale: irrigazione gia' spenta");
     	    	    		};
         	    	    	
         	    	    	
@@ -1521,7 +1595,8 @@ public class MainVerticle extends AbstractVerticle {
     	    	    /*
     	    	     * STATO IRRIGAZIONE
     	    	     */
-    	    	    routerFactory.addHandlerByOperationId("getStatoIrrigazione", routingContext ->{	
+    	    	    routerFactory.addHandlerByOperationId("getStatoIrrigazione", routingContext ->{
+    	    	    	Logger.getLogger().print("Chiamata REST getStatoIrrigazione");
     	    	    	if(this.loggingController.isUserLogged()) {
     	    	    		//Caso nel quale non è stata creata nessuna irrigazione
     	    	    		if(this.irrigationController != null) {
@@ -1551,7 +1626,8 @@ public class MainVerticle extends AbstractVerticle {
     	    	    /*
     	    	     * GET ALL IRRIGAZIONI
     	    	     */
-    	    	    routerFactory.addHandlerByOperationId("irrigationStorico", routingContext ->{	
+    	    	    routerFactory.addHandlerByOperationId("irrigationStorico", routingContext ->{
+    	    	    	Logger.getLogger().print("Chiamata REST irrigationStorico");
     	    	    	if(this.loggingController.isUserLogged()) {
     	    	    		 
     	    	    		System.out.println("Invio irrigazioni...");
@@ -1590,7 +1666,8 @@ public class MainVerticle extends AbstractVerticle {
     	    	    /*
     	    	     * LAST-IRRIGATION
     	    	     */
-    	    	    routerFactory.addHandlerByOperationId("lastIrrigation", routingContext ->{	
+    	    	    routerFactory.addHandlerByOperationId("lastIrrigation", routingContext ->{
+    	    	    	Logger.getLogger().print("Chiamata REST lastIrrigation");
     	    	    	if(this.loggingController.isUserLogged()) {	    	    		
     	    	    
     	    	    		System.out.println("Invio ultima irrigazione...");
@@ -1638,6 +1715,7 @@ public class MainVerticle extends AbstractVerticle {
         	    	    			        //System.out.println("Connessione effettuata con successo al db!");
         	    	    			      }
         	    	    			      System.out.println("Last irrigation: "+lastIrrigation.encodePrettily());
+        	    	    			      Logger.getLogger().print("Last irrigation: "+lastIrrigation.encodePrettily());
         	    	    			      routingContext
         	    		    	   	      .response()
         	    			              .setStatusCode(200)
@@ -1670,6 +1748,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	     * IRRIGATION TIME
     	    	     */
     	    	    routerFactory.addHandlerByOperationId("irrigationTime", routingContext ->{	
+    	    	    	Logger.getLogger().print("Chiamata REST irrigationTime");
     	    	    	if(this.loggingController.isUserLogged()) {	    	    		
     	    	    
     	    	    		System.out.println("GET-IRRIGATION-TIME...:"+this.irrigationController.getStartingTimeIrrigation().toString());
@@ -1702,6 +1781,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	     * SET IRRIGATION TIME
     	    	     */
     	    	    routerFactory.addHandlerByOperationId("setIrrigationTime", routingContext ->{	
+    	    	    	Logger.getLogger().print("Chiamata REST setIrrigationTime");
     	    	    	if(this.loggingController.isUserLogged()) {	    	    		
     	    	    
     	    	    		System.out.println("SET-IRRIGATION-TIME ...");
@@ -1715,7 +1795,7 @@ public class MainVerticle extends AbstractVerticle {
         	    	    			//Per evitare bug mancanza secondi
         	    	    			newIrrigationTime= LocalTime.of(newIrrigationTime.getHour(), newIrrigationTime.getMinute(), 0);
         	    	    			System.out.println("New Irrigation time: "+newIrrigationTime.getHour()+" "+newIrrigationTime.getMinute()+" "+newIrrigationTime.getSecond());
-        	    	    			
+        	    	    			Logger.getLogger().print("New Irrigation time: "+newIrrigationTime.getHour()+" "+newIrrigationTime.getMinute()+" "+newIrrigationTime.getSecond());
         	    	    			//Dopo aver impostato l'irrigazione resettare il timer e il timer task e crearne uno nuovo
         	    	    			//this.timer.cancel();
         	    	    			
@@ -1809,6 +1889,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	     * CHANNELS-NUMBER
     	    	     */
     	    	    routerFactory.addHandlerByOperationId("channelsNum", routingContext ->{	
+    	    	    	Logger.getLogger().print("Chiamata REST channelsNum");
     	    	    	if(this.loggingController.isUserLogged()) {
     	    	    		//Caso nel quale non è stata creata nessuna irrigazione	    
     	    	    		System.out.println("Invio numero canali... ");
@@ -1858,7 +1939,8 @@ public class MainVerticle extends AbstractVerticle {
     	    	    /*
     	    	     * GET CONFIGURATIONS
     	    	     */
-    	    	    routerFactory.addHandlerByOperationId("getConfigurations", routingContext ->{	
+    	    	    routerFactory.addHandlerByOperationId("getConfigurations", routingContext ->{
+    	    	    	Logger.getLogger().print("Chiamata REST getConfigurations");
     	    	    	if(this.loggingController.isUserLogged()) {
     	    	    		//Caso nel quale non è stata creata nessuna irrigazione	    
     	    	    		System.out.println("Invio configuazioni: "+this.configuration.toString());
