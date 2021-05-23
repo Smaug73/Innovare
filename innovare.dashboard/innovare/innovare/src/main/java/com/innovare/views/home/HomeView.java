@@ -264,7 +264,7 @@ public class HomeView extends Div {
 		to.setFlexGrow(2, toLabel, toDate);
 
 		// Si crea la riga relativa alla quantità di acqua erogata durante l'ultima irrigazione
-		FlexBoxLayout quantitaLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Quantità:"));
+		FlexBoxLayout quantitaLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Quantità (L):"));
 		quantitaLabel.setWidth("200px");
 		
 		/* Se non c'è nessuna irrigazione in corso, allora bisogna mostrare i dati dell'ultima irrigazione:

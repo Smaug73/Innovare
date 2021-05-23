@@ -264,7 +264,7 @@ public class ConfigurazioneView extends Div {
 		to.setFlexDirection(FlexLayout.FlexDirection.ROW);
 		to.setFlexGrow(2, toLabel, toDate);
 
-		FlexBoxLayout quantitaLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Quantità:"));
+		FlexBoxLayout quantitaLabel = new FlexBoxLayout(UIUtils.createLabel(FontSize.L, "Quantità (L):"));
 		quantitaLabel.setWidth("200px");
 		
 		if(!isIrrigationOn.equalsIgnoreCase("ON")) {

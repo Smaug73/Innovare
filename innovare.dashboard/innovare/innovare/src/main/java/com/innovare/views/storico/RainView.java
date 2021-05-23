@@ -58,9 +58,9 @@ public class RainView extends StoricoView{
         Configuration configuration = chart.getConfiguration();
         
         Tooltip tooltip = configuration.getTooltip();
-        tooltip.setValueSuffix("%");
+        tooltip.setValueSuffix("mm");
         
-        DataSeries dataSeries = new DataSeries("Variazione Umidità");
+        DataSeries dataSeries = new DataSeries("Piogge");
         if(samples == null) samples = new ArrayList<Sample>();
         for (Sample sample : samples) {
             dataSeries.add(new DataSeriesItem(sample.getTimestamp(), sample.getMisure(), sample.getMisure()));
