@@ -26,7 +26,7 @@ public class ClassificationSint implements Comparable<ClassificationSint>{
 	private String model;
 	private String maxPercForIrrigation;
 	private String _id;
-
+	private Timestamp creationData;
 	
 
 
@@ -92,11 +92,33 @@ public class ClassificationSint implements Comparable<ClassificationSint>{
 		this._id = _id;
 	}
 
+	
+
+
+
+	public ClassificationSint(Status status, Timestamp date, int percCarenza, int percSane, int percEccesso,
+			int percScartate, int percInfestanti, String model, String _id, Timestamp creationData) {
+		super();
+		this.status = status;
+		this.date = date;
+		this.percCarenza = percCarenza;
+		this.percSane = percSane;
+		this.percEccesso = percEccesso;
+		this.percScartate = percScartate;
+		this.percInfestanti = percInfestanti;
+		this.model = model;
+		this._id = _id;
+		this.creationData = creationData;
+	}
+
 
 
 
 	public ClassificationSint(ArrayList<PlantClassification> classifications) {
 		this._id= this.RandomId();
+		
+		this.creationData= new Timestamp(System.currentTimeMillis());
+		
 		//Variabili conteggio delle varie tipologie di immagini 
 		int carenza=0;
 		int eccesso=0;
@@ -209,6 +231,7 @@ public class ClassificationSint implements Comparable<ClassificationSint>{
 		return String.valueOf(System.currentTimeMillis()+randStr);
 	}
 
+	
 
 	public String getStatus() {
 		return status.name;
@@ -288,14 +311,32 @@ public class ClassificationSint implements Comparable<ClassificationSint>{
 		this._id = _id;
 	}
 
+
+	public Timestamp getCreationData() {
+		return creationData;
+	}
+
+
+
+
+	public void setCreationData(Timestamp creationData) {
+		this.creationData = creationData;
+	}
+
+
+
+
 	@Override
 	public String toString() {
 		return "ClassificationSint [status=" + status + ", date=" + date + ", percCarenza=" + percCarenza
-				+ ", percSane=" + percSane + ", percEccesso=" + percEccesso + ", percAmbigue=" + percScartate
-				+ ", percInfestanti=" + percInfestanti + "]";
+				+ ", percSane=" + percSane + ", percEccesso=" + percEccesso + ", percScartate=" + percScartate
+				+ ", percInfestanti=" + percInfestanti + ", model=" + model + ", _id=" + _id + ", creationData="
+				+ creationData + "]";
 	}
 
-	
+
+
+
 	public int findMax(ArrayList<Integer> valori) {
 		//Cerchiamo percentuali delle quali una deve avere per forza un valore maggiore di zero
 		//Non cercheremo mai valori negativi
