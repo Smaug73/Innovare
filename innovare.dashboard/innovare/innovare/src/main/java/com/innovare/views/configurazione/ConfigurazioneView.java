@@ -607,11 +607,15 @@ public class ConfigurazioneView extends Div {
 				ArrayList<Model> newModels = HttpHandler.getAllModels();
 				models.removeAll(models);
 				models.addAll(newModels);
-				modelsNames.removeAll(modelsNames);
+				//modelsNames.removeAll(modelsNames);
 				for(Model m : models) {
-					modelsNames.add(m.getName());
+					if(!modelsNames.contains(m.getName())) {
+						modelsNames.add(m.getName());
+					}
+					
 				}
 				modelSelection.setItems(modelsNames);
+				modelSelection.setValue(selectedModel.getName());
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -657,6 +661,8 @@ public class ConfigurazioneView extends Div {
 			if(statusCode == 200);
 			else modelSelection.setValue(event.getOldValue());
 		});
+		
+		
 
 		Upload uploadZipImages = new Upload(buffer);
 		uploadZipImages.setId("i18n-uploadZipImages");
@@ -680,12 +686,13 @@ public class ConfigurazioneView extends Div {
 		});
 
 		uploadZipImages.setI18n(i18n);
+		/*
 		modelSelection.addValueChangeListener(event -> {
 			String selection = event.getValue();
 			HttpHandler.setModel(selection);
 
 		});
-
+		*/
 
 		FlexBoxLayout modelAndZip = new FlexBoxLayout(modelSelection, uploadZipImages);
 		modelAndZip.setFlexDirection(FlexLayout.FlexDirection.COLUMN);

@@ -87,6 +87,12 @@ public class ClassificazioniView extends StoricoView{
 				.setFrozen(true)
 				.setHeader("Data Volo")
 				.setSortable(true);
+		grid.addColumn(Classification::getCreationData)
+				.setAutoWidth(true)
+				.setFlexGrow(1)
+				.setFrozen(true)
+				.setHeader("Data Classificazione")
+				.setSortable(true);
 		grid.addColumn(new ComponentRenderer<>(this::createStatusLabel))
 				.setAutoWidth(true)
 				.setFlexGrow(1)

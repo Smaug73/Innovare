@@ -20,6 +20,7 @@ public class Classification {
 	private int percInfestanti;
 	private String model;
 	private String maxPercForIrrigation;
+	private Timestamp creationData;
 
 	
 
@@ -69,6 +70,22 @@ public class Classification {
 	}
 
 	
+
+	public Classification(String _id, Status status, Timestamp date, int percCarenza, int percSane, int percEccesso,
+			int percScartate, int percInfestanti, String model, String maxPercForIrrigation, Timestamp creationData) {
+		super();
+		this._id = _id;
+		this.status = status;
+		this.date = date;
+		this.percCarenza = percCarenza;
+		this.percSane = percSane;
+		this.percEccesso = percEccesso;
+		this.percScartate = percScartate;
+		this.percInfestanti = percInfestanti;
+		this.model = model;
+		this.maxPercForIrrigation = maxPercForIrrigation;
+		this.creationData = creationData;
+	}
 
 	public String get_id() {
 		return _id;
@@ -153,12 +170,24 @@ public class Classification {
 		this.maxPercForIrrigation = maxPercForIrrigation;
 	}
 
+	
+	public Timestamp getCreationData() {
+		return creationData;
+	}
+
+	public void setCreationData(Timestamp creationData) {
+		this.creationData = creationData;
+	}
+
 	@Override
 	public String toString() {
-		return "Classification\n[status=" + status + ",\ndate=" + date + ",\npercCarenza=" + percCarenza + ",\npercSane="
-				+ percSane + ",\npercEccesso=" + percEccesso + ",\npercScartate=" + percScartate + ",\npercInfestanti="
-				+ percInfestanti + ",\nmodel=" + model + "]";
+		return "Classification [_id=" + _id + ", status=" + status + ", date=" + date + ", percCarenza=" + percCarenza
+				+ ", percSane=" + percSane + ", percEccesso=" + percEccesso + ", percScartate=" + percScartate
+				+ ", percInfestanti=" + percInfestanti + ", model=" + model + ", maxPercForIrrigation="
+				+ maxPercForIrrigation + ", creationData=" + creationData + "]";
 	}
+
+	
 
 
 	
