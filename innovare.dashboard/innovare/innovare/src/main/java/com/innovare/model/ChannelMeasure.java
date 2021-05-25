@@ -5,7 +5,7 @@ public class ChannelMeasure {
 	private String measure;
 	
 	
-	
+	public ChannelMeasure() {}
 	
 	public ChannelMeasure(int channelnum, String measure) {
 		super();
