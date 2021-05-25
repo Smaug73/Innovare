@@ -16,6 +16,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.innovare.model.ChannelMeasure;
 import com.innovare.model.Classification;
 import com.innovare.model.ConfigurationItem;
 import com.innovare.model.Irrigazione;
@@ -46,6 +47,7 @@ public class HttpHandler {
 	private final static String ACTIVE_CHANNELS = "/channelsNumber";
 	private final static String IRRIG_TIME = "/irrigationTime";
 	private final static String SET_IRRIG_TIME = "/setIrrigationTime/";
+	private final static String GET_CHANNEL_MEASURE = "/channelMeasure";
 	
 
 
@@ -234,6 +236,20 @@ public class HttpHandler {
 		}
 		return null;
 	}
+	
+	// Ricostruisce l'array dei ChannelMeasure
+	private static ArrayList<ChannelMeasure> getChannelMeasures(HttpResponse<String> response){
+		ArrayList<ChannelMeasure> items;
+		try {
+			items = new ObjectMapper().readValue(response.body(), new TypeReference<ArrayList<ChannelMeasure>>(){});
+			return items;
+		} catch (JsonMappingException e) {
+			e.printStackTrace();
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
 
 	// Recupera lo storico delle classificazioni dal middleware
 	public static ArrayList<Classification> getAllClassifications() {
@@ -404,5 +420,13 @@ public class HttpHandler {
 		HttpResponse<String> response = sendRequest(path);
 		if(response == null) return 400;
 		return response.statusCode();
+	}
+	
+	// Recupera file con unità di misura per i canali relativi al suolo
+	public static ArrayList<ChannelMeasure> getChannelMeasures() {
+		String path = GET_CHANNEL_MEASURE;
+		HttpResponse<String> response = sendRequest(path);
+		if(response == null) return null;
+		return getChannelMeasures(response);
 	}
 }

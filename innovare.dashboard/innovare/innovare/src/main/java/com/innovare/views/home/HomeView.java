@@ -47,6 +47,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import com.innovare.ui.utils.Left;
+import com.innovare.model.ChannelMeasure;
 import com.innovare.model.Classification;
 import com.innovare.model.IrrigationState;
 import com.innovare.model.Irrigazione;
@@ -96,6 +97,7 @@ public class HomeView extends Div {
 	private float lastMeasureWindSpeed;
 	private float lastMeasureWindDirection;
 	private HashMap<Integer, Sensor> sensors;
+	private HashMap<Integer, String> channelMeasures;
 	
 	private float quantitaAttuale;
 	private FlexBoxLayout quantitaL;
@@ -156,6 +158,7 @@ public class HomeView extends Div {
 
 		sensors = new HashMap<Integer, Sensor>();
 		channels = HttpHandler.getActiveChannels();
+		channelMeasures = new HashMap<Integer, String>();
 		if(channels == null) {
 			channels = new ArrayList<Integer>();
 		}
@@ -176,8 +179,17 @@ public class HomeView extends Div {
 		
 		for(Integer channel : channels) {
 			Sample sample = HttpHandler.getLastSample(channel);
-			Sensor sensor = new Sensor("Sensore Canale " + channel, sample);
+			Sensor sensor = new Sensor(channel, sample);
 			sensors.put(channel, sensor);
+		}
+		
+		ArrayList<ChannelMeasure> measures = HttpHandler.getChannelMeasures();
+		if(measures == null) {
+			measures = new ArrayList<ChannelMeasure>();
+		}
+		
+		for(ChannelMeasure cm : measures) {
+			channelMeasures.put(cm.getChannelnum(), cm.getMeasure());
 		}
 
 	}
@@ -778,7 +790,8 @@ public class HomeView extends Div {
 
 	// Crea gli item della colonna Valore 
 	private Component createValueLabel(Sensor sensor) {
-		return UIUtils.createLabel(FontSize.S, "" + sensor.getSample().getMisure());
+		
+		return UIUtils.createLabel(FontSize.S, sensor.getSample().getMisure() + " " + channelMeasures.get(sensor.getName()));
 	}
 	
 	public static void runWhileAttached(Component component, Command task,

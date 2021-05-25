@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import com.innovare.model.ChannelMeasure;
 import com.innovare.model.Sample;
 import com.innovare.ui.utils.FlexBoxLayout;
 import com.innovare.utils.Channel;
@@ -33,6 +34,7 @@ import com.vaadin.flow.router.Route;
 public class InfoSuoloView extends StoricoView{
 	
 	private HashMap<Integer, ArrayList<Sample>> sensors;
+	private HashMap<Integer, String> channelMeasures;
 
 	public InfoSuoloView() {
 		super();
@@ -57,9 +59,12 @@ public class InfoSuoloView extends StoricoView{
 		}
 */	
 		sensors = new HashMap<Integer, ArrayList<Sample>>();
-		ArrayList<Integer> channels = HttpHandler.getActiveChannels();
+		channelMeasures = new HashMap<Integer, String>();
+		
 		
 		try {
+			ArrayList<Integer> channels = HttpHandler.getActiveChannels();
+			
 			// Si filtrano i canali in modo da prendere solo quelli relativi al suolo
 			for (Iterator<Integer> iterator = channels.iterator(); iterator.hasNext(); ) {
 				Integer value = iterator.next();
@@ -82,12 +87,20 @@ public class InfoSuoloView extends StoricoView{
 				}
 				sensors.put(channel, samples);
 			}
+			
+			ArrayList<ChannelMeasure> measures = HttpHandler.getChannelMeasures();
+			
+			for(ChannelMeasure cm : measures) {
+				channelMeasures.put(cm.getChannelnum(), cm.getMeasure());
+			}
 		}
 		catch(NullPointerException e) {
 			Notification notif = Notification.show("Controlla la tua connessione");
 			notif.setPosition(Position.BOTTOM_END);
 			notif.addThemeVariants(NotificationVariant.LUMO_ERROR);
 		}
+		
+		
 
 	}
 
@@ -96,7 +109,7 @@ public class InfoSuoloView extends StoricoView{
 	protected Component createChart() {
 		FlexBoxLayout content = new FlexBoxLayout();
 		for(Integer channel : sensors.keySet()) {
-			content.add(createChart(sensors.get(channel), "Sensore Canale " + channel));
+			content.add(createChart(sensors.get(channel), channel));
 		}
 		
 		content.setFlexDirection(FlexLayout.FlexDirection.COLUMN);
@@ -104,14 +117,14 @@ public class InfoSuoloView extends StoricoView{
         return content;
 	}
 	
-	private Component createChart(ArrayList<Sample> samples, String nameSensor) {
+	private Component createChart(ArrayList<Sample> samples, Integer sensorChannel) {
 		
 		final Chart chart = new Chart(ChartType.AREASPLINE);
 
         Configuration configuration = chart.getConfiguration();
         
         Tooltip tooltip = configuration.getTooltip();
-        //tooltip.setValueSuffix("°C");
+        tooltip.setValueSuffix(channelMeasures.get(sensorChannel));
         
         DataSeries dataSeries = new DataSeries("Info");
         if(samples == null) samples = new ArrayList<Sample>();
@@ -119,7 +132,7 @@ public class InfoSuoloView extends StoricoView{
             dataSeries.add(new DataSeriesItem(sample.getTimestamp(), sample.getMisure(), sample.getMisure()));
         }
         configuration.setSeries(dataSeries);
-        configuration.setTitle(nameSensor);
+        configuration.setTitle("Sensore Canale " + sensorChannel);
         
         chart.setTimeline(true);
         
