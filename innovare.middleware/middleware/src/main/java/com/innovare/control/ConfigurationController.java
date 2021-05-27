@@ -2,9 +2,17 @@ package com.innovare.control;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.DateTimeException;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Scanner;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -12,6 +20,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.model.ChannelMeasure;
 import com.innovare.model.Sample;
 import com.innovare.utils.Utilities;
+import com.opencsv.CSVParser;
+import com.opencsv.CSVParserBuilder;
+import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
 
 public class ConfigurationController {
 
@@ -39,6 +51,8 @@ public class ConfigurationController {
 	//Quantita' acqua standard per l'irrigazione
 	public static float quantitastand;
 	
+	//Mappa contenente i valori di kc
+	public static HashMap<Date,Double> kcMap=null;
 	
 	public ConfigurationController(){
 		//verifichiamo l'esistenza del file di configurazione e lo leggiamo
@@ -206,7 +220,8 @@ public class ConfigurationController {
 								this.quantitastand=0;
 							}
 							System.out.println("CONFIGURATION-FILE middlelayer: quantStandard : "+this.quantitastand);
-							sc.nextLine();
+							if(sc.hasNextLine())
+								sc.nextLine();
 						break;
 							
 						default:
@@ -229,6 +244,46 @@ public class ConfigurationController {
 		}
 		
 	}
+	
+	
+	public void kcFileRead() {
+		System.out.println("Lettura valori KC dal file kc.csv ..");
+		//Apriamo il file csv contenente i dati sul kc per ogni data
+		try {
+			//leggiamo il file csv
+			CSVParser csvParser = new CSVParserBuilder().withSeparator(';').build();
+			CSVReader reader = new CSVReaderBuilder(new FileReader(Utilities.kcFilePath))
+					.withCSVParser(csvParser)
+					.withSkipLines(1)
+					.build();	
+			List<String[]> r = reader.readAll();
+			
+			this.kcMap= new HashMap<Date,Double>();
+			SimpleDateFormat df = new SimpleDateFormat("dd-MM-yy");
+			
+			r.forEach( x -> {
+				System.out.println(Arrays.toString(x));
+				try {
+					//System.out.println("DEBUG :"+x[0]);
+					//System.out.println("DEBUG Sdf:"+df.toPattern());
+					Date d= df.parse(x[0]);
+					Double kc = Double.parseDouble(x[1]);
+					//System.out.println("DEBUG  data: "+d.toString()+" kc:"+kc);
+					//Aggiungiamola alla mappa
+					kcMap.put(d, kc);
+					
+				} catch (ParseException e) {
+					System.err.println("Errore lettura Data");
+					e.printStackTrace();
+				}
+				
+			});
+		}catch(Exception e) {
+			System.err.println("Errore durante lettura file KC");
+			e.printStackTrace();
+		}
+	}
+	
 
 	
 	

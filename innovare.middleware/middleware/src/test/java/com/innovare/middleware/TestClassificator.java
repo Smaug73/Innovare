@@ -200,7 +200,7 @@ public class TestClassificator {
 		Logger.getLogger().print("TestString3");
 		Logger.getLogger().print("TestString4");
 	}
-	*/
+	
 	
 	@Test
 	public void testSensorDataControllerSync() throws JsonMappingException, JsonProcessingException {
@@ -218,6 +218,14 @@ public class TestClassificator {
 			System.out.println(s.toString());
 		
 	}
+	*/
+	
+	@Test
+	public void testKCRead() {
+		ConfigurationController cc= new ConfigurationController();
+		cc.kcFileRead();
+	}
+	
 	
 	/*
 	@Test
