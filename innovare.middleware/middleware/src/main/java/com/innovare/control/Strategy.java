@@ -14,6 +14,6 @@ public abstract class Strategy {
 	 * Metodo che decide se irrigare
 	 * Va definito
 	 */
-	public abstract Irrigazione strategy(ClassificationSint cs);
+	public abstract Irrigazione createIrrigation(ClassificationSint cs);
 	
 }

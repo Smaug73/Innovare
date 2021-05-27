@@ -49,6 +49,7 @@ public class Logger {
 	public synchronized void print(String s) {
 		Timestamp tm= new Timestamp(System.currentTimeMillis());
 		this.ps.append(tm.toString()+" "+s+"\n");
+		System.out.println(tm.toString()+" "+s+"\n");
 	}
 	
 }

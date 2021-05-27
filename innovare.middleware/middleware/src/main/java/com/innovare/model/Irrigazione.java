@@ -19,6 +19,23 @@ public class Irrigazione {
 		this.fineIrrig=ConfigurationController.irrigationMaxTime+this.inizioIrrig;
 	}
 	
+	/*
+	 * Costruttore dell'irrigazione basandosi su quantita' e portata dell'impianto irriguo
+	 */
+	
+	public Irrigazione(float quant) {
+		
+		//Settiamo quantita'
+		this.quantita=quant;
+		
+		//Settiamo inizio e fine dell'irrigazione
+		Timestamp now= new Timestamp(System.currentTimeMillis());
+		this.inizioIrrig=now.getTime();
+		long durataTot=(long) (this.quantita/ConfigurationController.portataIrrigation)*1000;
+		this.fineIrrig=this.inizioIrrig+durataTot;
+	}
+	
+	
 	public Irrigazione(Status s) {
 		/*switch(s) {
 		case CARENZA:

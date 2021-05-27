@@ -338,6 +338,13 @@ paths:
     - name: irrigationTime
       in: path
       required: true
+  /channelMeasure:
+    get:
+      responses:
+        "200":
+          description: Unita' di misura inviate correttamente.
+      operationId: channelMeasure
+      summary: Ritorna le unita' di misura per i sensori da terra
 components:
   schemas:
     ConfigurationItem:

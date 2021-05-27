@@ -7,6 +7,10 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.innovare.model.ChannelMeasure;
+import com.innovare.model.Sample;
 import com.innovare.utils.Utilities;
 
 public class ConfigurationController {
@@ -29,6 +33,12 @@ public class ConfigurationController {
 	
 	//IP gateway, di default settato su localhost
 	public static String gatewayIP="localhost";
+	
+	public static ArrayList<ChannelMeasure> channelMeasureArray;
+	
+	//Quantita' acqua standard per l'irrigazione
+	public static float quantitastand;
+	
 	
 	public ConfigurationController(){
 		//verifichiamo l'esistenza del file di configurazione e lo leggiamo
@@ -163,6 +173,41 @@ public class ConfigurationController {
 							if(sc.hasNextLine())
 								sc.nextLine();
 							break;
+							
+							
+						case "ChannelMeasure":
+							this.channelMeasureArray= new ArrayList<ChannelMeasure>();
+							String measureChannel15= "none";
+							String measureChannel16= "none";
+							try{
+								if(sc.hasNext())
+									measureChannel15= sc.next();
+								this.channelMeasureArray.add(new ChannelMeasure(15,measureChannel15));
+								if(sc.hasNext())
+									measureChannel16= sc.next();
+								this.channelMeasureArray.add(new ChannelMeasure(16,measureChannel16));
+								
+							}catch(Exception e){
+								System.err.println("ERRORE CONFIGURATION-FILE middlelayer: errore lettura channelMeasure , configurazione valori di base per i channel: null");
+								this.channelMeasureArray= new ArrayList<ChannelMeasure>();
+								this.channelMeasureArray.add(new ChannelMeasure(15,"none"));
+								this.channelMeasureArray.add(new ChannelMeasure(16,"none"));
+							}
+							System.out.println("CONFIGURATION-FILE middlelayer: ChannelMeasure : "+this.channelMeasureArray.toString());
+							
+							break;
+							
+						case "quantStandard":
+							try {
+								this.quantitastand= sc.nextFloat();
+								
+							}catch(Exception e) {
+								System.err.println("ERRORE CONFIGURATION-FILE middlelayer: errore lettura quantStandard , configurazione valori di base: 0");
+								this.quantitastand=0;
+							}
+							System.out.println("CONFIGURATION-FILE middlelayer: quantStandard : "+this.quantitastand);
+							sc.nextLine();
+						break;
 							
 						default:
 							if(sc.hasNextLine())

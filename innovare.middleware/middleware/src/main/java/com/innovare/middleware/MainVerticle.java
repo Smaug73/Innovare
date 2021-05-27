@@ -1959,7 +1959,39 @@ public class MainVerticle extends AbstractVerticle {
     	    	    	}	    	    	 	    	
     	    	    }); 
     	    	    
-    	    	    
+    	    	    /*
+    	    	     * ----- GET CHANNEL MEASURE --------
+    	    	     */
+    	    	    routerFactory.addHandlerByOperationId("channelMeasure", routingContext ->{
+    	    	    	Logger.getLogger().print("Chiamata REST channelMeasure");
+    	    	    	if(this.loggingController.isUserLogged()) {
+    	    	    		//Caso nel quale non è stata creata nessuna irrigazione	    
+    	    	    		System.out.println("Invio channelMeasure: "+this.configurationController.channelMeasureArray.toString());
+    	    	    		try {
+    	    	    		  String jsonresp= new ObjectMapper().writeValueAsString(this.configurationController.channelMeasureArray);
+    	    	    		  System.out.println("TEST: "+this.configurationController.channelMeasureArray.toString());
+    	    	    		  routingContext
+      		    	   	      .response()
+      			              .setStatusCode(200)
+      			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+      			              .end(jsonresp);	    		
+    	    	    		}catch(Exception e) {
+    	    	    			routingContext
+      		    	   	      .response()
+      			              .setStatusCode(400)
+      			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+      			              .end("Errore!");
+    	    	    		}
+    	    	    		
+    	    	    	}else {
+    	    	    		routingContext
+    		    	   	      .response()
+    			              .setStatusCode(401)
+    			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    			              .end("Non autorizzato: non sei loggato.");
+    	    	    	}	    	    	 	    	
+    	    	    	
+    	    	    }); 
     	    	    
     	    	    
     	    Router router = routerFactory.getRouter(); // <1>
