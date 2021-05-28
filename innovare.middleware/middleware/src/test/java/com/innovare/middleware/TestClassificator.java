@@ -39,6 +39,7 @@ import com.innovare.control.SampleCSVController;
 import com.innovare.control.SensorDataController;
 import com.innovare.control.SensorDataControllerSync;
 import com.innovare.model.ClassificationSint;
+import com.innovare.model.Evapotranspiration;
 import com.innovare.model.PlantClassification;
 import com.innovare.model.Sample;
 import com.innovare.utils.Utilities;
@@ -218,14 +219,23 @@ public class TestClassificator {
 			System.out.println(s.toString());
 		
 	}
-	*/
+	
 	
 	@Test
 	public void testKCRead() {
 		ConfigurationController cc= new ConfigurationController();
 		cc.kcFileRead();
 	}
+	*/
 	
+	@Test
+	public void testEvapotrasp() {
+		ArrayList<Sample> temps=new ArrayList<Sample>();
+		temps.add(new Sample());
+		double res= Evapotranspiration.calculate(30.0, 30.0, temps, 20.0*3.386, 0.0);
+		
+		System.out.println("Risultato: "+(float)res);
+	}
 	
 	/*
 	@Test

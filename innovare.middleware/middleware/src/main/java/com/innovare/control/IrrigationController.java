@@ -944,12 +944,14 @@ public class IrrigationController extends TimerTask {
 			}
 			
 			//GETIONE ALTRI STATUS
-			STATUS CLASSIFICAZIONE NON RIUSCITA
-			STATUS CLASSIFICAZIONE PIANTE MALATE
+			//STATUS CLASSIFICAZIONE NON RIUSCITA
+			//STATUS CLASSIFICAZIONE PIANTE MALATE
 			
 		}
 
-		
+		private float calcolo() {
+			
+		}
 		
 		
 	}

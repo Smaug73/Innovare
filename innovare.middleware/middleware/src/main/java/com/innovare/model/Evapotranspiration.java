@@ -3,12 +3,12 @@ package com.innovare.model;
 import java.util.ArrayList;
 
 public class Evapotranspiration {
-
 	
+	public static final double eliofania =2.71;//  (6.5/24) 
 	public static double calculate(double temperatura,double umidRel,ArrayList<Sample> temperature,double pressione,double vento) {
 		//La temperatura passata in questa formuale e' in centrigradi quindi viene convertita a kelvin
 		//convertiamo il vento da mph ad ms(metri al secondo) nella formula
-		return  ( 0.408*delta(temperatura)*( Rn()-G()  ) +  psicrometricaCost(pressione,temperatura)*( 900/(temperatura+-273.15))*(vento*0.44704)*(eaed(umidRel,temperatura)) )/
+		return  ( 0.408*delta(temperatura)*( Rn(umidRel,temperatura)-G()  ) +  psicrometricaCost(pressione,temperatura)*( 900/(temperatura+273.15))*(vento*0.44704)*(eaed(umidRel,temperatura)) )/
 				(  delta(temperatura)+ psicrometricaCost(pressione,temperatura)*(1+0.34*(vento*0.44704) )  );
 	}
 	
@@ -36,8 +36,9 @@ public class Evapotranspiration {
 	}
 	
 	//Radiazione netta??
-	public static double Rn() {
-		return 1;
+	public static double Rn(double umidRel,double temperature) {
+		return ( 0.1+(0.9*eliofania))*(0.34-(0.14*Math.sqrt(ed(umidRel,ea(temperature)))))*(4.903*Math.pow(10, -9)*Math.pow(temperature, 4));
+			
 	}
 	
 	//Flusso di calore G chiedere
