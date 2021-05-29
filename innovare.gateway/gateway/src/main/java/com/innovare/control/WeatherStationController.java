@@ -58,9 +58,9 @@ public class WeatherStationController extends TimerTask{
 		channelsSample= new HashMap<String,Sample>();
 		channelsNames= new HashSet<String>();
 		//Creo l'hash set dei nomi dei vari canali
-				for(int i=0; i< Utilities.channelsNames.length; i++) {
-					channelsNames.add(Utilities.channelsNames[i]);
-				}
+		for(int i=0; i< Utilities.channelsNames.length; i++) {
+			channelsNames.add(Utilities.channelsNames[i]);
+		}
 	}
 	
 	public WeatherStationController(long tempoCampionamento, Vertx vertx) {
@@ -132,9 +132,12 @@ public class WeatherStationController extends TimerTask{
 			//Avvio l'aggiornamento dei valori tramite uno dei due metodi
 			//this.campionamentoFromFile();//TEST/////////////////
 			try {
-				System.out.println("DEBIG RUN");
+				System.out.println("DEBUG RUN");
 				this.campionamentoFromProcess();
 				
+				//Creiamo arraylist sample da seriale
+				SerialChannelReader serial= new SerialChannelReader();
+				ArrayList<Sample> serialSample= serial.getMeasursFromSerial();
 				
 				//Dopo il campionamento inviamo tramite mqtt i dati
 				this.mqttClient.connect(1883, ConfigurationController.ipMiddleLayer, s -> {	
@@ -149,6 +152,7 @@ public class WeatherStationController extends TimerTask{
 								
 							} catch (Exception e) {
 								System.err.println(e.getMessage());
+								System.err.println("Canale non correttamente letto, aggiunta misura");
 								//e.printStackTrace();
 							}
 							/*
@@ -170,6 +174,13 @@ public class WeatherStationController extends TimerTask{
 								e.printStackTrace();
 							}*/						
 						} 
+						
+						//Aggiungiamo sample letti dalla seriale
+						for(Sample serS: serialSample) {
+							newSamples.add(serS);
+						}
+						
+						
 						System.out.println("LOG-WEATHERSTATION-CHANNEL: invio");
 						
 						try {
@@ -197,6 +208,10 @@ public class WeatherStationController extends TimerTask{
 				e1.printStackTrace();
 			}
 			//this.campionamentoFromProcess(); /////VERO
+			 catch (Exception e1) {
+				 System.err.println("ERRORE lettura seriale");			
+				e1.printStackTrace();
+			}
 			
 			/*
 			try {
@@ -577,7 +592,7 @@ public class WeatherStationController extends TimerTask{
 							this.channelsSample.put(token[0], new Sample(timestamp,token[0]));
 						break;
 					
-					default:
+					default://Aggiungiamo il valore cosi' come letto se non ci sono controlli da effettuare
 						this.channelsSample.put(token[0], new Sample(timestamp,token[0], Float.valueOf(token[1])  ));
 						
 					}

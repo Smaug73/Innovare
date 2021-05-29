@@ -94,4 +94,39 @@ public class SensorDataControllerSync {
 	}
 	
 	
+	
+	/*
+	 * Recupera gli ultimi dati da i canali passati e ne calcola la media
+	 */
+	public float meanMeasureOfChannels(ArrayList<Integer> channelsId) throws JsonMappingException, JsonProcessingException {
+		
+		ArrayList<Sample> measurs= new ArrayList<Sample>();
+		
+		//Recuperiamo gli ultimi valori letti da questi canali 
+		for(Integer id: channelsId) {
+			measurs.add(this.getLastSamplesFromMongoSynch(id));
+		}
+		
+		//Calcoliamo la media
+		return this.media(measurs);
+	}
+	
+	
+	
+	
+	//Calcolo media delle misure passate
+	public float media(ArrayList<Sample> measurs) {
+		float mean=0;
+		
+		for(Sample s: measurs) {
+			mean=mean+s.getMisure();
+		}
+		
+		return mean/measurs.size();
+		
+	}
+	
+	
+	
+	
 }

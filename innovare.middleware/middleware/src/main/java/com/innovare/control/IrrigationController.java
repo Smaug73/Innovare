@@ -799,7 +799,7 @@ public class IrrigationController extends TimerTask {
 			
 			Logger.getLogger().print("IRRIGATION-STRATEGY: Classificazione prelevata dal db: "+cs.toString());
 			//Caso ECCESSO ACQUA -> no irrigazione
-			Status statusclass= cs.getMaxPercForIrrigation();
+			Status statusclass= cs.getStatus();
 			
 			if(statusclass==Status.ECCESSO) {
 				Logger.getLogger().print("IRRIGATION-STRATEGY: risultato classificazione: ECCESSO di acqua");
@@ -864,7 +864,7 @@ public class IrrigationController extends TimerTask {
 							//controllo se sta piovendo : PRECIPITAZIONE NON IN CORSO
 								
 							//controllo umidita' terreno: CONTROLLARE CANALI DA UTILIZZARE PER UMIDITA'  
-							float umid= sd.getLastSamplesFromMongoSynch();
+							float umid= sd.meanMeasureOfChannels(ConfigurationController.);
 							if(umid>80) {
 								//controllo umidita' terreno: UMIDITA' OTTIMALE
 								Logger.getLogger().print("IRRIGATION-STRATEGY: temperatura ottimale, vento ottimale,nessuna precipitazione in corso, umidita' relativa ottimale  : turno di irrigazione soppresso!");

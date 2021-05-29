@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.time.DateTimeException;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 import com.innovare.utils.Utilities;
@@ -19,6 +20,9 @@ public class ConfigurationController {
 	public static long irrigationMaxTime=120000;
 	
 	public static LocalTime waetherStationTime;
+	
+	//id canali letti da seriale
+	public static ArrayList<Integer> idSerialChannel= new ArrayList<Integer>();
 	
 	public ConfigurationController(){
 		//verifichiamo l'esistenza del file di configurazione e lo leggiamo
@@ -94,7 +98,22 @@ public class ConfigurationController {
 							}
 							System.out.println("CONFIGURATION-FILE middlelayer: irrigationTime : "+this.waetherStationTime);
 							sc.nextLine();
-							break;		
+							break;
+							
+							case "serialChannel" :
+								//Leggiamo i canali da considerare per la classificazione
+								while(sc.hasNextInt()) {
+									try {
+										this.idSerialChannel.add(sc.nextInt());
+									}catch(Exception e) {
+										System.err.println("ERRORE CONFIGURATION-FILE middlelayer: errore di lettura di uno dei canali di serialChannel");
+									}
+								}
+							System.out.println("CONFIGURATION-FILE middlelayer: serialChannel : "+this.idSerialChannel.toString());
+							break;
+							
+							
+							
 						default:
 							sc.nextLine();
 					}	

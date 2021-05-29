@@ -54,6 +54,12 @@ public class ConfigurationController {
 	//Mappa contenente i valori di kc
 	public static HashMap<Date,Double> kcMap=null;
 	
+	//Soglia percentuale classificazione
+	public static float sogliaclassificazione=2;
+	
+	//id canali letti da seriale
+	public static ArrayList<Integer> idSerialChannel=new ArrayList<Integer>();
+	
 	public ConfigurationController(){
 		//verifichiamo l'esistenza del file di configurazione e lo leggiamo
 		//altrimenti lasciamo i valori nel loro stato predefinito in Utilities
@@ -223,6 +229,36 @@ public class ConfigurationController {
 							if(sc.hasNextLine())
 								sc.nextLine();
 						break;
+						
+						case "sogliaClassificazione":
+							try {
+								this.sogliaclassificazione= sc.nextFloat();
+								
+							}catch(Exception e) {
+								System.err.println("ERRORE CONFIGURATION-FILE middlelayer: errore lettura sogliaClassificazione , configurazione valori di base: 2");
+								this.sogliaclassificazione=0;
+							}
+							System.out.println("CONFIGURATION-FILE middlelayer: sogliaClassificazione : "+this.sogliaclassificazione);
+							if(sc.hasNextLine())
+								sc.nextLine();
+						break;
+						
+						
+						case "serialChannel" :
+							//Leggiamo i canali da considerare per la classificazione
+							while(sc.hasNextInt()) {
+								try {
+									this.idSerialChannel.add(sc.nextInt());
+								}catch(Exception e) {
+									System.err.println("ERRORE CONFIGURATION-FILE middlelayer: errore di lettura di uno dei canali di serialChannel");
+								}
+							}
+						System.out.println("CONFIGURATION-FILE middlelayer: serialChannel : "+this.idSerialChannel.toString());
+						break;
+						
+						
+						
+						
 							
 						default:
 							if(sc.hasNextLine())

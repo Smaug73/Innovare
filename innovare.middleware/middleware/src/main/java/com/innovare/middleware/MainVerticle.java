@@ -2216,9 +2216,9 @@ public class MainVerticle extends AbstractVerticle {
 		    		  /*
 		    		   * La misura che è arrivata è un array contenente le nuove misurazioni.
 		    		   */
-		    		  if(newMisures.size()<Utilities.channelsNames.length)
+		    		  if(newMisures.size()<(Utilities.channelsNames.length+configurationController.idSerialChannel.size()))
 		    			  System.out.println("--DEBUG-----Sono arrivate meno misure di quelle previste------");
-		    		  else if(newMisures.size()==Utilities.channelsNames.length)
+		    		  else if(newMisures.size()==Utilities.channelsNames.length+configurationController.idSerialChannel.size())
 		    			  System.out.println("--DEBUG-----Misure uguali in numero------");
 		    		  
 		    		  
@@ -2231,10 +2231,14 @@ public class MainVerticle extends AbstractVerticle {
 		    			  if(singleMisure.containsKey("channel")){
 		    				  //System.out.println("--DEBUG-----Canale trovato-----");
 		    				  channelName=singleMisure.getString("channel");
-		    				  for(int k=0;k<Utilities.channelsNames.length;k++) {
-		    					  if(channelName.equalsIgnoreCase(Utilities.channelsNames[k]))
-		    						  channelId=k;				  
-		    				  }
+		    				  if(channelName.contains("Seriale")) {
+		    					  channelId=Utilities.channelsNames.length;//primo canale dopo le misure della weatherstation
+		    				  }else
+			    				  for(int k=0;k<Utilities.channelsNames.length;k++) {
+			    					  if(channelName.equalsIgnoreCase(Utilities.channelsNames[k]))
+			    						  channelId=k;				  
+			    				  }
+		    				 
 		    				  if(channelId!=-1) {   				  
 			    				//Salviamo la misura nella priorityQueue
 				    			  this.sampleChannelQueue.put(""+channelId, singleMisure);

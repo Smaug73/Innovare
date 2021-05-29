@@ -25,12 +25,13 @@ public class SampleCSVController extends Thread{
 	//Lista sensori attivi
 	private ArrayList<Integer> channelNumberCSV= new ArrayList<Integer>();
 	HashMap<String, ArrayList<Sample> > newSamples;
-	public int startingChannel=16;
+	public int startingChannel;
 	
 	public SampleCSVController() {}
 	
 	public SampleCSVController(MongoClient mongoClient) {
 		this.mongoClient= mongoClient;
+		this.startingChannel=Utilities.channelsNames.length+ConfigurationController.idSerialChannel.size();
 	}
 	
 	public void run() {
