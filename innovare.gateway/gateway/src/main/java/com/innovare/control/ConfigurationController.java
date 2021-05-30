@@ -20,6 +20,7 @@ public class ConfigurationController {
 	public static long irrigationMaxTime=120000;
 	
 	public static LocalTime waetherStationTime;
+	public static ArrayList<LocalTime> waetherStationTimes= new ArrayList<LocalTime>();
 	
 	//id canali letti da seriale
 	public static ArrayList<Integer> idSerialChannel= new ArrayList<Integer>();
@@ -77,27 +78,35 @@ public class ConfigurationController {
 									this.timeIrrigation[0]= hour;//ora
 									this.timeIrrigation[1]= minute;//minuti
 								}*/
+								String linewithdata= sc.nextLine();
+								Scanner scW= new Scanner(linewithdata);
 								String localTimeString;
-								if(sc.hasNext())
-									localTimeString = sc.next();
-								else throw new Exception("nessun orario definito nel file di configurazione.");
-								this.waetherStationTime= LocalTime.parse(localTimeString);
+								while(scW.hasNext() ) {
+									try {	
+										localTimeString = scW.next();
+										System.out.println(localTimeString);
+										LocalTime wst= LocalTime.parse(localTimeString);
+										//valori uguali non vengono aggiunti
+										if(!this.findWeatherTime(wst))
+											this.waetherStationTimes.add(wst);
+									}catch(DateTimeException ed) {
+										System.err.println("ERRORE CONFIRATION-FILE middlelayer: "+ed.getMessage());
+										System.err.println("ERRORE CONFIRATION-FILE middlelayer: la data di campionamento non verra' aggiunta");
+									}
+								}
+								if(this.waetherStationTimes.size()==0)
+									throw new Exception("Nessun orario definito nel file di configurazione.");
 								
-							}catch(DateTimeException ed) {
-								System.err.println("ERRORE CONFIRATION-FILE middlelayer: "+ed.getMessage());
-								System.err.println("ERRORE CONFIRATION-FILE middlelayer: configurazione con valori di base: 13:55:00");
-								this.waetherStationTime= LocalTime.of(WeatherStationController.defaultHour,WeatherStationController.defaultMinute,WeatherStationController.defaultSecond);
-								
-							}
-							catch(Exception e) {
+							}catch(Exception e) {
 								System.err.println("ERRORE CONFIRATION-FILE middlelayer: "+e.getMessage());
 								System.err.println("ERRORE CONFIRATION-FILE middlelayer: configurazione con valori di base: 14:00:00");
 								this.waetherStationTime= LocalTime.of(WeatherStationController.defaultHour,WeatherStationController.defaultMinute,WeatherStationController.defaultSecond);
+								this.waetherStationTimes.add(waetherStationTime);
 								//this.timeIrrigation[0]= IrrigationController.defaultHour;//ora
 								//this.timeIrrigation[1]= IrrigationController.defaultMinute;//minuti
 							}
-							System.out.println("CONFIGURATION-FILE middlelayer: irrigationTime : "+this.waetherStationTime);
-							sc.nextLine();
+							System.out.println("CONFIGURATION-FILE middlelayer: irrigationTimes : "+this.waetherStationTimes.toString());
+							//sc.nextLine();
 							break;
 							
 							case "serialChannel" :
@@ -147,5 +156,12 @@ public class ConfigurationController {
 		this.irrigationMaxTime= Long.parseLong(Integer.toString(timeI*1000*60));
 	}
 	
+	public boolean findWeatherTime(LocalTime lc) {
+		for(LocalTime l: this.waetherStationTimes) {
+			if(l.compareTo(lc)==0)
+				return true;
+		}
+		return false;
+	}
 	
 }

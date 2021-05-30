@@ -24,10 +24,13 @@ import org.quartz.TriggerBuilder;
 import org.quartz.impl.StdSchedulerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.innovare.middleware.MainVerticle;
 import com.innovare.model.ClassificationSint;
+import com.innovare.model.Evapotranspiration;
 import com.innovare.model.Irrigazione;
+import com.innovare.model.Sample;
 import com.innovare.utils.Utilities;
 import com.innovare.model.Status;
 
@@ -245,7 +248,19 @@ public class IrrigationController extends TimerTask {
 	    				 * AGGIUNTA STRATEGIA DI IRRIGAZIONE PER DECIDERE QUANTO IRRIGARE======================================================================
 	    				 */
 	    				IrrigationStrategy strategy= new IrrigationStrategy();
-	    				this.irr = strategy.createIrrigation(lastClassification);
+	    				try {
+							this.irr = strategy.createIrrigation(lastClassification);
+						} catch (JsonMappingException e) {
+							Logger.getLogger().print(" Irrigazione automatica ERRORE: errore creazione irrigazione automatica!");
+							e.printStackTrace();
+							this.irr=null;
+							return;
+						} catch (JsonProcessingException e) {
+							Logger.getLogger().print(" Irrigazione automatica ERRORE: errore creazione irrigazione automatica!");
+							e.printStackTrace();
+							this.irr=null;
+							return;
+						}
 	    				
 	    				//newIrr= new Irrigazione(lastClassification.getMaxPercForIrrigation());
 	    				
@@ -795,7 +810,7 @@ public class IrrigationController extends TimerTask {
 	class IrrigationStrategy extends Strategy{
 		
 		
-		public Irrigazione createIrrigation(ClassificationSint cs) {
+		public Irrigazione createIrrigation(ClassificationSint cs) throws JsonMappingException, JsonProcessingException  {
 			
 			Logger.getLogger().print("IRRIGATION-STRATEGY: Classificazione prelevata dal db: "+cs.toString());
 			//Caso ECCESSO ACQUA -> no irrigazione
@@ -816,13 +831,28 @@ public class IrrigationController extends TimerTask {
 				
 				// Calcolo quantita' acqua ------------------------
 				
-				double evaptr= metodopercalcolare();
 				
 				//prelevare piogge giornaliere canale 11
 				float dayrain = sd.getLastSamplesFromMongoSynch(11).getMisure();
+				float temperatura= sd.getLastSamplesFromMongoSynch(3).getMisure();
+				//Controlliamo dati vento, canale 4
+				float windspeed = sd.getLastSamplesFromMongoSynch(4).getMisure();
+				//convertiamo il vento da MPH(miglia per ore) a Km/h (chilometri per ora) 1 MPH = 1.609Km/h
+				windspeed = (float) (windspeed*1.609);
 				
+				////////////	UMIDITA'	////////////////
+				//Canali umidita' seriale
+				ArrayList<Integer> serialC= ConfigurationController.idSerialChannel;
+				//Canali contenente dati umidita' da CSV
+				ArrayList<Integer> csv= SampleCSVController.channelNumberCSV;
 				
-				float quant= (float)evaptr..;
+				serialC.addAll(csv);
+				/////////////////////////////////////////////////////////////////////////////////UMIDITA' 
+				float umid= sd.meanMeasureOfChannels(serialC);
+				
+				ArrayList<Sample> temperaturs= sd.getAllSamplesFromTimeFrame(60*60*24*1000l, 3);
+				float pressione = sd.getLastSamplesFromMongoSynch(0).getMisure();
+				double quant= Evapotranspiration.calculate(temperatura, umid, temperaturs, pressione, windspeed);
 				//-------------------------------------------------
 					
 			}
@@ -863,8 +893,15 @@ public class IrrigationController extends TimerTask {
 						}else {
 							//controllo se sta piovendo : PRECIPITAZIONE NON IN CORSO
 								
-							//controllo umidita' terreno: CONTROLLARE CANALI DA UTILIZZARE PER UMIDITA'  
-							float umid= sd.meanMeasureOfChannels(ConfigurationController.);
+							//controllo umidita' terreno: CONTROLLARE CANALI DA UTILIZZARE PER UMIDITA'
+							//Canali umidita' seriale
+							ArrayList<Integer> serialC= ConfigurationController.idSerialChannel;
+							//Canali contenente dati umidita' da CSV
+							ArrayList<Integer> csv= SampleCSVController.channelNumberCSV;
+							
+							serialC.addAll(csv);
+							/////////////////////////////////////////////////////////////////////////////////UMIDITA' 
+							float umid= sd.meanMeasureOfChannels(serialC);
 							if(umid>80) {
 								//controllo umidita' terreno: UMIDITA' OTTIMALE
 								Logger.getLogger().print("IRRIGATION-STRATEGY: temperatura ottimale, vento ottimale,nessuna precipitazione in corso, umidita' relativa ottimale  : turno di irrigazione soppresso!");
@@ -873,7 +910,10 @@ public class IrrigationController extends TimerTask {
 							//controllo umidita' terreno: UMIDITA' NON OTTIMALE
 							Logger.getLogger().print("IRRIGATION-STRATEGY: temperatura ottimale, vento ottimale,nessuna precipitazione in corso,umidita' relativa non ottimale  : irrigazione standard ridotta 1/2");
 							//Quantita' da usare = quant Standard/2
-							return new Irrigazione(ConfigurationController.quantitastand/2);
+							ArrayList<Sample> temperaturs= sd.getAllSamplesFromTimeFrame(60*60*24*1000l, 3);
+							float pressione = sd.getLastSamplesFromMongoSynch(0).getMisure();
+							double quant= Evapotranspiration.calculate(temp, umid, temperaturs, pressione, windspeed)/2;
+							return new Irrigazione((float)quant);
 						}
 					} 
 						
@@ -897,7 +937,14 @@ public class IrrigationController extends TimerTask {
 							}
 							//-----NESSUNA PRECIPITAZIONE IN CORSO
 							//controllo umidita' terreno: CONTROLLARE CANALI DA UTILIZZARE PER UMIDITA'  
-							float umid= sd.getLastSamplesFromMongoSynch();
+							//Canali umidita' seriale
+							ArrayList<Integer> serialC= ConfigurationController.idSerialChannel;
+							//Canali contenente dati umidita' da CSV
+							ArrayList<Integer> csv= SampleCSVController.channelNumberCSV;
+							
+							serialC.addAll(csv);
+							float umid= sd.meanMeasureOfChannels(serialC);
+							
 							if(umid>80) {
 								//controllo umidita' terreno: UMIDITA' OTTIMALE
 								Logger.getLogger().print("IRRIGATION-STRATEGY: temperatura non ottimale, vento non ottimale,nessuna precipitazione in corso, umidita' relativa ottimale  : turno di irrigazione soppresso!");
@@ -905,8 +952,11 @@ public class IrrigationController extends TimerTask {
 							}
 							//UMIDITA' NON OTTIMALE
 							Logger.getLogger().print("IRRIGATION-STRATEGY: temperatura non ottimale, vento non ottimale,nessuna precipitazione in corso, umidita' relativa non ottimale : irrigazione standard ridotta 1/4");
-							return new Irrigazione(ConfigurationController.quantitastand/4);
 							
+							ArrayList<Sample> temperaturs= sd.getAllSamplesFromTimeFrame(60*60*24*1000l, 3);
+							float pressione = sd.getLastSamplesFromMongoSynch(0).getMisure();
+							double quant= Evapotranspiration.calculate(temp, umid, temperaturs, pressione, windspeed)/4;
+							return new Irrigazione((float)quant);
 						
 						}else {
 						//------------VENTO OTTIMALE
@@ -921,7 +971,14 @@ public class IrrigationController extends TimerTask {
 							
 							//-----NESSUNA PRECIPITAZIONE IN CORSO
 							//controllo umidita' terreno: CONTROLLARE CANALI DA UTILIZZARE PER UMIDITA'  
-							float umid= sd.getLastSamplesFromMongoSynch();
+							//Canali umidita' seriale
+							ArrayList<Integer> serialC= ConfigurationController.idSerialChannel;
+							//Canali contenente dati umidita' da CSV
+							ArrayList<Integer> csv= SampleCSVController.channelNumberCSV;
+							
+							serialC.addAll(csv);
+							float umid= sd.meanMeasureOfChannels(serialC);
+							
 							if(umid>80) {
 								//controllo umidita' terreno: UMIDITA' OTTIMALE
 								Logger.getLogger().print("IRRIGATION-STRATEGY: temperatura non ottimale, vento ottimale,nessuna precipitazione in corso, umidita' relativa ottimale  : turno di irrigazione soppresso!");
@@ -929,9 +986,14 @@ public class IrrigationController extends TimerTask {
 							}
 							//UMIDITA' NON OTTIMALE
 							Logger.getLogger().print("IRRIGATION-STRATEGY: temperatura non ottimale, vento ottimale,nessuna precipitazione in corso, umidita' relativa non ottimale : irrigazione standard ridotta 1/4");
-							return new Irrigazione(ConfigurationController.quantitastand/2);
+							
+							ArrayList<Sample> temperaturs= sd.getAllSamplesFromTimeFrame(60*60*24*1000l, 3);
+							float pressione = sd.getLastSamplesFromMongoSynch(0).getMisure();
+							double quant= Evapotranspiration.calculate(temp, umid, temperaturs, pressione, windspeed)/2;
+							return new Irrigazione((float)quant);
 						}
 					}
+					
 					
 					
 				}else {
@@ -943,14 +1005,20 @@ public class IrrigationController extends TimerTask {
 				
 			}
 			
+			//CASO NESSUNO DEGLI IF SIA ANDATO A BUON FINE
+			Logger.getLogger().print("Dati non compatibili per la creazione di una irrigazione!");
+			return new Irrigazione(0,0,0);
+			
+			
 			//GETIONE ALTRI STATUS
 			//STATUS CLASSIFICAZIONE NON RIUSCITA
 			//STATUS CLASSIFICAZIONE PIANTE MALATE
 			
 		}
 
-		private float calcolo() {
-			
+		private float calcolo(double temperatura,double umidRel,ArrayList<Sample> temperature,double pressione,double vento) {
+			double etc=Evapotranspiration.calculate(temperatura, umidRel, temperature, pressione, vento);
+			return  etc-piogge?-risalita? ;
 		}
 		
 		

@@ -14,6 +14,10 @@ import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,7 +37,7 @@ import io.vertx.mqtt.MqttClient;
  * Deve essere accessibile in mutua escluzione dai thread Channel, anche se eseguono solo una operazione di lettura
  * potrebbero accedere alla risorsa mentre sta aggiornando i dati al suon interno
  */
-public class WeatherStationController extends TimerTask{
+public class WeatherStationController extends TimerTask implements Runnable{
 	private HashMap<String,Float> channels;
 	private HashMap<String,Sample> channelsSample;
 	private HashSet<String> channelsNames;
@@ -51,6 +55,9 @@ public class WeatherStationController extends TimerTask{
 	public static final int defaultHour=13;
 	public static final int defaultMinute=58;
 	public static final int defaultSecond=0; 
+	
+	//Scheduler
+	private final ScheduledExecutorService scheduler =Executors.newScheduledThreadPool(1);
 	
 	//DEBUG
 	public WeatherStationController() {
@@ -108,6 +115,14 @@ public class WeatherStationController extends TimerTask{
 		for(int i=0;i<channelsNames.size();i++)
 			System.out.println(channelsNames.toArray()[i]);
 		////////////
+		
+		
+		///SCHEDULER 
+		//ScheduledFuture<?> campionamento= this.scheduler.scheduleWithFixedDelay(this, this.delayFromNewMeasure(this.getStartingTimeMeasure()), delayDay, TimeUnit.MILLISECONDS);
+		for(LocalTime lc: ConfigurationController.waetherStationTimes) {
+			this.scheduler.scheduleWithFixedDelay(this, this.delayFromNewMeasure(lc), delayDay, TimeUnit.MILLISECONDS);
+		}
+		
 	}
 	
 	
