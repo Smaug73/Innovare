@@ -79,15 +79,22 @@ public class Authenticator {
 				return true;
 			} catch (IOException e) {
 				//e.printStackTrace();
+				System.out.println(e);
 				Notification notif = Notification.show("Controlla la tua connessione");
 				notif.setPosition(Position.BOTTOM_END);
 				notif.addThemeVariants(NotificationVariant.LUMO_ERROR);
 				return false;
 			} catch (InterruptedException e) {
 				e.printStackTrace();
+				Notification notif = Notification.show("Si è verificato un errore");
+				notif.setPosition(Position.BOTTOM_END);
+				notif.addThemeVariants(NotificationVariant.LUMO_ERROR);
 				return false;
 			} catch (URISyntaxException e) {
 				e.printStackTrace();
+				Notification notif = Notification.show("Si è verificato un errore");
+				notif.setPosition(Position.BOTTOM_END);
+				notif.addThemeVariants(NotificationVariant.LUMO_ERROR);
 				return false;
 			} 
 	}
