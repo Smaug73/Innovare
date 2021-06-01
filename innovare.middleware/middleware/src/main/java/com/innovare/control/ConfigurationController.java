@@ -2,12 +2,28 @@ package com.innovare.control;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.DateTimeException;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Scanner;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.innovare.model.ChannelMeasure;
+import com.innovare.model.Sample;
 import com.innovare.utils.Utilities;
+import com.opencsv.CSVParser;
+import com.opencsv.CSVParserBuilder;
+import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
 
 public class ConfigurationController {
 
@@ -29,6 +45,20 @@ public class ConfigurationController {
 	
 	//IP gateway, di default settato su localhost
 	public static String gatewayIP="localhost";
+	
+	public static ArrayList<ChannelMeasure> channelMeasureArray;
+	
+	//Quantita' acqua standard per l'irrigazione
+	public static float quantitastand;
+	
+	//Mappa contenente i valori di kc
+	public static HashMap<Date,Double> kcMap=null;
+	
+	//Soglia percentuale classificazione
+	public static float sogliaclassificazione=2;
+	
+	//id canali letti da seriale
+	public static ArrayList<Integer> idSerialChannel=new ArrayList<Integer>();
 	
 	public ConfigurationController(){
 		//verifichiamo l'esistenza del file di configurazione e lo leggiamo
@@ -164,6 +194,72 @@ public class ConfigurationController {
 								sc.nextLine();
 							break;
 							
+							
+						case "ChannelMeasure":
+							this.channelMeasureArray= new ArrayList<ChannelMeasure>();
+							String measureChannel15= "none";
+							String measureChannel16= "none";
+							try{
+								if(sc.hasNext())
+									measureChannel15= sc.next();
+								this.channelMeasureArray.add(new ChannelMeasure(15,measureChannel15));
+								if(sc.hasNext())
+									measureChannel16= sc.next();
+								this.channelMeasureArray.add(new ChannelMeasure(16,measureChannel16));
+								
+							}catch(Exception e){
+								System.err.println("ERRORE CONFIGURATION-FILE middlelayer: errore lettura channelMeasure , configurazione valori di base per i channel: null");
+								this.channelMeasureArray= new ArrayList<ChannelMeasure>();
+								this.channelMeasureArray.add(new ChannelMeasure(15,"none"));
+								this.channelMeasureArray.add(new ChannelMeasure(16,"none"));
+							}
+							System.out.println("CONFIGURATION-FILE middlelayer: ChannelMeasure : "+this.channelMeasureArray.toString());
+							
+							break;
+							
+						case "quantStandard":
+							try {
+								this.quantitastand= sc.nextFloat();
+								
+							}catch(Exception e) {
+								System.err.println("ERRORE CONFIGURATION-FILE middlelayer: errore lettura quantStandard , configurazione valori di base: 0");
+								this.quantitastand=0;
+							}
+							System.out.println("CONFIGURATION-FILE middlelayer: quantStandard : "+this.quantitastand);
+							if(sc.hasNextLine())
+								sc.nextLine();
+						break;
+						
+						case "sogliaClassificazione":
+							try {
+								this.sogliaclassificazione= sc.nextFloat();
+								
+							}catch(Exception e) {
+								System.err.println("ERRORE CONFIGURATION-FILE middlelayer: errore lettura sogliaClassificazione , configurazione valori di base: 2");
+								this.sogliaclassificazione=0;
+							}
+							System.out.println("CONFIGURATION-FILE middlelayer: sogliaClassificazione : "+this.sogliaclassificazione);
+							if(sc.hasNextLine())
+								sc.nextLine();
+						break;
+						
+						
+						case "serialChannel" :
+							//Leggiamo i canali da considerare per la classificazione
+							while(sc.hasNextInt()) {
+								try {
+									this.idSerialChannel.add(sc.nextInt());
+								}catch(Exception e) {
+									System.err.println("ERRORE CONFIGURATION-FILE middlelayer: errore di lettura di uno dei canali di serialChannel");
+								}
+							}
+						System.out.println("CONFIGURATION-FILE middlelayer: serialChannel : "+this.idSerialChannel.toString());
+						break;
+						
+						
+						
+						
+							
 						default:
 							if(sc.hasNextLine())
 								sc.nextLine();
@@ -184,6 +280,46 @@ public class ConfigurationController {
 		}
 		
 	}
+	
+	
+	public void kcFileRead() {
+		System.out.println("Lettura valori KC dal file kc.csv ..");
+		//Apriamo il file csv contenente i dati sul kc per ogni data
+		try {
+			//leggiamo il file csv
+			CSVParser csvParser = new CSVParserBuilder().withSeparator(';').build();
+			CSVReader reader = new CSVReaderBuilder(new FileReader(Utilities.kcFilePath))
+					.withCSVParser(csvParser)
+					.withSkipLines(1)
+					.build();	
+			List<String[]> r = reader.readAll();
+			
+			this.kcMap= new HashMap<Date,Double>();
+			SimpleDateFormat df = new SimpleDateFormat("dd-MM-yy");
+			
+			r.forEach( x -> {
+				System.out.println(Arrays.toString(x));
+				try {
+					//System.out.println("DEBUG :"+x[0]);
+					//System.out.println("DEBUG Sdf:"+df.toPattern());
+					Date d= df.parse(x[0]);
+					Double kc = Double.parseDouble(x[1]);
+					//System.out.println("DEBUG  data: "+d.toString()+" kc:"+kc);
+					//Aggiungiamola alla mappa
+					kcMap.put(d, kc);
+					
+				} catch (ParseException e) {
+					System.err.println("Errore lettura Data");
+					e.printStackTrace();
+				}
+				
+			});
+		}catch(Exception e) {
+			System.err.println("Errore durante lettura file KC");
+			e.printStackTrace();
+		}
+	}
+	
 
 	
 	

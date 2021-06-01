@@ -1,5 +1,7 @@
 package com.innovare.control;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.innovare.model.ClassificationSint;
 import com.innovare.model.Irrigazione;
 
@@ -14,6 +16,6 @@ public abstract class Strategy {
 	 * Metodo che decide se irrigare
 	 * Va definito
 	 */
-	public abstract Irrigazione strategy(ClassificationSint cs);
+	public abstract Irrigazione createIrrigation(ClassificationSint cs) throws Exception;
 	
 }

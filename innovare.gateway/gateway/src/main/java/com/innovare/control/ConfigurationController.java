@@ -2,6 +2,9 @@ package com.innovare.control;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.time.DateTimeException;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 import com.innovare.utils.Utilities;
@@ -15,6 +18,12 @@ public class ConfigurationController {
 	//Il tempo di irrigazione massimo viene espresso in long  
 	//ma viene prelevato dal file di configurazione in minuti
 	public static long irrigationMaxTime=120000;
+	
+	public static LocalTime waetherStationTime;
+	public static ArrayList<LocalTime> waetherStationTimes= new ArrayList<LocalTime>();
+	
+	//id canali letti da seriale
+	public static ArrayList<Integer> idSerialChannel= new ArrayList<Integer>();
 	
 	public ConfigurationController(){
 		//verifichiamo l'esistenza del file di configurazione e lo leggiamo
@@ -55,6 +64,64 @@ public class ConfigurationController {
 							System.out.println("CONFIGURATION-FILE middlelayer: irrigationMaxTime : "+this.irrigationMaxTime);
 							sc.nextLine();
 							break;
+						case "weatherStationStart":
+							try {
+								//Leggiamo ora e minuti di inizio dell'irrigazione
+								/*
+								int hour=sc.nextInt();//ora;
+								int minute= sc.nextInt();//minuti
+								if(hour>IrrigationController.maxHour || minute>IrrigationController.maxMinute) {
+									System.err.println("ERRORE CONFIRATION-FILE middlelayer: configurazione con valori di base: 14:00");
+									this.timeIrrigation[0]= IrrigationController.defaultHour;//ora
+									this.timeIrrigation[1]= IrrigationController.defaultMinute;//minuti
+								}else {
+									this.timeIrrigation[0]= hour;//ora
+									this.timeIrrigation[1]= minute;//minuti
+								}*/
+								String linewithdata= sc.nextLine();
+								Scanner scW= new Scanner(linewithdata);
+								String localTimeString;
+								while(scW.hasNext() ) {
+									try {	
+										localTimeString = scW.next();
+										System.out.println(localTimeString);
+										LocalTime wst= LocalTime.parse(localTimeString);
+										//valori uguali non vengono aggiunti
+										if(!this.findWeatherTime(wst))
+											this.waetherStationTimes.add(wst);
+									}catch(DateTimeException ed) {
+										System.err.println("ERRORE CONFIRATION-FILE middlelayer: "+ed.getMessage());
+										System.err.println("ERRORE CONFIRATION-FILE middlelayer: la data di campionamento non verra' aggiunta");
+									}
+								}
+								if(this.waetherStationTimes.size()==0)
+									throw new Exception("Nessun orario definito nel file di configurazione.");
+								
+							}catch(Exception e) {
+								System.err.println("ERRORE CONFIRATION-FILE middlelayer: "+e.getMessage());
+								System.err.println("ERRORE CONFIRATION-FILE middlelayer: configurazione con valori di base: 14:00:00");
+								this.waetherStationTime= LocalTime.of(WeatherStationController.defaultHour,WeatherStationController.defaultMinute,WeatherStationController.defaultSecond);
+								this.waetherStationTimes.add(waetherStationTime);
+								//this.timeIrrigation[0]= IrrigationController.defaultHour;//ora
+								//this.timeIrrigation[1]= IrrigationController.defaultMinute;//minuti
+							}
+							System.out.println("CONFIGURATION-FILE middlelayer: irrigationTimes : "+this.waetherStationTimes.toString());
+							//sc.nextLine();
+							break;
+							
+							case "serialChannel" :
+								//Leggiamo i canali da considerare per la classificazione
+								while(sc.hasNextInt()) {
+									try {
+										this.idSerialChannel.add(sc.nextInt());
+									}catch(Exception e) {
+										System.err.println("ERRORE CONFIGURATION-FILE middlelayer: errore di lettura di uno dei canali di serialChannel");
+									}
+								}
+							System.out.println("CONFIGURATION-FILE middlelayer: serialChannel : "+this.idSerialChannel.toString());
+							break;
+							
+							
 							
 						default:
 							sc.nextLine();
@@ -89,5 +156,12 @@ public class ConfigurationController {
 		this.irrigationMaxTime= Long.parseLong(Integer.toString(timeI*1000*60));
 	}
 	
+	public boolean findWeatherTime(LocalTime lc) {
+		for(LocalTime l: this.waetherStationTimes) {
+			if(l.compareTo(lc)==0)
+				return true;
+		}
+		return false;
+	}
 	
 }

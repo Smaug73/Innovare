@@ -132,8 +132,8 @@ public class GatewayVerticle extends AbstractVerticle {
 	    	 //RIATTIVARE LA CREAZIONE DEI THREAD , COMMENTATO PER TEST
 	    	 //this.channelCreation();   ///////////////////////////////////////////////////
 	    	 
-	    	 this.weatherStationC= new WeatherStationController(this.confController.getTempoCampionamentoWS(),vertx);
-	    	 this.weatherStationC.start();
+	    	 this.weatherStationC= new WeatherStationController(this.confController.getTempoCampionamentoWS(),vertx,ConfigurationController.waetherStationTime);
+	    	 //this.weatherStationC.start();
 	    	 //this.channelCreation();
 	    	 //Si può anche disconnettere questo client dopo l'instanziazione dei client dei singoli sensori...
 	    });

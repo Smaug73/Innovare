@@ -6,10 +6,18 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,7 +37,7 @@ import io.vertx.mqtt.MqttClient;
  * Deve essere accessibile in mutua escluzione dai thread Channel, anche se eseguono solo una operazione di lettura
  * potrebbero accedere alla risorsa mentre sta aggiornando i dati al suon interno
  */
-public class WeatherStationController extends Thread{
+public class WeatherStationController extends TimerTask implements Runnable{
 	private HashMap<String,Float> channels;
 	private HashMap<String,Sample> channelsSample;
 	private HashSet<String> channelsNames;
@@ -39,15 +47,27 @@ public class WeatherStationController extends Thread{
 	
 	private long tempoCampionamento;
 	
+	private LocalTime StartingTimeMeasure;
+	
+	//Timer per il campionamento
+	private Timer timer=null;
+	public static final long delayDay= 24*60*60*1000l;
+	public static final int defaultHour=13;
+	public static final int defaultMinute=58;
+	public static final int defaultSecond=0; 
+	
+	//Scheduler
+	private final ScheduledExecutorService scheduler =Executors.newScheduledThreadPool(1);
+	
 	//DEBUG
 	public WeatherStationController() {
 		channels= new HashMap<String,Float>();
 		channelsSample= new HashMap<String,Sample>();
 		channelsNames= new HashSet<String>();
 		//Creo l'hash set dei nomi dei vari canali
-				for(int i=0; i< Utilities.channelsNames.length; i++) {
-					channelsNames.add(Utilities.channelsNames[i]);
-				}
+		for(int i=0; i< Utilities.channelsNames.length; i++) {
+			channelsNames.add(Utilities.channelsNames[i]);
+		}
 	}
 	
 	public WeatherStationController(long tempoCampionamento, Vertx vertx) {
@@ -65,6 +85,8 @@ public class WeatherStationController extends Thread{
 			channelsNames.add(Utilities.channelsNames[i]);
 		}
 		
+		this.StartingTimeMeasure= ConfigurationController.waetherStationTime;
+		this.timer= new Timer();
 		//debug
 		//System.out.println("\nDEBUG HASHSET");
 		for(int i=0;i<channelsNames.size();i++)
@@ -72,16 +94,65 @@ public class WeatherStationController extends Thread{
 		////////////
 	}
 	
+	public WeatherStationController(long tempoCampionamento, Vertx vertx,LocalTime StartingTimeMeasure) {
+		
+		channels= new HashMap<String,Float>();
+		channelsSample= new HashMap<String,Sample>();
+		channelsNames= new HashSet<String>();
+		this.tempoCampionamento=tempoCampionamento;
+		this.StartingTimeMeasure= StartingTimeMeasure;
+		this.timer= new Timer();
+		//Creo il client mqtt
+		this.mqttClient= MqttClient.create(vertx);
+		
+		//Creo l'hash set dei nomi dei vari canali
+		for(int i=0; i< Utilities.channelsNames.length; i++) {
+			channelsNames.add(Utilities.channelsNames[i]);
+		}
+		
+		//debug
+		//System.out.println("\nDEBUG HASHSET");
+		for(int i=0;i<channelsNames.size();i++)
+			System.out.println(channelsNames.toArray()[i]);
+		////////////
+		
+		
+		///SCHEDULER 
+		//ScheduledFuture<?> campionamento= this.scheduler.scheduleWithFixedDelay(this, this.delayFromNewMeasure(this.getStartingTimeMeasure()), delayDay, TimeUnit.MILLISECONDS);
+		for(LocalTime lc: ConfigurationController.waetherStationTimes) {
+			this.scheduler.scheduleWithFixedDelay(this, this.delayFromNewMeasure(lc), delayDay, TimeUnit.MILLISECONDS);
+		}
+		
+	}
+	
+	
+	public void start() {
+		this.timer.schedule(
+	    		this,
+	    		this.delayFromNewMeasure(this.getStartingTimeMeasure()),
+	    		//this.irrigationController.delayDay
+	    		//this.irrigationController.delayOneMinutetTest  //TEST
+	    		//this.delayFromIrrigation
+	    		this.delayDay
+	    );
+		System.out.println("DEBUG WEATERSTATION-CONTROLLER: irrigazione schedulata");
+	}
+	
+	
 	/*
 	 * All'interno del metodo run andiamo ad aggiornare i valori e creare nuovi sample
 	 */
 	public void run() {
-		while(true) {
+		//while(true) {
 			//Avvio l'aggiornamento dei valori tramite uno dei due metodi
 			//this.campionamentoFromFile();//TEST/////////////////
 			try {
+				System.out.println("DEBUG RUN");
 				this.campionamentoFromProcess();
 				
+				//Creiamo arraylist sample da seriale
+				SerialChannelReader serial= new SerialChannelReader();
+				ArrayList<Sample> serialSample= serial.getMeasursFromSerial();
 				
 				//Dopo il campionamento inviamo tramite mqtt i dati
 				this.mqttClient.connect(1883, ConfigurationController.ipMiddleLayer, s -> {	
@@ -96,6 +167,7 @@ public class WeatherStationController extends Thread{
 								
 							} catch (Exception e) {
 								System.err.println(e.getMessage());
+								System.err.println("Canale non correttamente letto, aggiunta misura");
 								//e.printStackTrace();
 							}
 							/*
@@ -117,6 +189,13 @@ public class WeatherStationController extends Thread{
 								e.printStackTrace();
 							}*/						
 						} 
+						
+						//Aggiungiamo sample letti dalla seriale
+						for(Sample serS: serialSample) {
+							newSamples.add(serS);
+						}
+						
+						
 						System.out.println("LOG-WEATHERSTATION-CHANNEL: invio");
 						
 						try {
@@ -144,15 +223,20 @@ public class WeatherStationController extends Thread{
 				e1.printStackTrace();
 			}
 			//this.campionamentoFromProcess(); /////VERO
+			 catch (Exception e1) {
+				 System.err.println("ERRORE lettura seriale");			
+				e1.printStackTrace();
+			}
 			
-			
+			/*
 			try {
 				this.sleep(tempoCampionamento);
 			} catch (InterruptedException e) {
 				System.err.println("Errore nella sleep del thread WeatherStationController");
 				e.printStackTrace();
 			}
-		}
+			*/
+		//}
 		
 		
 		
@@ -523,7 +607,7 @@ public class WeatherStationController extends Thread{
 							this.channelsSample.put(token[0], new Sample(timestamp,token[0]));
 						break;
 					
-					default:
+					default://Aggiungiamo il valore cosi' come letto se non ci sono controlli da effettuare
 						this.channelsSample.put(token[0], new Sample(timestamp,token[0], Float.valueOf(token[1])  ));
 						
 					}
@@ -631,6 +715,25 @@ public class WeatherStationController extends Thread{
 	}
 
 	
+	public long delayFromNewMeasure(LocalTime ld) {
+		
+		//Calcoliamo il delay come la distanza da questo istante all'orario di irrigazione
+		LocalTime now= LocalTime.now();
+		
+		System.out.println("DEBUG: NOW: "+now+"  ld: "+ld);
+		if(now.compareTo(ld)==1) { 
+			//Now e' maggiore
+			//Dobbiamo calcolare il tempo sommando la differenza tra il LocalTime massimo e now e il LocalTimeMinimo e ld
+			return now.until(LocalTime.MAX, ChronoUnit.MILLIS)+ ld.until(LocalTime.MIN, ChronoUnit.MILLIS)*-1;
+		}
+		else
+			return now.until(ld, ChronoUnit.MILLIS);
+		
+		
+		
+		
+	}
+	
 	
 	public HashMap<String, Float> getChannels() {
 		return channels;
@@ -658,6 +761,14 @@ public class WeatherStationController extends Thread{
 
 	public long getTempoCampionamento() {
 		return tempoCampionamento;
+	}
+
+	public LocalTime getStartingTimeMeasure() {
+		return StartingTimeMeasure;
+	}
+
+	public void setStartingTimeMeasure(LocalTime startingTimeMeasure) {
+		StartingTimeMeasure = startingTimeMeasure;
 	}
 	
 	

@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Files;
 import com.innovare.model.ClassificationSint;
 import com.innovare.model.PlantClassification;
+import com.innovare.utils.ClassificationException;
 import com.innovare.utils.Utilities;
 
 import io.vertx.core.Future;
@@ -89,7 +90,7 @@ public class Classificator {
 	
 	
 	
-	public ClassificationSint unZipAndClassification(String modelName) throws FileNotFoundException{
+	public ClassificationSint unZipAndClassification(String modelName) throws FileNotFoundException, ClassificationException{
 		//Verifichiamo che il modello selezionato esista
 		if(!this.existDirOrFile(Utilities.modelPath+modelName))
 			throw new FileNotFoundException("Il modello selezionato non esiste.");
@@ -187,8 +188,8 @@ public class Classificator {
 				else
 					promise.fail(this.LOG+" Errore esecuzione classificazione");
 				
-			}catch(FileNotFoundException e) {
-				
+			}catch(FileNotFoundException | ClassificationException e) {
+				Logger.getLogger().print("Errore generazione classificazione: "+e.getMessage());
 				promise.fail(this.LOG+" Errore esecuzione classificazione");
 			}
 			
@@ -213,7 +214,7 @@ public class Classificator {
 	/*
 	 * Classificazione utilizzata dal Thread worker in modo asincrono
 	 */
-	public ClassificationSint unZipAndClassificationAsincronous(String modelName) throws FileNotFoundException{
+	public ClassificationSint unZipAndClassificationAsincronous(String modelName) throws FileNotFoundException, ClassificationException{
 		//Verifichiamo che il modello selezionato esista
 		if(!this.existDirOrFile(Utilities.modelPath+modelName))
 			throw new FileNotFoundException("Il modello selezionato non esiste.");

@@ -10,7 +10,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Random;
 
+import com.innovare.control.ConfigurationController;
 import com.innovare.model.Status;
+import com.innovare.utils.ClassificationException;
 import com.innovare.utils.Utilities;
 
 public class ClassificationSint implements Comparable<ClassificationSint>{
@@ -72,6 +74,7 @@ public class ClassificationSint implements Comparable<ClassificationSint>{
 		this.percScartate = percScartate;
 		this.percInfestanti = percInfestanti;
 		this.model = model;
+		this.creationData= new Timestamp(System.currentTimeMillis());
 	}
 	
 	
@@ -90,6 +93,7 @@ public class ClassificationSint implements Comparable<ClassificationSint>{
 		this.percInfestanti = percInfestanti;
 		this.model = model;
 		this._id = _id;
+		this.creationData= new Timestamp(System.currentTimeMillis());
 	}
 
 	
@@ -114,7 +118,7 @@ public class ClassificationSint implements Comparable<ClassificationSint>{
 
 
 
-	public ClassificationSint(ArrayList<PlantClassification> classifications) {
+	public ClassificationSint(ArrayList<PlantClassification> classifications) throws ClassificationException {
 		this._id= this.RandomId();
 		
 		this.creationData= new Timestamp(System.currentTimeMillis());
@@ -123,8 +127,8 @@ public class ClassificationSint implements Comparable<ClassificationSint>{
 		int carenza=0;
 		int eccesso=0;
 		int sane=0;
-		int infestanti=0;
-		int ambigue=0;
+		int infestanti=0; 	//da ignorare
+		int ambigue=0;		//da ignorare
 		for(PlantClassification p: classifications){
 			ArrayList<Result> risultati=p.getClassification().getClassifications();
 			//Prendiamo il risultato della classificazione
@@ -177,12 +181,12 @@ public class ClassificationSint implements Comparable<ClassificationSint>{
 		percentuali.add(this.percCarenza);
 		this.percEccesso= (eccesso/classifications.size())*100;
 		percentuali.add(this.percEccesso);
-		this.percInfestanti= (infestanti/classifications.size())*100;
-		percentuali.add(this.percInfestanti);
+		//this.percInfestanti= (infestanti/classifications.size())*100;  	IGNORIAMO QUESTA CLASSE
+		//percentuali.add(this.percInfestanti);
 		this.percSane= (sane/classifications.size())*100;
 		percentuali.add(this.percSane);
-		this.percScartate= (ambigue/classifications.size())*100;
-		percentuali.add(this.percScartate);
+		//this.percScartate= (ambigue/classifications.size())*100;		IGNORIAMO QUESTA CLASSE
+		//percentuali.add(this.percScartate);
 		
 		//Confrontiamo le percentuali per scegliere quel stato ritorna la classificazione.
 		//In base alla posizione restituita scegliamo lo stato
@@ -191,20 +195,35 @@ public class ClassificationSint implements Comparable<ClassificationSint>{
 		switch(position) {
 			case 0:
 				this.status=Status.CARENZA;
+				//Verifichiamo se la percentuale massima supera la soglia altrimenti scartiamo la classificazione
+				if(this.percCarenza<=ConfigurationController.sogliaclassificazione)
+					//Scartiamo classification
+					throw new ClassificationException("Soglia non superata");
 				break;
 			case 1:
 				this.status=Status.ECCESSO;
+				//Verifichiamo se la percentuale massima supera la soglia altrimenti scartiamo la classificazione
+				if(this.percEccesso<=ConfigurationController.sogliaclassificazione)
+					//Scartiamo classification
+					throw new ClassificationException("Soglia non superata");
 				break;
+			//case 2:
+				//this.status=Status.INFESTANTI;
+				//break;
 			case 2:
-				this.status=Status.INFESTANTI;
-				break;
-			case 3:
 				this.status=Status.NORMALE;
+				//Verifichiamo se la percentuale massima supera la soglia altrimenti scartiamo la classificazione
+				if(this.percSane<=ConfigurationController.sogliaclassificazione)
+					//Scartiamo classification
+					throw new ClassificationException("Soglia non superata");
 				break;
-			case 4:
-				this.status=Status.SCARTATE;
-				break;
+			//case 4:
+				//this.status=Status.SCARTATE;
+				//break;
 		}
+		
+		
+		
 		
 		//Dopo aver scelto lo stato e le percentuali impostiamo il resto 
 		//Per il modello basta prendere il primo elemento che sicuramente è presente nella lista
@@ -233,10 +252,10 @@ public class ClassificationSint implements Comparable<ClassificationSint>{
 
 	
 
-	public String getStatus() {
-		return status.name;
-	}
 
+	public Status getStatus() {
+		return this.status;
+	}
 
 	public Timestamp getDate() {
 		return date;
@@ -258,6 +277,7 @@ public class ClassificationSint implements Comparable<ClassificationSint>{
 		this.status = status;
 	}
 
+	
 	public void setDate(Timestamp date) {
 		this.date = date;
 	}
