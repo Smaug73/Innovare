@@ -5,8 +5,8 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 
@@ -64,9 +64,19 @@ public class HttpHandler {
 		HttpClient client = HttpClient.newHttpClient();
 		HttpRequest request;
 		try {
-			request = HttpRequest.newBuilder()
-					.uri(builder.build())
-					.build();
+			if(!path.contains(NEW_CLASSIF)) {
+				request = HttpRequest.newBuilder()
+						.uri(builder.build())
+						.timeout(Duration.ofSeconds(30))
+						.build();
+			}
+			else {
+				request = HttpRequest.newBuilder()
+						.uri(builder.build())
+						.timeout(Duration.ofHours(1))
+						.build();
+
+			}
 			HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
 			return response;
@@ -309,9 +319,9 @@ public class HttpHandler {
 		return getIrrigationStates(response);
 	}
 
-	// Manda il commando di avvio/stop dell'irrigazione al middleware
+	// Manda il commando di avvio dell'irrigazione del campo automatizzato al middleware
 	public static Irrigazione startIrrigation() {
-		String path = START_IRR;
+		String path = START_IRR + "?campo=" + Campo.AUTO.getNome();
 		HttpResponse<String> response = sendRequest(path);
 		if(response == null) return null;
 		//if(response == null) return 401; 
@@ -319,20 +329,36 @@ public class HttpHandler {
 		//return response.statusCode();
 	}
 	
-	// Manda il commando di avvio/stop dell'irrigazione al middleware
+	// Manda il commando di avvio dell'irrigazione del campo tradizionale al middleware
+	public static int startIrrigation(Campo campo) {
+		String path = START_IRR + "?campo=" + campo.getNome();
+		HttpResponse<String> response = sendRequest(path);
+		if(response == null) return 401; 
+		return response.statusCode();
+	}
+	
+	// Manda il commando di stop dell'irrigazione del campo automatizzato al middleware
 	public static Irrigazione stopIrrigation() {
-		String path = STOP_IRR;
+		String path = STOP_IRR + "?campo=" + Campo.AUTO.getNome();
 		HttpResponse<String> response = sendRequest(path);
 		if(response == null) return null;
 		//if(response == null) return 401;
 		//return response.statusCode();
 		return getIrrigation(response);
 	}
+	
+	// Manda il commando di stop dell'irrigazione del campo tradizionale al middleware
+	public static int stopIrrigation(Campo campo) {
+		String path = STOP_IRR + "?campo=" + campo.getNome();;
+		HttpResponse<String> response = sendRequest(path);
+		if(response == null) return 401;
+		return response.statusCode();
+	}
 
 
 	// Recupera lo stato attuale dell'irrigazione dal middleware
-	public static String getCurrentIrrigationState() {
-		String path = CURR_IRR_STATE;
+	public static String getCurrentIrrigationState(Campo campo) {
+		String path = CURR_IRR_STATE + "?campo=" + campo.getNome();
 		HttpResponse<String> response = sendRequest(path);
 		if(response == null) return null;
 		return getIrrigationState(response);

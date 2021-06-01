@@ -68,6 +68,7 @@ import com.innovare.ui.utils.TextColor;
 import com.innovare.ui.utils.Top;
 import com.innovare.ui.utils.UIUtils;
 import com.innovare.ui.utils.Uniform;
+import com.innovare.utils.Campo;
 import com.innovare.utils.Channel;
 import com.innovare.utils.Constants;
 import com.innovare.utils.Direction;
@@ -139,7 +140,7 @@ public class HomeView extends Div {
 		}
 */	
    	
-		isIrrigationOn = HttpHandler.getCurrentIrrigationState();
+		isIrrigationOn = HttpHandler.getCurrentIrrigationState(Campo.AUTO);
 		if(isIrrigationOn == null) {
 			isIrrigationOn = "UNKNOWN";
 		}
@@ -322,7 +323,7 @@ public class HomeView extends Div {
 							quantitaL.add(UIUtils.createLabel(FontSize.L, lastIrrigation.getQuantita() + "/" + lastIrrigation.getQuantita()));
 							do {
 								//isIrrigationOn = "OFF";
-								isIrrigationOn = HttpHandler.getCurrentIrrigationState();
+								isIrrigationOn = HttpHandler.getCurrentIrrigationState(Campo.AUTO);
 								if(isIrrigationOn == null) {
 									isIrrigationOn = "UNKNOWN";
 								}
@@ -341,7 +342,7 @@ public class HomeView extends Div {
 						quantitaL.add(UIUtils.createLabel(FontSize.L, lastIrrigation.getQuantita() + "/" + lastIrrigation.getQuantita()));
 						do {
 							//isIrrigationOn = "OFF";
-							isIrrigationOn = HttpHandler.getCurrentIrrigationState();
+							isIrrigationOn = HttpHandler.getCurrentIrrigationState(Campo.AUTO);
 							if(isIrrigationOn == null) {
 								isIrrigationOn = "UNKNOWN";
 							}

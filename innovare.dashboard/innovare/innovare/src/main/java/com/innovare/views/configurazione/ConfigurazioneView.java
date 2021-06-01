@@ -36,6 +36,7 @@ import com.innovare.ui.utils.TextColor;
 import com.innovare.ui.utils.Top;
 import com.innovare.ui.utils.UIUtils;
 import com.innovare.ui.utils.Uniform;
+import com.innovare.utils.Campo;
 import com.innovare.utils.Constants;
 import com.innovare.utils.HttpHandler;
 import com.innovare.views.main.ContentView;
@@ -158,7 +159,7 @@ public class ConfigurazioneView extends Div {
 */
 		
 		configurationItems = HttpHandler.getAllConfigurationItems();
-		isIrrigationOn = HttpHandler.getCurrentIrrigationState();
+		isIrrigationOn = HttpHandler.getCurrentIrrigationState(Campo.AUTO);
 		if(isIrrigationOn == null) {
 			isIrrigationOn = "UNKNOWN";
 		}
@@ -301,7 +302,7 @@ public class ConfigurazioneView extends Div {
 						quantitaL.add(UIUtils.createLabel(FontSize.L, lastIrrigation.getQuantita() + "/" + lastIrrigation.getQuantita()));
 						do {
 							//isIrrigationOn = "OFF";
-							isIrrigationOn = HttpHandler.getCurrentIrrigationState();
+							isIrrigationOn = HttpHandler.getCurrentIrrigationState(Campo.AUTO);
 						} while(!isIrrigationOn.equalsIgnoreCase("OFF"));
 						cardLastIrrigation.removeAll();
 						cardLastIrrigation = (FlexBoxLayout) createLastIrrigationCard();
@@ -316,7 +317,7 @@ public class ConfigurazioneView extends Div {
 					quantitaL.add(UIUtils.createLabel(FontSize.L, lastIrrigation.getQuantita() + "/" + lastIrrigation.getQuantita()));
 					do {
 						//isIrrigationOn = "OFF";
-						isIrrigationOn = HttpHandler.getCurrentIrrigationState();
+						isIrrigationOn = HttpHandler.getCurrentIrrigationState(Campo.AUTO);
 					} while(!isIrrigationOn.equalsIgnoreCase("OFF"));
 					cardLastIrrigation.removeAll();
 					cardLastIrrigation = (FlexBoxLayout) createLastIrrigationCard();
@@ -399,7 +400,7 @@ public class ConfigurazioneView extends Div {
 			Irrigazione newIrrigation = null;
 			
 			
-			isIrrigationOn = HttpHandler.getCurrentIrrigationState();
+			isIrrigationOn = HttpHandler.getCurrentIrrigationState(Campo.AUTO);
 			//isIrrigationOn = "ON";
 			if(isIrrigationOn != null) {
 				if(on_off.getText().equalsIgnoreCase("START")) {

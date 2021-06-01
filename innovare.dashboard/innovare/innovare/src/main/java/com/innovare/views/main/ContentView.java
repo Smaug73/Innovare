@@ -27,6 +27,7 @@ import com.innovare.views.storico.SolarRadiationView;
 import com.innovare.views.storico.WindView;
 import com.innovare.model.Role;
 import com.innovare.views.configurazione.ConfigurazioneView;
+import com.innovare.views.configurazione.IrrigazioneCampoManualeView;
 import com.innovare.views.innovare.InnovareView;
 
 @Route(value = "content", layout = MainView.class)
@@ -97,6 +98,9 @@ public class ContentView extends MainView{
 		}
 		if (role != null && role.equals(Role.ADMIN)) {
 			naviMenu.addNaviItem(VaadinIcon.COG_O, "Configurazione",ConfigurazioneView.class);
+		}
+		if (role != null && role.equals(Role.ADMIN)) {
+			naviMenu.addNaviItem(VaadinIcon.POWER_OFF, "Campo Tradizionale",IrrigazioneCampoManualeView.class);
 		}
 
 		final String contextPath = VaadinServlet.getCurrent().getServletContext().getContextPath();
