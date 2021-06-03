@@ -294,7 +294,7 @@ public class IrrigationController extends Thread{
 		//Aggiungere lo script di irrigazione al quale va aggiunto 
 		Process process;
 		try {
-			process = Runtime.getRuntime().exec(this.scriptPathIrrigation+" on");
+			process = Runtime.getRuntime().exec(this.scriptPathIrrigation+" on "+ConfigurationController.releAut);
 			int processOutput=process.waitFor();
 			
 			//TESTING 
@@ -451,7 +451,7 @@ public class IrrigationController extends Thread{
 		//FERMARE IRRIGAZIONE CON SCRIPT
 		Process process;
 		try {
-			process = Runtime.getRuntime().exec(this.scriptPathIrrigation+" off");
+			process = Runtime.getRuntime().exec(this.scriptPathIrrigation+" off "+ConfigurationController.releAut);
 			int processOutput=process.waitFor();
 			
 			//TESTING 

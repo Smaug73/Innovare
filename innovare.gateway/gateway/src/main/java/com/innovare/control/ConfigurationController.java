@@ -25,6 +25,16 @@ public class ConfigurationController {
 	//id canali letti da seriale
 	public static ArrayList<Integer> idSerialChannel= new ArrayList<Integer>();
 	
+	//porta seriala utilizzata per la lettura dei sensori da seriale
+	public static String serialPort = "";
+	
+	//id rele irrigazione automatica
+	public static int releAut= 1;
+	
+	//id rele irrigazione manuale
+	public static int releMan=2;
+	
+	
 	public ConfigurationController(){
 		//verifichiamo l'esistenza del file di configurazione e lo leggiamo
 		//altrimenti lasciamo i valori nel loro stato predefinito in Utilities
@@ -121,10 +131,47 @@ public class ConfigurationController {
 							System.out.println("CONFIGURATION-FILE middlelayer: serialChannel : "+this.idSerialChannel.toString());
 							break;
 							
+							case "releAut" :
+								//Leggiamo i canali da considerare per la classificazione
+								while(sc.hasNextInt()) {
+									try {
+										this.releAut= sc.nextInt();
+									}catch(Exception e) {
+										System.err.println("ERRORE CONFIGURATION-FILE middlelayer: errore di lettura releAut.");
+										System.err.println("ERRORE CONFIGURATION-FILE middlelayer: sara' lasciato id default.");
+									}
+								}
+							System.out.println("CONFIGURATION-FILE middlelayer: releAut : "+this.releAut);
+							break;
 							
+							case "releMan" :
+								//Leggiamo i canali da considerare per la classificazione
+								while(sc.hasNextInt()) {
+									try {
+										this.releMan= sc.nextInt();
+									}catch(Exception e) {
+										System.err.println("ERRORE CONFIGURATION-FILE middlelayer: errore di lettura releMan.");
+										System.err.println("ERRORE CONFIGURATION-FILE middlelayer: sara' lasciato id default.");
+									}
+								}
+							System.out.println("CONFIGURATION-FILE middlelayer: releMan : "+this.releMan);
+							break;
+							
+							case "serialPort" :
+								if(sc.hasNext())
+									try {
+										this.serialPort=sc.next();
+									}catch(Exception e) {
+										System.err.println("ERRORE CONFIGURATION-FILE middlelayer: errore di lettura serialPort.");
+										System.err.println("ERRORE CONFIGURATION-FILE middlelayer: sara' lasciato id default.");
+										this.serialPort="/dev/ttyUSB0";
+									}
+								System.out.println("CONFIGURATION-FILE middlelayer: serialPort : "+this.serialPort);
+							break;
 							
 						default:
 							sc.nextLine();
+							
 					}	
 				else
 					if(sc.hasNext())
