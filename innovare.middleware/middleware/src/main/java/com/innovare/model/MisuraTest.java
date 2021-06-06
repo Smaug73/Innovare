@@ -34,13 +34,13 @@ public class MisuraTest {
 		try {
 			//Per trasformare l'oggetto in unsa stringa json
 			String misure= new ObjectMapper().writeValueAsString(m);
-			System.out.println(misure);
+			Logger.getLogger().print(misure);
 			
 			//Per trasformare la stringa json in un oggetto
 			MisuraTest misDecodeFromJson= new ObjectMapper().readValue(misure, MisuraTest.class);
-			System.out.println(misDecodeFromJson.toString());
+			Logger.getLogger().print(misDecodeFromJson.toString());
 		} catch (JsonProcessingException e) {
-			System.err.println("Misura non correttamente convertita in json!");
+			Logger.getLogger().print("Misura non correttamente convertita in json!");
 			e.printStackTrace();
 		}
 	}

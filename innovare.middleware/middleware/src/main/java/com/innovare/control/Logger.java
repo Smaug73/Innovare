@@ -26,7 +26,7 @@ public class Logger {
 			this.fileLog.createNewFile();
 		} catch (IOException e) {
 			//Il file gia' esiste
-			System.out.println("File di log gia' esistente");
+			Logger.getLogger().print("File di log gia' esistente");
 			e.printStackTrace();
 		}	
 		this.ps= new PrintStream(this.fileLog);
@@ -49,7 +49,7 @@ public class Logger {
 	public synchronized void print(String s) {
 		Timestamp tm= new Timestamp(System.currentTimeMillis());
 		this.ps.append(tm.toString()+" "+s+"\n");
-		System.out.println(tm.toString()+" "+s+"\n");
+		Logger.getLogger().print(tm.toString()+" "+s+"\n");
 	}
 	
 }

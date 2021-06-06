@@ -37,7 +37,7 @@ public class SampleCSVController extends Thread{
 	public void run() {
 		
 		if(this.mongoClient==null) {
-			System.out.println("CSV CONTROLLER DEBUG: nessun client mongo e' stato assegnato.");
+			Logger.getLogger().print("CSV CONTROLLER DEBUG: nessun client mongo e' stato assegnato.");
 			return;
 		}else
 			while(true) {
@@ -47,30 +47,30 @@ public class SampleCSVController extends Thread{
 					//Tempo di attesa prima di iniziare
 					this.sleep(10000);
 				} catch (InterruptedException e) {
-					System.err.println("Errore nella sleep del thread SampleCSVController");
+					Logger.getLogger().print("Errore nella sleep del thread SampleCSVController");
 					e.printStackTrace();
 				}
 				
-				System.out.println("CSV CONTROLLER DEBUG: Leggo file csv e salvo le nuove misure..");
+				Logger.getLogger().print("CSV CONTROLLER DEBUG: Leggo file csv e salvo le nuove misure..");
 				
 				try {
 					newSamples= this.readSampleFromCSV();
 					//debug
-					System.out.println("Sensori attivi:"+newSamples.keySet());
+					Logger.getLogger().print("Sensori attivi:"+newSamples.keySet());
 					JsonObject jo;
 					//VERIFICARE CONCORRENZA SUL CLIENT MONGO
 					//Ogni nuovo sample viene aggiunto al database in base al canale
 					for(int i=0;i<10;i++) {
 						if(newSamples.containsKey("#ch"+i)) {
-							System.out.println("Salvataggio misure canale ch"+(i+this.startingChannel-1)+"..");
+							Logger.getLogger().print("Salvataggio misure canale ch"+(i+this.startingChannel-1)+"..");
 							ArrayList<Sample> samples= newSamples.get("#ch"+i);
 							for(Sample s: samples) {
 								jo= new JsonObject(new ObjectMapper().writeValueAsString(s));
 								this.mongoClient.insert("channel-"+(i+this.startingChannel-1), jo, res ->{
 									if(res.succeeded())
-				    				  System.out.println("Misura salvata correttamente nel DB.");
+				    				  Logger.getLogger().print("Misura salvata correttamente nel DB.");
 									else
-				    				  System.err.println("ERRORE salvataggio misura");  
+				    				  Logger.getLogger().print("ERRORE salvataggio misura");  
 								});
 							}
 						}
@@ -79,7 +79,7 @@ public class SampleCSVController extends Thread{
 					}
 					
 				} catch (IOException e1) {
-					System.err.println(e1.getMessage());
+					Logger.getLogger().print(e1.getMessage());
 					e1.printStackTrace();
 				}
 				
@@ -87,7 +87,7 @@ public class SampleCSVController extends Thread{
 				try {
 					this.sleep(waitTime);
 				} catch (InterruptedException e) {
-					System.err.println("Errore nella sleep del thread WeatherStationController");
+					Logger.getLogger().print("Errore nella sleep del thread WeatherStationController");
 					e.printStackTrace();
 				}
 			}	
@@ -106,23 +106,23 @@ public class SampleCSVController extends Thread{
 		
 		//Al suo interno ci deve essere un solo file che dovra' essere letto
 		if(dirCSV.isDirectory()) {
-			//System.out.println("DEBUG dir:"+dirCSV.getName());
+			//Logger.getLogger().print("DEBUG dir:"+dirCSV.getName());
 			File[] child= dirCSV.listFiles();
 			//Caso nel quale non c'e' nessun nuovo file da leggere
 			if(child.length==0) {
-				System.out.println("DEBUG CSV READER: Nessun nuovo file trovato.");
+				Logger.getLogger().print("DEBUG CSV READER: Nessun nuovo file trovato.");
 				throw new FileNotFoundException(); 
 			}
 			
 			if(child.length>1) {
-				System.err.println("ERRORE: presenza di un file");
+				Logger.getLogger().print("ERRORE: presenza di un file");
 				//Prendiamo solo il piu' recente
 				csvFile= findNewer(child);
 			}
 			else
 				csvFile= child[0];
 			
-			System.out.println("DEBUG CSV READER- file trovato:"+csvFile.getName());
+			Logger.getLogger().print("DEBUG CSV READER- file trovato:"+csvFile.getName());
 			//Trovato il file lo leggiamo e lo deparsiamo.
 			
 				FileReader fr= new FileReader(csvFile.getAbsolutePath());
@@ -168,15 +168,15 @@ public class SampleCSVController extends Thread{
 				 * DEBUG
 				 *
 				for (String[] record : allData) {
-				    System.out.println("1 : " + record[0]);
-				    System.out.println("2 : " + record[1]);
-				    System.out.println("3 : " + record[2]);
-				    System.out.println("4 : " + record[3]);
-				    System.out.println("---------------------------");
+				    Logger.getLogger().print("1 : " + record[0]);
+				    Logger.getLogger().print("2 : " + record[1]);
+				    Logger.getLogger().print("3 : " + record[2]);
+				    Logger.getLogger().print("4 : " + record[3]);
+				    Logger.getLogger().print("---------------------------");
 				}
-				System.out.println("PosizioneVal: " + posizioneValor);
-				System.out.println("sensorNumber: " + sensorNumber);
-				System.out.println("sampleMap: " + samplesMaps.keySet().toArray()[0]);
+				Logger.getLogger().print("PosizioneVal: " + posizioneValor);
+				Logger.getLogger().print("sensorNumber: " + sensorNumber);
+				Logger.getLogger().print("sampleMap: " + samplesMaps.keySet().toArray()[0]);
 				
 				/*
 				 * 

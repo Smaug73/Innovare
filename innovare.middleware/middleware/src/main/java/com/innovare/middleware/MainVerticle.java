@@ -34,6 +34,7 @@ import com.innovare.control.LoggingController;
 import com.innovare.control.ModelController;
 import com.innovare.control.SampleCSVController;
 import com.innovare.control.SensorDataController;
+import com.innovare.model.Campo;
 import com.innovare.model.ClassificationSint;
 import com.innovare.model.IrrigationState;
 import com.innovare.model.Irrigazione;
@@ -133,7 +134,7 @@ public class MainVerticle extends AbstractVerticle {
 	  
 	  
 	  //Connessione a MongoDB    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      System.out.println("Starting MongoConnection..");
+      Logger.getLogger().print("Starting MongoConnection..");
       Logger.getLogger().print("Starting MongoConnection..");
       
 	  JsonObject config = Vertx.currentContext().config();
@@ -142,13 +143,13 @@ public class MainVerticle extends AbstractVerticle {
 	    if (uri == null) {
 	      uri = "mongodb://localhost:27017";
 	    }
-	    System.out.println(uri);
+	    Logger.getLogger().print(uri);
 
 	    String db = config.getString("mongo_db");
 	    if (db == null) {
 	      db = "innovare";
 	    }
-	    System.out.println(db);
+	    Logger.getLogger().print(db);
 	    Logger.getLogger().print(db);
 	    
 	    JsonObject mongoconfig = new JsonObject()
@@ -163,8 +164,8 @@ public class MainVerticle extends AbstractVerticle {
 	  mongoClient.find("Utenti", query, res -> {
 	    if (res.succeeded()) {
 	      for (JsonObject json : res.result()) {
-	        System.out.println(json.encodePrettily());
-	        System.out.println("Connessione effettuata con successo al db!");
+	        Logger.getLogger().print(json.encodePrettily());
+	        Logger.getLogger().print("Connessione effettuata con successo al db!");
 	        Logger.getLogger().print("Connessione effettuata con successo al db!");
 	      }
 	    } else {
@@ -187,7 +188,7 @@ public class MainVerticle extends AbstractVerticle {
 				HashMap<Integer, Sample> rr=res.result();
 				
 				for(Integer i:  rr.keySet())
-					System.out.println("Channel: "+i+" value: "+rr.get(i).toString() );
+					Logger.getLogger().print("Channel: "+i+" value: "+rr.get(i).toString() );
 			});
 			
 			
@@ -203,13 +204,13 @@ public class MainVerticle extends AbstractVerticle {
 	   * Creazione del MODEL CONTROLLER   =====================================================================================================
 	   */
 	  this.modelController= new ModelController();
-	  System.out.println(this.LOG+": modelController creato: "+this.modelController.toString());
+	  Logger.getLogger().print(this.LOG+": modelController creato: "+this.modelController.toString());
 	  Logger.getLogger().print(this.LOG+": modelController creato: "+this.modelController.toString());
 	  /*
 	   *Recuperiamo il modello selezionato in precedenza 
 	   */
 	  JsonObject querySelectedModel = new JsonObject();
-	  System.out.println(this.LOG+" Avvio ricerca modello selezionato.");
+	  Logger.getLogger().print(this.LOG+" Avvio ricerca modello selezionato.");
 	  Logger.getLogger().print(this.LOG+" Avvio ricerca modello selezionato.");
 	  mongoClient.find("selectedModel", querySelectedModel, res -> {
 	    if (res.succeeded()) {
@@ -220,7 +221,7 @@ public class MainVerticle extends AbstractVerticle {
 		       * Ricerchiamo il modello selezionato in precedenza nel db e lo impostiamo come modello selezionato
 		       */
 		    	JsonObject jsonSelectedModel=res.result().get(0);
-		    	System.out.println(this.LOG+"Modello selezionato predentemente: "+jsonSelectedModel.encodePrettily());
+		    	Logger.getLogger().print(this.LOG+"Modello selezionato predentemente: "+jsonSelectedModel.encodePrettily());
 		    	Logger.getLogger().print(this.LOG+"Modello selezionato predentemente: "+jsonSelectedModel.encodePrettily());
 		    	Model selectedModel;
 				try {
@@ -238,7 +239,7 @@ public class MainVerticle extends AbstractVerticle {
 					e.printStackTrace();
 				}
 	    	}
-		    //System.out.println(this.LOG+"Nessun modello selezionato.");mongoClient
+		    //Logger.getLogger().print(this.LOG+"Nessun modello selezionato.");mongoClient
 		    
 	    } else {
 	      res.cause().printStackTrace();
@@ -250,7 +251,7 @@ public class MainVerticle extends AbstractVerticle {
 	   * LOGGIN CONTROLLER   =====================================================================================================
 	   */
 	  this.loggingController= new LoggingController();
-	  System.out.println(this.LOG+": loggingController creato: "+this.loggingController.toString());
+	  Logger.getLogger().print(this.LOG+": loggingController creato: "+this.loggingController.toString());
 	  Logger.getLogger().print(this.LOG+": loggingController creato: "+this.loggingController.toString());
 	  /*
 	   * MQTT CLIENT        =====================================================================================================
@@ -259,7 +260,7 @@ public class MainVerticle extends AbstractVerticle {
 	  /*
 	   * Colleghiamo ed iscriviamo il client al canale del suo corrispondente channel
 	   */
-	  System.out.println("Creazione struttura dati ultimi sample");
+	  Logger.getLogger().print("Creazione struttura dati ultimi sample");
 	  this.sampleChannelQueue= new HashMap<String,JsonObject>();
 	  
 	  //Creazione client MQTT per cattura log dei gateway
@@ -268,15 +269,15 @@ public class MainVerticle extends AbstractVerticle {
 		  
 		  clientLog.publishHandler(c -> {
 	    		//Ogni qual volta viene pubblicata una misura la stampiamo e la salviamo.
-				  //System.out.println("There are new message in topic: " + c.topicName());
-	    		  //System.out.println("Content(as string) of the message: " + c.payload().toString());
-	    		  //System.out.println("QoS: " + c.qosLevel());	
-	    		  System.out.println("LOG-GATEWAY: "+c.payload().toString());
+				  //Logger.getLogger().print("There are new message in topic: " + c.topicName());
+	    		  //Logger.getLogger().print("Content(as string) of the message: " + c.payload().toString());
+	    		  //Logger.getLogger().print("QoS: " + c.qosLevel());	
+	    		  Logger.getLogger().print("LOG-GATEWAY: "+c.payload().toString());
 	    		  Logger.getLogger().print("LOG-GATEWAY: "+c.payload().toString());
 	    		  
 	    		  if(c.payload().toString().startsWith("channelNumber:")) {
 	    			  String num=c.payload().toString().substring(14);
-	    			  System.out.println("Numero di channel: "+num);
+	    			  Logger.getLogger().print("Numero di channel: "+num);
 	    			  Logger.getLogger().print("Numero di channel: "+num);
 	    			  
 	    			  this.numberOfChannel= Integer.parseInt(num);
@@ -288,7 +289,7 @@ public class MainVerticle extends AbstractVerticle {
 	    		  //Salviamo i configurationItem
 	    		  if(c.payload().toString().contains("id")) {
 	    			 this.configuration.add(new JsonObject(c.payload().toString()));
-	    			 System.out.println("LOG-GATEWAY: Aggiunto "+c.payload().toString()+" alle configurazioni.");
+	    			 Logger.getLogger().print("LOG-GATEWAY: Aggiunto "+c.payload().toString()+" alle configurazioni.");
 	    			 Logger.getLogger().print("LOG-GATEWAY: Aggiunto "+c.payload().toString()+" alle configurazioni.");
 	    		  }
 	    		  //JsonObject confJson= new JsonObject( c.payload().toString());
@@ -301,31 +302,31 @@ public class MainVerticle extends AbstractVerticle {
 	   * 
 	   * Client per l'invio di comandi 
 	   */
-	  System.out.println("Creazione client mqtt per i comandi di irrigazione.");
+	  Logger.getLogger().print("Creazione client mqtt per i comandi di irrigazione.");
 	  Logger.getLogger().print("Creazione client mqtt per i comandi di irrigazione.");
 	  this.irrigationCommandClient= MqttClient.create(vertx);
 	  
 	  /*
 	   * Client per la ricezione del log dell'irrigazione. 
 	   */
-	  System.out.println("Creazione client mqtt per il log dell'irrigazione.");
+	  Logger.getLogger().print("Creazione client mqtt per il log dell'irrigazione.");
 	  Logger.getLogger().print("Creazione client mqtt per il log dell'irrigazione.");
 	  this.irrigationLog= MqttClient.create(vertx);
 	  this.irrigationLog.connect(1883, Utilities.ipMqtt, s ->{
 		  irrigationLog.publishHandler(c -> {
 	    		  
-	    		  System.out.println(Utilities.irrigationLogMqttChannel+":"+c.payload().toString());
+	    		  Logger.getLogger().print(Utilities.irrigationLogMqttChannel+":"+c.payload().toString());
 	    		  Logger.getLogger().print(Utilities.irrigationLogMqttChannel+":"+c.payload().toString());
 	    		  //Modifichiamo lo stato dell'irrigazione corrente
 	    		  if(c.payload().toString().contains(Utilities.stateOn)) {
 	    			  this.irrigationState=Utilities.stateOn;
-	    			  System.out.println("---DEBUG IRRIGAZIONE---- stato irrigazione modificato ON");
+	    			  Logger.getLogger().print("---DEBUG IRRIGAZIONE---- stato irrigazione modificato ON");
 	    			  Logger.getLogger().print("---DEBUG IRRIGAZIONE---- stato irrigazione modificato ON");
 	    		  }
 	    		  else
 	    			  if(c.payload().toString().contains(Utilities.stateOff)) {
 	    				  this.irrigationState=Utilities.stateOff;
-	    				  System.out.println("---DEBUG IRRIGAZIONE---- stato irrigazione modificato OFF");
+	    				  Logger.getLogger().print("---DEBUG IRRIGAZIONE---- stato irrigazione modificato OFF");
 	    				  Logger.getLogger().print("---DEBUG IRRIGAZIONE---- stato irrigazione modificato OFF");
 	    			  }
 	    		  
@@ -361,7 +362,7 @@ public class MainVerticle extends AbstractVerticle {
 	    dateC.set(Calendar.SECOND, 0);
 	    dateC.set(Calendar.MILLISECOND, 0);
 	    this.irrigationController= new IrrigationController(MongoClient.createShared(vertx, mongoconfig),this.irrigationCommandClient);
-	    System.out.println("DEBUG: irrigationController  started");
+	    Logger.getLogger().print("DEBUG: irrigationController  started");
 	    // Schedule to run 
 	    /*timer.schedule(
 	      this.irrigationController,
@@ -400,7 +401,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	mongoClient.find("ConfigurationItem", query, res -> {
     	    		  if (res.succeeded()) {
     	    			  for (JsonObject json : res.result()) {
-    	    				  System.out.println(json.encodePrettily());
+    	    				  Logger.getLogger().print(json.encodePrettily());
     	    		      List<JsonObject> configurations= res.result();
     	    		      
     	    		      routingContext
@@ -424,7 +425,7 @@ public class MainVerticle extends AbstractVerticle {
     	    		String username=routingContext.request().params().get("username");
         	    	//String password= routingContext.request().getParam("password").toString();
     	    		String password=routingContext.request().params().get("password");
-        	    	System.out.println("Utente che cerca di loggarsi nel sistema: "+username+" "+password);	//Stampa di TEST
+        	    	Logger.getLogger().print("Utente che cerca di loggarsi nel sistema: "+username+" "+password);	//Stampa di TEST
         	    	/*RequestParameters params = routingContext.get("parsedParameters"); // (1)
         	    	String username = params.pathParameter("username").toString();
         	    	String password = params.pathParameter("password").toString();*/
@@ -436,10 +437,10 @@ public class MainVerticle extends AbstractVerticle {
         	    	 
         	    	 mongoClient.findOne("Utenti", q, null , res -> {
         	    		 if (res.succeeded() && (res.result()!=null)) {
-							System.out.println("test login: "+res.result());
+							Logger.getLogger().print("test login: "+res.result());
         	    			 if(this.loggingController.logIn(res.result().toString())) {
         	    				 try {
-    								System.out.println("Conferma login effettuato per utente: user: "+this.loggingController.getUserLogged().toString());
+    								Logger.getLogger().print("Conferma login effettuato per utente: user: "+this.loggingController.getUserLogged().toString());
     								Logger.getLogger().print("Conferma login effettuato per utente: user: "+this.loggingController.getUserLogged().toString());
     								routingContext
 								 	.response()
@@ -447,7 +448,7 @@ public class MainVerticle extends AbstractVerticle {
 								 	.end( this.loggingController.getUserLogged().getRole().toString()  );
     							 }catch(NoUserLogException e) {
     								// TODO Auto-generated catch block
-    								System.out.println("Errore toString user loggato");
+    								Logger.getLogger().print("Errore toString user loggato");
     								Logger.getLogger().print("Errore toString user loggato");
     								 routingContext
 	       	   		    	   	      .response()
@@ -466,7 +467,7 @@ public class MainVerticle extends AbstractVerticle {
         	    			 }
         	    			
         	    		}else{
-        	    			  System.out.println("Utente "+username+" "+password+" non esistente.");
+        	    			  Logger.getLogger().print("Utente "+username+" "+password+" non esistente.");
         	    			  Logger.getLogger().print("Utente "+username+" "+password+" non esistente.");
     		    	   	      //res.cause().printStackTrace();
     		    	   	      /*
@@ -531,7 +532,7 @@ public class MainVerticle extends AbstractVerticle {
         	    	    		 */
         	    	    	
         	    	    		JsonObject q= new JsonObject();
-        	    	    		System.out.println("DEBUG LASTSAMPLE CHANNEL: "+channel);
+        	    	    		Logger.getLogger().print("DEBUG LASTSAMPLE CHANNEL: "+channel);
         	    	    		Logger.getLogger().print("DEBUG LASTSAMPLE CHANNEL: "+channel);
         	    	    		this.mongoClient.find("channel-"+channel,q, res-> {
 	        	    	      		/*
@@ -548,7 +549,7 @@ public class MainVerticle extends AbstractVerticle {
 	    	    	    			    			lastSample=json;
 	    	    	    			    	}   
 	    	    	    			      }
-	    	    	    			      System.out.println("Canale: "+channel+" --- Last sample  "+lastSample.encodePrettily());
+	    	    	    			      Logger.getLogger().print("Canale: "+channel+" --- Last sample  "+lastSample.encodePrettily());
 	    	    	    			      Logger.getLogger().print("Canale: "+channel+" --- Last sample  "+lastSample.encodePrettily());
 	    	    	    			      /*
 	    	    	    			       * Invio dell'ultimo sample registrato
@@ -607,7 +608,7 @@ public class MainVerticle extends AbstractVerticle {
         	    	    	 * Fallimento se non il parametro non è stato inserito o non esiste il canale selezionato
         	    	    	 */
     	    	    		Logger.getLogger().print("Chiamata REST lastsamples");
-    	    	    		System.out.println("DEBUG----LASTSAMPLE");
+    	    	    		Logger.getLogger().print("DEBUG----LASTSAMPLE");
         	    	    	if(channel==null)
         	    	    		routingContext
     			    	   	      .response()
@@ -621,21 +622,21 @@ public class MainVerticle extends AbstractVerticle {
             	    	    	
             	    	    	
             	    	    	if(!samples.isEmpty()) {
-            	    	    		System.out.println("Samples inviati: "+samples.toString());
+            	    	    		Logger.getLogger().print("Samples inviati: "+samples.toString());
             	    	    		routingContext
         								.response()
         								.setStatusCode(200)
         								.end(samples.toString());
         								this.sampleChannelQueue.get(channel).clear();
         	            	    */	 
-        								System.out.println("NOT IN USE");
+        								Logger.getLogger().print("NOT IN USE");
                 	    	    		routingContext
         	    	    	    	 	.response()
         	    	    	    	 	.setStatusCode(200)
         	    	    	    	 	.end();
         						/*	
             	    	    	}else {
-            	    	    		System.out.println("No new Value");
+            	    	    		Logger.getLogger().print("No new Value");
             	    	    		routingContext
     	    	    	    	 	.response()
     	    	    	    	 	.setStatusCode(200)
@@ -671,21 +672,21 @@ public class MainVerticle extends AbstractVerticle {
             	    	    	
             	    	    	
             	    	    	if(!samples.isEmpty()) {
-            	    	    		System.out.println("Samples inviati: "+samples.toString());
+            	    	    		Logger.getLogger().print("Samples inviati: "+samples.toString());
             	    	    		routingContext
         								.response()
         								.setStatusCode(200)
         								.end(samples.toString());
         							
             	    	    	}else {
-            	    	    		System.out.println("No new Value");
+            	    	    		Logger.getLogger().print("No new Value");
             	    	    		routingContext
     	    	    	    	 	.response()
     	    	    	    	 	.setStatusCode(200)
     	    	    	    	 	.end();
             	    	    	}
             	    	    	*/
-            	    	    	System.out.println("NOT IN USE");
+            	    	    	Logger.getLogger().print("NOT IN USE");
         	    	    		routingContext
 	    	    	    	 	.response()
 	    	    	    	 	.setStatusCode(200)
@@ -720,7 +721,7 @@ public class MainVerticle extends AbstractVerticle {
         	    	    		 * Restituiamo tutti i Sample di un determinato canale
         	    	    		 */
         	    	    		JsonObject q= new JsonObject();
-        	    	    		System.out.println("DEBUG ALL SAMPLE CHANNEL: "+channel);
+        	    	    		Logger.getLogger().print("DEBUG ALL SAMPLE CHANNEL: "+channel);
         	    	    		Logger.getLogger().print("Chiamata REST allsamples");
             	    	    	this.mongoClient.find("channel-"+channel,q, res-> {
             	    	    		/*
@@ -731,7 +732,7 @@ public class MainVerticle extends AbstractVerticle {
         								.response()
         								.setStatusCode(200)
         								.end(res.result().toString());
-            	    	    			System.out.println("DEBUG ALL SAMPLE: "+res.result().toString());
+            	    	    			Logger.getLogger().print("DEBUG ALL SAMPLE: "+res.result().toString());
             	    	    			Logger.getLogger().print("DEBUG ALL SAMPLE: "+res.result().toString());
             	    	    		}
             	    	    		/*
@@ -800,7 +801,7 @@ public class MainVerticle extends AbstractVerticle {
         									singleClassification = newClassificationsJson.getJsonObject(i);
         					    			mongoClient.insert("classifications", singleClassification , res ->{
         						    			  if(res.succeeded()) {
-        						    				  System.out.println("Classificazione salvata correttamente nel DB.");
+        						    				  Logger.getLogger().print("Classificazione salvata correttamente nel DB.");
         						    				  Logger.getLogger().print("Classificazione salvata correttamente nel DB.");
         						    			  }else
         						    				  System.err.println("ERRORE salvataggio misura");  
@@ -847,7 +848,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	    	Logger.getLogger().print("Chiamata REST newclassificationSint");
     	    	    	if(this.loggingController.isUserLogged()) {
         	    	    	String dataSet= routingContext.request().getParam("datasetName");
-        	    	    	System.out.println("Dataset: "+dataSet);
+        	    	    	Logger.getLogger().print("Dataset: "+dataSet);
         	    	    	Logger.getLogger().print("Dataset: "+dataSet);
         	    	    	/*
         	    	    	 * Fallimento se il parametro non è stato inserito o non esiste il canale selezionato
@@ -895,10 +896,10 @@ public class MainVerticle extends AbstractVerticle {
         								//Memorizzio nel database tutte le classificazioni
             	    	    			//JsonArray newClassificationsJson= new JsonArray(jsonClassifications);
             	    	    			JsonObject singleClassification= new JsonObject(jsonClassifications);
-            	    	    			System.out.println("--DEBUG-- "+singleClassification.toString());
+            	    	    			Logger.getLogger().print("--DEBUG-- "+singleClassification.toString());
             	    	    			mongoClient.insert("ClassificazioniSintetiche", singleClassification , res ->{
   						    			  if(res.succeeded())
-  						    				  System.out.println("Classificazione sintetica salvata correttamente nel DB.");
+  						    				  Logger.getLogger().print("Classificazione sintetica salvata correttamente nel DB.");
   						    			  else
   						    				  System.err.println("ERRORE salvataggio ClassificazioniSintetiche");  
             	    	    			});
@@ -912,7 +913,7 @@ public class MainVerticle extends AbstractVerticle {
         									singleImageClassification = newClassificationsJson.getJsonObject(i);
         					    			mongoClient.insert("classifications", singleImageClassification , res ->{
         						    			  if(res.succeeded())
-        						    				  System.out.println("Singola classificazione salvata correttamente nel DB.");
+        						    				  Logger.getLogger().print("Singola classificazione salvata correttamente nel DB.");
         						    			  else
         						    				  System.err.println("ERRORE salvataggio classifications");  
         						    		});
@@ -959,12 +960,12 @@ public class MainVerticle extends AbstractVerticle {
 	            	    	    			//Memorizzio nel database tutte le classificazioni
 	            	    	    			//JsonArray newClassificationsJson= new JsonArray(jsonClassifications);
 	            	    	    			JsonObject singleClassification= new JsonObject(jsonClassifications);
-	            	    	    			System.out.println("--DEBUG-- "+singleClassification.toString());
+	            	    	    			Logger.getLogger().print("--DEBUG-- "+singleClassification.toString());
 	            	    	    			Logger.getLogger().print("--DEBUG-- "+singleClassification.toString());
 	            	    	    			
 	            	    	    			mongoClient.insert("ClassificazioniSintetiche", singleClassification , res ->{
 	  						    			  if(res.succeeded()) {
-	  						    				  System.out.println("Classificazione sintetica salvata correttamente nel DB.");
+	  						    				  Logger.getLogger().print("Classificazione sintetica salvata correttamente nel DB.");
 	  						    				  Logger.getLogger().print("Classificazione sintetica salvata correttamente nel DB.");
 	  						    			  }else {
 	  						    				  System.err.println("ERRORE salvataggio ClassificazioniSintetiche");
@@ -981,7 +982,7 @@ public class MainVerticle extends AbstractVerticle {
 	        									singleImageClassification = newClassificationsJson.getJsonObject(i);
 	        					    			mongoClient.insert("classifications", singleImageClassification , res ->{
 	        						    			  if(res.succeeded()) {
-	        						    				  System.out.println("Singola classificazione salvata correttamente nel DB.");
+	        						    				  Logger.getLogger().print("Singola classificazione salvata correttamente nel DB.");
 	        						    				  Logger.getLogger().print("Singola classificazione salvata correttamente nel DB.");
 	        						    			  }else {
 	        						    				  System.err.println("ERRORE salvataggio classifications");
@@ -1057,7 +1058,7 @@ public class MainVerticle extends AbstractVerticle {
         	    	    		 * Avviamo una nuova classificazione
         	    	    		 */
         	    	    		long date = Long.parseLong(dateString);
-        	    	    		//System.out.println(date);
+        	    	    		//Logger.getLogger().print(date);
         	    	    		JsonObject q= new JsonObject().put("date",date );
             	    	    	this.mongoClient.find("ClassificazioniSintetiche",q, res-> {
             	    	    		/*
@@ -1174,7 +1175,7 @@ public class MainVerticle extends AbstractVerticle {
             	    	    			
             	    	    			Collections.sort((List<ClassificationSint>) csa);
             	    	    			ArrayList<ClassificationSint> arrayResp= new ArrayList<ClassificationSint>();
-            	    	    			System.out.println("DEBUG GET-LAST-CLASSIFICATIONS: "+csa.toString());
+            	    	    			Logger.getLogger().print("DEBUG GET-LAST-CLASSIFICATIONS: "+csa.toString());
             	    	    			Logger.getLogger().print("DEBUG GET-LAST-CLASSIFICATIONS: "+csa.toString());
             	    	    			
             	    	    			for(int i=0; i<4; i++) {
@@ -1318,7 +1319,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	    		 */
         	    	    	String modelName= routingContext.request().getParam("modelName");
         	    	    	try {
-        	    	    		System.out.println("Modello selezionato: "+modelName+"... ");
+        	    	    		Logger.getLogger().print("Modello selezionato: "+modelName+"... ");
         	    	    		Logger.getLogger().print("Modello selezionato: "+modelName+"... ");
     							/*
     							 * Salviamo nel db come modello selezionato
@@ -1336,7 +1337,7 @@ public class MainVerticle extends AbstractVerticle {
         	    	    					  .put("name", modelName));
         	    	    			mongoClient.updateCollection("selectedModel", query, update, res -> {
         	    	    				  if (res.succeeded()) {
-        	    	    				    System.out.println("Modello selezionato salvato nel db");
+        	    	    				    Logger.getLogger().print("Modello selezionato salvato nel db");
         	    	    				    Logger.getLogger().print("Modello selezionato salvato nel db");
         	    	    				    routingContext
     	        							.response()
@@ -1354,7 +1355,7 @@ public class MainVerticle extends AbstractVerticle {
         	    	    			
         	    	    			
         	    	    		}else {
-        	    	    			System.out.println("Nessun modello è presente nel db, aggiunta nuovo modello...");
+        	    	    			Logger.getLogger().print("Nessun modello è presente nel db, aggiunta nuovo modello...");
         	    	    			//Verifico che il modello sia nel filesystem e aggiorno il controller
         							this.modelController.setModelSelected(modelName);
 
@@ -1363,7 +1364,7 @@ public class MainVerticle extends AbstractVerticle {
         	    	    			JsonObject newModelJson = new JsonObject();		  
         	    	    			mongoClient.save("selectedModel", newModelJson, res -> {
         	    	    					  if (res.succeeded()) {
-        	    	    					    System.out.println("Modello selezionato salvato nel db");
+        	    	    					    Logger.getLogger().print("Modello selezionato salvato nel db");
         	    	    					    Logger.getLogger().print("Modello selezionato salvato nel db");
         	    	    					    routingContext
         	        							.response()
@@ -1416,7 +1417,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	    		 * Aggiungo un nuovo modello di classificazione
     	    	    		 */
         	    	    	String modelNameZip= routingContext.request().getParam("fileName");
-        	    	    	System.out.println("File Zip da estrarre: "+modelNameZip+"... ");
+        	    	    	Logger.getLogger().print("File Zip da estrarre: "+modelNameZip+"... ");
         	    	    	Logger.getLogger().print("File Zip da estrarre: "+modelNameZip+"... ");
 							ModelController mc= new ModelController();
 							try {
@@ -1466,11 +1467,35 @@ public class MainVerticle extends AbstractVerticle {
     	    	    routerFactory.addHandlerByOperationId("startIrrigation", routingContext ->{
     	    	    	Logger.getLogger().print("Chiamata REST startIrrigation");
     	    	    	if(this.loggingController.isUserLogged()) {
-    	    	    		System.out.println("Invio comando di start dell'irrigazione...");
+    	    	    		Logger.getLogger().print("Invio comando di start dell'irrigazione...");
     	    	    		
+    	    	    		//Controlliamo che non abbia query param per indicare il campo tradizionale
+    	    	    		if(routingContext.request().getParam("campo").equalsIgnoreCase(Campo.MANUAL.getNome())) {
+    	    	    			
+    	    	    			Logger.getLogger().print("Richiesta avvio irrigazione campo tradizionale");
+    	    	    			
+    	    	    			Future<Irrigazione> result=this.irrigationController.startIrrigationDirect(Campo.MANUAL);
+    	    	    			result.onSuccess( c->{
+    	    	    				//Ritorniamo lo stato 200 per indicare il corretto avvio dell'irrigazione
+    	    	    				routingContext
+		  	    		    			  .response()
+		  	    		    			  .setStatusCode(200)
+		  	    		    			  .end();
+	  	    		    			Logger.getLogger().print("Irrigazione campo tradizionale avvenuta con successo!");
+	  	    		    			
+    	    	    			});
+    	    	    			result.onFailure(f->{
+    	    	    				Logger.getLogger().print("---DEBUG IRRIGAZIONE-LOG---- ERROR: irrigazione non avviata");
+    	    	    				routingContext
+	        						.response()
+	        						.setStatusCode(400)
+	        						.end("Stato attuale: errore attivazione.");
+                	    	    	Logger.getLogger().print("Stato attuale: errore attivazione.");
+    	    	    			});
+    	    	    		}else
     	    	    		if(this.irrigationController.getState() != Utilities.stateOn) {
  
-    	    	    			Future<Irrigazione> result=this.irrigationController.startIrrigationDirect();
+    	    	    			Future<Irrigazione> result=this.irrigationController.startIrrigationDirect(Campo.AUTO);
     	    	    			
     	    	    			result.onSuccess( c->{
     	    	    				//Convertiamo l'irrigazione
@@ -1480,8 +1505,8 @@ public class MainVerticle extends AbstractVerticle {
 		  	    		    			  .response()
 		  	    		    			  .setStatusCode(200)
 		  	    		    			  .end(irrigationJson);
-										System.out.println("Irrigazione ON : "+irrigationJson);
 										Logger.getLogger().print("Irrigazione ON : "+irrigationJson);
+										
 									} catch (JsonProcessingException e) {
 										// TODO Auto-generated catch block
 										e.printStackTrace();
@@ -1490,17 +1515,16 @@ public class MainVerticle extends AbstractVerticle {
 		        						.setStatusCode(400)
 		        						.end("Errore parsing Irrigazione");
 									}
-	  	    		    			System.out.println("Stato attuale: irrigazione attivata.");
 	  	    		    			Logger.getLogger().print("Stato attuale: irrigazione attivata.");
+	  	    		    			
     	    	    			});
     	    	    			result.onFailure(f->{
-    	    	    				System.out.println("---DEBUG IRRIGAZIONE-LOG---- ERROR: irrigazione non avviata");
     	    	    				Logger.getLogger().print("---DEBUG IRRIGAZIONE-LOG---- ERROR: irrigazione non avviata");
-    	    						routingContext
+    	    	    				routingContext
 	        						.response()
 	        						.setStatusCode(400)
 	        						.end("Stato attuale: errore attivazione.");
-                	    	    	System.out.println("Stato attuale: errore attivazione.");
+                	    	    	Logger.getLogger().print("Stato attuale: errore attivazione.");
     	    	    			});
     	    	    				
 	    	    	    	}else {
@@ -1509,7 +1533,7 @@ public class MainVerticle extends AbstractVerticle {
     							.response()
     							.setStatusCode(400)
     							.end("Stato attuale: irrigazione gia' in eseguzione");
-            	    	    	System.out.println("Stato attuale: irrigazione gia' in eseguzione");
+            	    	    	Logger.getLogger().print("Stato attuale: irrigazione gia' in eseguzione");
     	    	    		};
         	    	    	
         	    	    	 	
@@ -1532,12 +1556,36 @@ public class MainVerticle extends AbstractVerticle {
     	    	    	Logger.getLogger().print("Chiamata REST stopIrrigation");
     	    	    	if(this.loggingController.isUserLogged()) {
     	    	    		
+    	    	    		//Controlliamo che non abbia query param per indicare il campo tradizionale
+    	    	    		if(routingContext.request().getParam("campo").equalsIgnoreCase(Campo.MANUAL.getNome())) {
+    	    	    			
+    	    	    			Logger.getLogger().print("Richiesta avvio irrigazione campo tradizionale");
+    	    	    			
+    	    	    			Future<Irrigazione> result=this.irrigationController.stopIrrigationDirect(Campo.MANUAL);
+    	    	    			result.onSuccess( c->{
+    	    	    				//Ritorniamo lo stato 200 per indicare il corretto avvio dell'irrigazione
+    	    	    				routingContext
+		  	    		    			  .response()
+		  	    		    			  .setStatusCode(200)
+		  	    		    			  .end();
+	  	    		    			Logger.getLogger().print("STOP-Irrigazione campo tradizionale avvenuta con successo!");
+	  	    		    			
+    	    	    			});
+    	    	    			result.onFailure(f->{
+    	    	    				Logger.getLogger().print("---DEBUG IRRIGAZIONE-LOG---- ERROR: irrigazione CAMPO TRADIZIONALE NON FERMATA CORRETTAMENTE");
+    	    	    				routingContext
+	        						.response()
+	        						.setStatusCode(400)
+	        						.end("Stato attuale: errore attivazione.");
+                	    	    	Logger.getLogger().print("Stato attuale: errore attivazione.");
+    	    	    			});
+    	    	    		}else
+    	    	    		//STOP IRRIGAZIONE CAMPO AUTOMATICO			-------------------------------------------------	
     	    	    		if(this.irrigationController.getState() != Utilities.stateOff) {
     	    	    			
-    	    	    			System.out.println("Invio comando di stop dell'irrigazione...");
     	    	    			Logger.getLogger().print("Invio comando di stop dell'irrigazione...");
     	    	    			
-    	    	    			Future<Irrigazione> result=this.irrigationController.stopIrrigationDirect();
+    	    	    			Future<Irrigazione> result=this.irrigationController.stopIrrigationDirect(Campo.AUTO);
     	    	    			result.onSuccess( c->{
     	    	    				//Convertiamo l'irrigazione
     	    	    				try {
@@ -1546,7 +1594,6 @@ public class MainVerticle extends AbstractVerticle {
 		  	    		    			  .response()
 		  	    		    			  .setStatusCode(200)
 		  	    		    			  .end(irrigationJson);
-										System.out.println("Irrigazione OFF : "+irrigationJson);
 										Logger.getLogger().print("Irrigazione OFF : "+irrigationJson);
 									} catch (JsonProcessingException e) {
 										// TODO Auto-generated catch block
@@ -1556,17 +1603,15 @@ public class MainVerticle extends AbstractVerticle {
 		        						.setStatusCode(400)
 		        						.end("Errore parsing Irrigazione");
 									}
-	  	    		    			System.out.println("Stato attuale: irrigazione OFF.");
 	  	    		    			Logger.getLogger().print("Stato attuale: irrigazione OFF.");
     	    	    			});
     	    	    			result.onFailure(f->{
-    	    	    				System.out.println("---DEBUG IRRIGAZIONE-LOG---- ERROR: irrigazione non avviata");
     	    	    				Logger.getLogger().print("---DEBUG IRRIGAZIONE-LOG---- ERROR: irrigazione non avviata");
     	    						routingContext
 	        						.response()
 	        						.setStatusCode(400)
 	        						.end("Stato attuale: errore attivazione.");
-                	    	    	System.out.println("Stato attuale: errore attivazione.");
+                	    	    	Logger.getLogger().print("Stato attuale: errore attivazione.");
     	    	    			});
     	    	    				
 	    	    	    	}else {
@@ -1575,7 +1620,6 @@ public class MainVerticle extends AbstractVerticle {
     							.response()
     							.setStatusCode(400)
     							.end("Stato attuale: irrigazione gia' in eseguzione");
-            	    	    	System.out.println("Stato attuale: irrigazione gia' spenta");
             	    	    	Logger.getLogger().print("Stato attuale: irrigazione gia' spenta");
     	    	    		};
         	    	    	
@@ -1630,13 +1674,13 @@ public class MainVerticle extends AbstractVerticle {
     	    	    	Logger.getLogger().print("Chiamata REST irrigationStorico");
     	    	    	if(this.loggingController.isUserLogged()) {
     	    	    		 
-    	    	    		System.out.println("Invio irrigazioni...");
+    	    	    		Logger.getLogger().print("Invio irrigazioni...");
     	    	    		JsonObject irrigazioniQuery= new JsonObject();
     	    	    		this.mongoClient.find("Irrigazioni",irrigazioniQuery , res -> {
     	    	    		    if (res.succeeded()) {
     	    	    			      //for (JsonObject json : res.result()) {
-    	    	    			        //System.out.println(json.encodePrettily());
-    	    	    			        //System.out.println("Connessione effettuata con successo al db!");
+    	    	    			        //Logger.getLogger().print(json.encodePrettily());
+    	    	    			        //Logger.getLogger().print("Connessione effettuata con successo al db!");
     	    	    			      //}
     	    	    			      routingContext
     	    		    	   	      .response()
@@ -1670,7 +1714,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	    	Logger.getLogger().print("Chiamata REST lastIrrigation");
     	    	    	if(this.loggingController.isUserLogged()) {	    	    		
     	    	    
-    	    	    		System.out.println("Invio ultima irrigazione...");
+    	    	    		Logger.getLogger().print("Invio ultima irrigazione...");
     	    	    		
     	    	    		if(this.irrigationController.getState()==Utilities.stateOn) {
     	    	    			if(this.irrigationController!=null) {
@@ -1711,10 +1755,9 @@ public class MainVerticle extends AbstractVerticle {
         	    	    			    	if(json.containsKey("inizioIrrig") && (json.getLong("inizioIrrig")>max)) {
         	    	    			    		lastIrrigation=json;
         	    	    			    	}
-        	    	    			        //System.out.println("Last irrigation: "+lastIrrigation.encodePrettily());
-        	    	    			        //System.out.println("Connessione effettuata con successo al db!");
+        	    	    			        //Logger.getLogger().print("Last irrigation: "+lastIrrigation.encodePrettily());
+        	    	    			        //Logger.getLogger().print("Connessione effettuata con successo al db!");
         	    	    			      }
-        	    	    			      System.out.println("Last irrigation: "+lastIrrigation.encodePrettily());
         	    	    			      Logger.getLogger().print("Last irrigation: "+lastIrrigation.encodePrettily());
         	    	    			      routingContext
         	    		    	   	      .response()
@@ -1751,7 +1794,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	    	Logger.getLogger().print("Chiamata REST irrigationTime");
     	    	    	if(this.loggingController.isUserLogged()) {	    	    		
     	    	    
-    	    	    		System.out.println("GET-IRRIGATION-TIME...:"+this.irrigationController.getStartingTimeIrrigation().toString());
+    	    	    		Logger.getLogger().print("GET-IRRIGATION-TIME...:"+this.irrigationController.getStartingTimeIrrigation().toString());
     	    	    		if(this.irrigationController != null)
 	    	    	    		routingContext
 	  		    	   	       .response()
@@ -1784,17 +1827,15 @@ public class MainVerticle extends AbstractVerticle {
     	    	    	Logger.getLogger().print("Chiamata REST setIrrigationTime");
     	    	    	if(this.loggingController.isUserLogged()) {	    	    		
     	    	    
-    	    	    		System.out.println("SET-IRRIGATION-TIME ...");
+    	    	    		Logger.getLogger().print("SET-IRRIGATION-TIME ...");
     	    	    		if(this.irrigationController != null) {
     	    	    			try {
     	    	    				
     	    	    				//Converto il tempo acquisito come parametro in LocalTime dell'irrigationController
-    	    	    				System.out.println("SET-IRRIGATION-TIME");
-    	    	    				System.out.println(routingContext.request().getParam("irrigationTime"));
+    	    	    				Logger.getLogger().print(routingContext.request().getParam("irrigationTime"));
         	    	    			LocalTime newIrrigationTime =LocalTime.parse(routingContext.request().getParam("irrigationTime"));
         	    	    			//Per evitare bug mancanza secondi
         	    	    			newIrrigationTime= LocalTime.of(newIrrigationTime.getHour(), newIrrigationTime.getMinute(), 0);
-        	    	    			System.out.println("New Irrigation time: "+newIrrigationTime.getHour()+" "+newIrrigationTime.getMinute()+" "+newIrrigationTime.getSecond());
         	    	    			Logger.getLogger().print("New Irrigation time: "+newIrrigationTime.getHour()+" "+newIrrigationTime.getMinute()+" "+newIrrigationTime.getSecond());
         	    	    			//Dopo aver impostato l'irrigazione resettare il timer e il timer task e crearne uno nuovo
         	    	    			//this.timer.cancel();
@@ -1806,7 +1847,7 @@ public class MainVerticle extends AbstractVerticle {
         	    	    			/*
         	    	    			 * Attendiamo fino al corretto completamento dello scheduling del nuovo orario
         	    	    			 */
-        	    	    			System.out.println("SET-IRRIGATION CALL...");
+        	    	    			Logger.getLogger().print("SET-IRRIGATION CALL...");
         	    	    			/*
         	    	    			 * Bisogna ricreare il controller poiche' il timerTask non e' riutilizzabile
         	    	    			 */
@@ -1830,7 +1871,7 @@ public class MainVerticle extends AbstractVerticle {
         	    	    					this.irrigationController.delayDay);
         	    	    			
         	    	    			
-        	    	    			//System.out.println("--debug tempo da attendere:  "+this.irrigationController.delayFromNewIrrigation(newIrrigationTime)/(60*60*1000));
+        	    	    			//Logger.getLogger().print("--debug tempo da attendere:  "+this.irrigationController.delayFromNewIrrigation(newIrrigationTime)/(60*60*1000));
         	    	    			
         	    	    			//Restituiamo risposta
         	    	    			routingContext
@@ -1892,21 +1933,21 @@ public class MainVerticle extends AbstractVerticle {
     	    	    	Logger.getLogger().print("Chiamata REST channelsNum");
     	    	    	if(this.loggingController.isUserLogged()) {
     	    	    		//Caso nel quale non è stata creata nessuna irrigazione	    
-    	    	    		System.out.println("Invio numero canali... ");
+    	    	    		Logger.getLogger().print("Invio numero canali... ");
     	    	    		//Calcolo numero canali presenti
     	    	    		ArrayList<Integer> listIdChannel= new ArrayList<Integer>();
     	    	    		for(int i=0;i<this.numberOfChannel;i++) {
     	    	    			listIdChannel.add(i);
     	    	    		}
     	    	    		//DEBUG
-    	    	    		System.out.println("--DEBUG-------Numero canali gateway: "+listIdChannel.size()+" Canali gateway: "+listIdChannel.toString());
+    	    	    		Logger.getLogger().print("--DEBUG-------Numero canali gateway: "+listIdChannel.size()+" Canali gateway: "+listIdChannel.toString());
     	    	    		
     	    	    		listIdChannel.addAll(this.csvController.getChannelNumberCSV());
-    	    	    		System.out.println("--DEBUG-------Numero canali totale: "+listIdChannel.size()+" Canali : "+listIdChannel.toString());
+    	    	    		Logger.getLogger().print("--DEBUG-------Numero canali totale: "+listIdChannel.size()+" Canali : "+listIdChannel.toString());
     	    	    		
 							try {
 								String jsonArray = new ObjectMapper().writeValueAsString(listIdChannel);
-								System.out.println("--DEBUG-------Json: "+listIdChannel.size());
+								Logger.getLogger().print("--DEBUG-------Json: "+listIdChannel.size());
 								routingContext
 	    		    	   	      .response()
 	    			              .setStatusCode(200)
@@ -1943,7 +1984,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	    	Logger.getLogger().print("Chiamata REST getConfigurations");
     	    	    	if(this.loggingController.isUserLogged()) {
     	    	    		//Caso nel quale non è stata creata nessuna irrigazione	    
-    	    	    		System.out.println("Invio configuazioni: "+this.configuration.toString());
+    	    	    		Logger.getLogger().print("Invio configuazioni: "+this.configuration.toString());
     	    	    		routingContext
     		    	   	      .response()
     			              .setStatusCode(200)
@@ -1966,10 +2007,10 @@ public class MainVerticle extends AbstractVerticle {
     	    	    	Logger.getLogger().print("Chiamata REST channelMeasure");
     	    	    	if(this.loggingController.isUserLogged()) {
     	    	    		//Caso nel quale non è stata creata nessuna irrigazione	    
-    	    	    		System.out.println("Invio channelMeasure: "+this.configurationController.channelMeasureArray.toString());
+    	    	    		Logger.getLogger().print("Invio channelMeasure: "+this.configurationController.channelMeasureArray.toString());
     	    	    		try {
     	    	    		  String jsonresp= new ObjectMapper().writeValueAsString(this.configurationController.channelMeasureArray);
-    	    	    		  System.out.println("TEST: "+this.configurationController.channelMeasureArray.toString());
+    	    	    		  Logger.getLogger().print("TEST: "+this.configurationController.channelMeasureArray.toString());
     	    	    		  routingContext
       		    	   	      .response()
       			              .setStatusCode(200)
@@ -2033,7 +2074,7 @@ public class MainVerticle extends AbstractVerticle {
     	  } else {
 			// Something went wrong during router factory initialization
     	    //future.fail(ar.cause()); // (2)
-    		 System.out.println("Errore creazione verticle");
+    		 Logger.getLogger().print("Errore creazione verticle");
     		 startPromise.fail(ar.cause());
     	  }
     	});
@@ -2092,10 +2133,10 @@ public class MainVerticle extends AbstractVerticle {
 	  client.connect(1883, "localhost", s -> {		 
 		this.mqttClients.get(i).publishHandler(c -> {
 	    		//Ogni qual volta viene pubblicata una misura la stampiamo e la salviamo.
-				  System.out.println("There are new message in topic: " + c.topicName());
-	    		  System.out.println("Content(as string) of the message: " + c.payload().toString());
-	    		  System.out.println("QoS: " + c.qosLevel());	
-	    		  System.out.println("LOG-GATEWAY: "+c.payload().toString());
+				  Logger.getLogger().print("There are new message in topic: " + c.topicName());
+	    		  Logger.getLogger().print("Content(as string) of the message: " + c.payload().toString());
+	    		  Logger.getLogger().print("QoS: " + c.qosLevel());	
+	    		  Logger.getLogger().print("LOG-GATEWAY: "+c.payload().toString());
 	    		  
 	    		 /* 
 	    		  * Il contenuto deve essere salvato nel database e nella PriorityQueue
@@ -2114,7 +2155,7 @@ public class MainVerticle extends AbstractVerticle {
 	    			  //Salviamo la misura nel DB
 	    			  mongoClient.insert("channel-"+i, singleMisure , res ->{
 		    			  if(res.succeeded())
-		    				  System.out.println("Misura salvata correttamente nel DB.");
+		    				  Logger.getLogger().print("Misura salvata correttamente nel DB.");
 		    			  else
 		    				  System.err.println("ERRORE salvataggio misura");  
 		    		  });
@@ -2134,10 +2175,10 @@ public class MainVerticle extends AbstractVerticle {
 	  client.connect(1883, "localhost", s -> {		 
 		this.mqttClients.get(i).publishHandler(c -> {
 	    		//Ogni qual volta viene pubblicata una misura la stampiamo e la salviamo.
-				  System.out.println("There are new message in topic: " + c.topicName());
-	    		  System.out.println("Content(as string) of the message: " + c.payload().toString());
-	    		  System.out.println("QoS: " + c.qosLevel());	
-	    		  System.out.println("LOG-GATEWAY: "+c.payload().toString());
+				  Logger.getLogger().print("There are new message in topic: " + c.topicName());
+	    		  Logger.getLogger().print("Content(as string) of the message: " + c.payload().toString());
+	    		  Logger.getLogger().print("QoS: " + c.qosLevel());	
+	    		  Logger.getLogger().print("LOG-GATEWAY: "+c.payload().toString());
 	    		  	  
 	    		  /*
 	    		   * La nuova misura viene convertita in jsonObject
@@ -2149,7 +2190,7 @@ public class MainVerticle extends AbstractVerticle {
 	    		  //Salviamo la misura nel DB
     			  mongoClient.insert("channel-"+i, newMisure , res ->{
 	    			  if(res.succeeded())
-	    				  System.out.println("Misura salvata correttamente nel DB.");
+	    				  Logger.getLogger().print("Misura salvata correttamente nel DB.");
 	    			  else
 	    				  System.err.println("ERRORE salvataggio misura");  
 	    		  });
@@ -2197,17 +2238,17 @@ public class MainVerticle extends AbstractVerticle {
   private void setClientWeatherStation() {
 	  
 	  //DEBUG
-	  System.out.println("MQTT WeatherStation Client creation...");
+	  Logger.getLogger().print("MQTT WeatherStation Client creation...");
 	  this.clientWS= MqttClient.create(vertx);
 	  
 	  
 	  clientWS.connect(1883, "localhost", s -> {		 
 		clientWS.publishHandler(c -> {
 	    		//Ogni qual volta viene pubblicata una misura la stampiamo e la salviamo.
-				  System.out.println("There are new message in topic: " + c.topicName());
-	    		  System.out.println("Content(as string) of the message: " + c.payload().toString());
-	    		  System.out.println("QoS: " + c.qosLevel());	
-	    		  System.out.println("LOG-GATEWAY: "+c.payload().toString());
+				  Logger.getLogger().print("There are new message in topic: " + c.topicName());
+	    		  Logger.getLogger().print("Content(as string) of the message: " + c.payload().toString());
+	    		  Logger.getLogger().print("QoS: " + c.qosLevel());	
+	    		  Logger.getLogger().print("LOG-GATEWAY: "+c.payload().toString());
 	    		  	  
 	    		  /* 
 		    		  * Il contenuto deve essere salvato nel database e nella PriorityQueue
@@ -2217,9 +2258,9 @@ public class MainVerticle extends AbstractVerticle {
 		    		   * La misura che è arrivata è un array contenente le nuove misurazioni.
 		    		   */
 		    		  if(newMisures.size()<(Utilities.channelsNames.length+configurationController.idSerialChannel.size()))
-		    			  System.out.println("--DEBUG-----Sono arrivate meno misure di quelle previste------");
+		    			  Logger.getLogger().print("--DEBUG-----Sono arrivate meno misure di quelle previste------");
 		    		  else if(newMisures.size()==Utilities.channelsNames.length+configurationController.idSerialChannel.size())
-		    			  System.out.println("--DEBUG-----Misure uguali in numero------");
+		    			  Logger.getLogger().print("--DEBUG-----Misure uguali in numero------");
 		    		  
 		    		  
 		    		  JsonObject singleMisure;
@@ -2229,7 +2270,7 @@ public class MainVerticle extends AbstractVerticle {
 		    			  String channelName;
 		    			  int channelId=-1;
 		    			  if(singleMisure.containsKey("channel")){
-		    				  //System.out.println("--DEBUG-----Canale trovato-----");
+		    				  //Logger.getLogger().print("--DEBUG-----Canale trovato-----");
 		    				  channelName=singleMisure.getString("channel");
 		    				  if(channelName.contains("Seriale")) {
 		    					  channelId=Utilities.channelsNames.length;//primo canale dopo le misure della weatherstation
@@ -2246,7 +2287,7 @@ public class MainVerticle extends AbstractVerticle {
 				    			//Salviamo la misura nel DB
 				    			  mongoClient.insert("channel-"+channelId, singleMisure , res ->{
 					    			  //if(res.succeeded())
-					    				  //System.out.println("Misura salvata correttamente nel DB.");
+					    				  //Logger.getLogger().print("Misura salvata correttamente nel DB.");
 					    			  //else
 					    				  //System.err.println("ERRORE salvataggio misura");  
 					    		  });

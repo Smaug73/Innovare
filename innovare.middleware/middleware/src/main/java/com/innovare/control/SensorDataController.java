@@ -65,7 +65,7 @@ public class SensorDataController {
 		//Usiamo join il che vuol dire che si attendera' la fine di tutti i metodi Future
 		CompositeFuture tasks= CompositeFuture.join(futures).onComplete(res ->{
 			if(res.succeeded()) {
-				System.out.println("Risultato: "+res.result().toString());
+				Logger.getLogger().print("Risultato: "+res.result().toString());
 				resultPromise.complete(samplesMapResult);
 			}
 		});
@@ -86,7 +86,7 @@ public class SensorDataController {
 		Promise<Sample> resultPromise = Promise.promise();
 		
 		JsonObject q= new JsonObject();
-		System.out.println("DEBUG SensorDataController id prelevato: "+index);
+		Logger.getLogger().print("DEBUG SensorDataController id prelevato: "+index);
 		FindOptions fd = new FindOptions();
 		//Opzione per fare il sorting del risultato in modo crescente??
 		fd.setSort(new JsonObject().put("timestamp", 1));
@@ -97,7 +97,7 @@ public class SensorDataController {
     		 */
     		if(res.succeeded()) {
     			
-    			System.out.println("DEBUG risultato: "+res.result().toString());
+    			Logger.getLogger().print("DEBUG risultato: "+res.result().toString());
     			
     			//Array per raccolta risultati, convertiamo l'array risultato in un ArrayList di Sample
 				ArrayList<Sample> results;
@@ -123,21 +123,21 @@ public class SensorDataController {
 					
 					//Imposto promise con il risultato
 					resultPromise.complete(lastSample);
-					System.err.println("promise impostata");
+					Logger.getLogger().print("promise impostata");
 					
 				} catch (JsonMappingException e1) {
-					System.err.println("Errore jsonMapping sample prelevato in getDataFromMongo");
-					System.err.println("Nessuna prelevazione per il channel "+index);
+					Logger.getLogger().print("Errore jsonMapping sample prelevato in getDataFromMongo");
+					Logger.getLogger().print("Nessuna prelevazione per il channel "+index);
 					e1.printStackTrace();
 				} catch (JsonProcessingException e1) {
-					System.err.println("Errore jsonProcessing sample prelevato in getDataFromMongo");
-					System.err.println("Nessuna prelevazione per il channel "+index);
+					Logger.getLogger().print("Errore jsonProcessing sample prelevato in getDataFromMongo");
+					Logger.getLogger().print("Nessuna prelevazione per il channel "+index);
 					e1.printStackTrace();
 				}
 				catch (Exception e1) {
-					System.err.println("Errore generico parsing Json in SensorDataController");
-					System.err.println("ERRORE: "+e1.getMessage());
-					System.err.println("Nessuna prelevazione per il channel "+index);
+					Logger.getLogger().print("Errore generico parsing Json in SensorDataController");
+					Logger.getLogger().print("ERRORE: "+e1.getMessage());
+					Logger.getLogger().print("Nessuna prelevazione per il channel "+index);
 					
 				}
 				
@@ -147,7 +147,7 @@ public class SensorDataController {
     		 * Caso di fallimento
     		 */
     		else {
-    			System.err.println("DEBUG SensorDataController: Errore recupero del Sample da MongoDB");
+    			Logger.getLogger().print("DEBUG SensorDataController: Errore recupero del Sample da MongoDB");
     			resultPromise.fail("DEBUG SensorDataController: Errore recupero del Sample da MongoDB");
     		}
     	});

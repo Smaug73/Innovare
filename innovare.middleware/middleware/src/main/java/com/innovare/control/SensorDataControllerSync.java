@@ -79,7 +79,7 @@ public class SensorDataControllerSync {
 		Block<Document> addBlock = new Block<Document>() {
 		     @Override
 		     public void apply(final Document document) {
-		         System.out.println(document.toJson(jsonset));
+		         Logger.getLogger().print(document.toJson(jsonset));
 		         samplesDoc.add(new JsonObject(document.toJson(jsonset)));
 		     }
 		};

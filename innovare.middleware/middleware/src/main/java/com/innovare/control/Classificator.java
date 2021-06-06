@@ -56,9 +56,9 @@ public class Classificator {
 			this.imagesDirName = imagesDirName.substring(0, imagesDirName.length()-4);
 		else 
 			this.imagesDirName= imagesDirName;
-		System.out.println("Test dirname: "+this.imagesDirName);
-		//System.out.println("Test -4 -1: "+imagesDirName.substring(imagesDirName.length()-4, imagesDirName.length()-1));
-		//System.out.println("Test 0 -4: "+imagesDirName.substring(0, imagesDirName.length()-4));
+		Logger.getLogger().print("Test dirname: "+this.imagesDirName);
+		//Logger.getLogger().print("Test -4 -1: "+imagesDirName.substring(imagesDirName.length()-4, imagesDirName.length()-1));
+		//Logger.getLogger().print("Test 0 -4: "+imagesDirName.substring(0, imagesDirName.length()-4));
 		//Creazione del relative Path e del Path di destinazione
 	}
 
@@ -71,7 +71,7 @@ public class Classificator {
 		try {
 	         ZipFile zipFile = new ZipFile(Utilities.zipSourcePath+this.imagesDirName+".zip");
 	         if (zipFile.isEncrypted()) {
-	        	 System.err.println("FILE-ERROR:Il file .zip appena letto e' criptato.");
+	        	 Logger.getLogger().print("FILE-ERROR:Il file .zip appena letto e' criptato.");
 	            throw new FileNotFoundException();
 	         }
 	         //Nel caso non esista la cartella delle immagini da classificare viene creata
@@ -105,21 +105,21 @@ public class Classificator {
 			//Prima di avviare il segmenter viene creata la cartella interna a InnovareSegmentDS che conterrà le immagini segmentate del volo
 			this.createDirOrFile(Utilities.segmentDataSetPath+System.getProperty("file.separator")+this.imagesDirName);
 			//Avvio il segmenter
-			System.out.println("python3 "+Utilities.scriptPath+"segmenter.py --create_hash_symlinks --image_processing_limit 5 -v --srcdir "+Utilities.datasetPath+this.imagesDirName+System.getProperty("file.separator")+" --dstdir "+Utilities.segmentDataSetPath+this.imagesDirName+System.getProperty("file.separator"));
+			Logger.getLogger().print("python3 "+Utilities.scriptPath+"segmenter.py --create_hash_symlinks --image_processing_limit 5 -v --srcdir "+Utilities.datasetPath+this.imagesDirName+System.getProperty("file.separator")+" --dstdir "+Utilities.segmentDataSetPath+this.imagesDirName+System.getProperty("file.separator"));
 			Process processSeg= Runtime.getRuntime().exec("python3 "+Utilities.scriptPath+"segmenter.py --create_hash_symlinks --image_processing_limit 5 -v --srcdir "+Utilities.datasetPath+this.imagesDirName+" --dstdir "+Utilities.segmentDataSetPath+this.imagesDirName);
 			//Attendiamo la fine della segmentazione
 			int processSegOutput=processSeg.waitFor();
 			OutputStream outPSeg= processSeg.getOutputStream();
-			System.out.println(outPSeg.toString());
+			Logger.getLogger().print(outPSeg.toString());
 			
 			//Finita la segmentazione avviamo la classificazione
-			System.out.println("python3 "+Utilities.scriptPath+"ClassificationScript.py "+Utilities.modelPath+modelName+" "+Utilities.segmentDataSetPath+this.imagesDirName+System.getProperty("file.separator"));
+			Logger.getLogger().print("python3 "+Utilities.scriptPath+"ClassificationScript.py "+Utilities.modelPath+modelName+" "+Utilities.segmentDataSetPath+this.imagesDirName+System.getProperty("file.separator"));
 			Process process= Runtime.getRuntime().exec("python3 "+Utilities.scriptPath+"ClassificationScript.py "+Utilities.modelPath+modelName+" "+Utilities.segmentDataSetPath+this.imagesDirName+System.getProperty("file.separator"));
 			
 			//Attendiamo la fine del processo di classificazione
 			int processOutput=process.waitFor();
 			OutputStream outP= process.getOutputStream();
-			System.out.println(outP.toString());
+			Logger.getLogger().print(outP.toString());
 			
 			if(processOutput == 0) {
 				/* 
@@ -146,11 +146,11 @@ public class Classificator {
 			
 		}
 		catch (IOException e) {
-			System.err.println("Errore processo python con path:"+Utilities.scriptPath+"ClassificationScript.py e nome modello:"+modelName);
+			Logger.getLogger().print("Errore processo python con path:"+Utilities.scriptPath+"ClassificationScript.py e nome modello:"+modelName);
 			e.printStackTrace();
 			return new ClassificationSint();
 		} catch (InterruptedException e) {
-			System.err.println("Errore processo python con path:"+Utilities.scriptPath+"ClassificationScript.py e nome modello:"+modelName);
+			Logger.getLogger().print("Errore processo python con path:"+Utilities.scriptPath+"ClassificationScript.py e nome modello:"+modelName);
 			e.printStackTrace();
 			return new ClassificationSint();
 		}
@@ -197,7 +197,7 @@ public class Classificator {
 			
 		}, res -> {
 			if(res.succeeded()) {
-				System.out.println(this.LOG+" Classificazione eseguita con successo!");
+				Logger.getLogger().print(this.LOG+" Classificazione eseguita con successo!");
 				classificationP.complete((ClassificationSint) res.result());
 			}else {
 				classificationP.fail(this.LOG+" Errore esecuzione classificazione");
@@ -229,21 +229,21 @@ public class Classificator {
 			//Prima di avviare il segmenter viene creata la cartella interna a InnovareSegmentDS che conterrà le immagini segmentate del volo
 			this.createDirOrFile(Utilities.segmentDataSetPath+System.getProperty("file.separator")+this.imagesDirName);
 			//Avvio il segmenter
-			System.out.println("python3 "+Utilities.scriptPath+"segmenter.py --create_hash_symlinks --image_processing_limit 5 -v --srcdir "+Utilities.datasetPath+this.imagesDirName+System.getProperty("file.separator")+" --dstdir "+Utilities.segmentDataSetPath+this.imagesDirName+System.getProperty("file.separator"));
+			Logger.getLogger().print("python3 "+Utilities.scriptPath+"segmenter.py --create_hash_symlinks --image_processing_limit 5 -v --srcdir "+Utilities.datasetPath+this.imagesDirName+System.getProperty("file.separator")+" --dstdir "+Utilities.segmentDataSetPath+this.imagesDirName+System.getProperty("file.separator"));
 			Process processSeg= Runtime.getRuntime().exec("python3 "+Utilities.scriptPath+"segmenter.py --create_hash_symlinks --image_processing_limit 5 -v --srcdir "+Utilities.datasetPath+this.imagesDirName+" --dstdir "+Utilities.segmentDataSetPath+this.imagesDirName);
 			//Attendiamo la fine della segmentazione
 			int processSegOutput=processSeg.waitFor();
 			OutputStream outPSeg= processSeg.getOutputStream();
-			System.out.println(outPSeg.toString());
+			Logger.getLogger().print(outPSeg.toString());
 			
 			//Finita la segmentazione avviamo la classificazione
-			System.out.println("python3 "+Utilities.scriptPath+"ClassificationScript.py "+Utilities.modelPath+modelName+" "+Utilities.segmentDataSetPath+this.imagesDirName+System.getProperty("file.separator"));
+			Logger.getLogger().print("python3 "+Utilities.scriptPath+"ClassificationScript.py "+Utilities.modelPath+modelName+" "+Utilities.segmentDataSetPath+this.imagesDirName+System.getProperty("file.separator"));
 			Process process= Runtime.getRuntime().exec("python3 "+Utilities.scriptPath+"ClassificationScript.py "+Utilities.modelPath+modelName+" "+Utilities.segmentDataSetPath+this.imagesDirName+System.getProperty("file.separator"));
 			
 			//Attendiamo la fine del processo di classificazione
 			int processOutput=process.waitFor();
 			OutputStream outP= process.getOutputStream();
-			System.out.println(outP.toString());
+			Logger.getLogger().print(outP.toString());
 			
 			if(processOutput == 0) {
 				/* 
@@ -270,11 +270,11 @@ public class Classificator {
 			
 		}
 		catch (IOException e) {
-			System.err.println("Errore processo python con path:"+Utilities.scriptPath+"ClassificationScript.py e nome modello:"+modelName);
+			Logger.getLogger().print("Errore processo python con path:"+Utilities.scriptPath+"ClassificationScript.py e nome modello:"+modelName);
 			e.printStackTrace();
 			return null;
 		} catch (InterruptedException e) {
-			System.err.println("Errore processo python con path:"+Utilities.scriptPath+"ClassificationScript.py e nome modello:"+modelName);
+			Logger.getLogger().print("Errore processo python con path:"+Utilities.scriptPath+"ClassificationScript.py e nome modello:"+modelName);
 			e.printStackTrace();
 			return null;
 		}
@@ -291,12 +291,12 @@ public class Classificator {
 		//Avvio il processo di classificazione 
 		ArrayList<PlantClassification> classifications = new ArrayList<PlantClassification>();
 		try {
-			System.out.println("python "+Utilities.scriptPath+"ClassificationScript.py "+Utilities.modelPath+modelName+" "+Utilities.datasetPath+this.imagesDirName+"/");
+			Logger.getLogger().print("python "+Utilities.scriptPath+"ClassificationScript.py "+Utilities.modelPath+modelName+" "+Utilities.datasetPath+this.imagesDirName+"/");
 			Process process= Runtime.getRuntime().exec("python "+Utilities.scriptPath+"ClassificationScript.py "+Utilities.modelPath+modelName+" "+Utilities.datasetPath+this.imagesDirName+"/");
 			
 			int processOutput=process.waitFor();
 			OutputStream outP= process.getOutputStream();
-			System.out.println(outP.toString());
+			Logger.getLogger().print(outP.toString());
 			
 			if(processOutput == 0) {
 				/* 
@@ -320,7 +320,7 @@ public class Classificator {
 			else throw new InterruptedException();
 			
 		} catch (IOException | InterruptedException e) {
-			System.err.println("Errore processo python con path:"+Utilities.scriptPath+"ClassificationScript.py e nome modello:"+modelName);
+			Logger.getLogger().print("Errore processo python con path:"+Utilities.scriptPath+"ClassificationScript.py e nome modello:"+modelName);
 			e.printStackTrace();
 			return classifications;
 		} 

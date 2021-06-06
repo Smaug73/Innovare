@@ -61,7 +61,7 @@ public class ModelController {
 	public void setModelSelected(String modelName) throws FileNotFoundException {
 		if(foundModel(modelName)) {
 			this.modelSelected=new Model(modelName);
-			System.out.println("Modello selezionato: "+modelName);
+			Logger.getLogger().print("Modello selezionato: "+modelName);
 		}
 		else 
 			throw new FileNotFoundException("Il modello: "+modelName+" non esiste.");
@@ -83,12 +83,12 @@ public class ModelController {
 		         
 		                 
 		         if(!zipFile.isValidZipFile() || !fz.canRead()) {
-		        	 System.err.println("FILE-ERROR:file zip non valido");
+		        	 Logger.getLogger().print("FILE-ERROR:file zip non valido");
 			         //throw new FileNotFoundException();
 		        	 prom.fail("DEBUG UnZipModel: file zip non valido!");
 		         }
 		         if (zipFile.isEncrypted()) {
-		        	 System.err.println("FILE-ERROR:Il file .zip appena letto e' criptato.");
+		        	 Logger.getLogger().print("FILE-ERROR:Il file .zip appena letto e' criptato.");
 		            //throw new FileNotFoundException();
 		        	 prom.fail("DEBUG UnZipModel: Il file .zip appena letto e' criptato.!");
 		         }
@@ -100,9 +100,9 @@ public class ModelController {
 		         fz= new File(Utilities.modelPath+zipName);
 		         
 		         if (fz.delete()) { 
-		             System.out.println("Deleted the folder: " + fz.getName());
+		             Logger.getLogger().print("Deleted the folder: " + fz.getName());
 		           } else {
-		             System.out.println("Failed to delete the folder.");
+		             Logger.getLogger().print("Failed to delete the folder.");
 		             throw new FileNotFoundException();
 		           }
 		         

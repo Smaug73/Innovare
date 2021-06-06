@@ -51,8 +51,8 @@ public class ConfigurationItem {
 	
 		
 		
-		System.out.println(it.toString());
-		System.out.println(jsonConv);
+		Logger.getLogger().print(it.toString());
+		Logger.getLogger().print(jsonConv);
 		
 		}
 		{
@@ -68,8 +68,8 @@ public class ConfigurationItem {
 		
 			
 			
-			System.out.println(it.toString());
-			System.out.println(jsonConv);
+			Logger.getLogger().print(it.toString());
+			Logger.getLogger().print(jsonConv);
 			
 			}
 		

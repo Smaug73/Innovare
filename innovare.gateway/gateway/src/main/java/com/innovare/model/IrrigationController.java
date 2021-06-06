@@ -20,12 +20,18 @@ import java.sql.Timestamp;
 
 public class IrrigationController extends Thread{
 
-	
+	//Comandi campo automatico
 	public static final String stateOff="OFF";
 	public static final String stateOn="ON";
 	
+	//Comandi campo manuale
+	public static final String stateC2On="c2ON";
+	public static final String stateC2Off="c2OFF";
+	
 	//Stato inizialmente impostato ad off
-	private String stato=this.stateOff;
+	private String statoRelAut=this.stateOff;
+	private String statoRelMan=this.stateOff;
+	
 	private MqttClient logClient=null;
 	private MqttClient commandClient=null;
 	
@@ -70,8 +76,8 @@ public class IrrigationController extends Thread{
 		    	//System.out.println("Tempo di irrigazione: "+time);
 		    	
 		    	//Impostiamo in base al comando
-		    	if(comando.equalsIgnoreCase(IrrigationController.stateOn)) {
-		    		Future<Boolean> resultS=startIrrigation();
+		    	if(comando.equalsIgnoreCase(IrrigationController.stateOn) ) {
+		    		Future<Boolean> resultS=startIrrigation(ConfigurationController.releAut);
 		    		resultS.onComplete(h->{
 		    			if(h.succeeded()) {
 		    				this.startResponseMqtt(true);
@@ -79,8 +85,8 @@ public class IrrigationController extends Thread{
 		    				//l'irrigazione deve fermarsi attraverso timer vertx
 		    				this.vertx.setTimer(ConfigurationController.irrigationMaxTime, f->{
 		    					//Fermiamo l'irrigazione se non e' stata gia' fermata
-		    					if(this.stato!=Utilities.stateOff) {
-		    						Future<Boolean> resultF=stopIrrigation();
+		    					if(this.statoRelAut!=Utilities.stateOff) {
+		    						Future<Boolean> resultF=stopIrrigation(ConfigurationController.releAut);
 			    					resultF.onComplete(t->{
 						    			if(t.succeeded())
 						    				//this.startResponseMqtt(true);
@@ -99,7 +105,7 @@ public class IrrigationController extends Thread{
 		    	}
 		    	else
 		    		if(comando.equalsIgnoreCase(IrrigationController.stateOff)) {
-		    			Future<Boolean> resultF=stopIrrigation();
+		    			Future<Boolean> resultF=stopIrrigation(ConfigurationController.releAut);
 		    			resultF.onComplete(t->{
 			    			if(t.succeeded())
 			    				this.startResponseMqtt(true);
@@ -108,8 +114,31 @@ public class IrrigationController extends Thread{
 		    			});
 		    		}
 		    	else
-		    		//Caso nel quale e' una irrigazione programmata
-		    		if(comando.contains("inizioIrrig")) {
+		    		//IRRIGAZIONE CAMPO MANUALE-----------------------------------------
+		    		if(comando.equalsIgnoreCase(this.stateC2On) ) {
+		    			Future<Boolean> resultS=startIrrigation(ConfigurationController.releMan);
+			    		resultS.onComplete(h->{
+			    			if(h.succeeded()) {
+			    				this.startResponseMqtt(true);
+			    				
+			    			}
+			    			else
+			    				this.startResponseMqtt(false);
+			    		});
+		    			
+		    			
+		    		}else if(comando.equalsIgnoreCase(this.stateC2Off)) {
+		    			Future<Boolean> resultF=stopIrrigation(ConfigurationController.releMan);
+		    			resultF.onComplete(t->{
+			    			if(t.succeeded())
+			    				this.startResponseMqtt(true);
+			    			else
+			    				this.startResponseMqtt(false);
+		    			});
+		    			
+		    		}
+		    		//Caso nel quale e' una irrigazione programmata --------------------
+		    		else if(comando.contains("inizioIrrig")) {
 		    			
 		    			try {
 		    				//Deparsiamo dal Json l'irrigazione
@@ -148,7 +177,7 @@ public class IrrigationController extends Thread{
 		this.irrigationTime=time;
 		////
 		Timestamp tm= new Timestamp(System.currentTimeMillis());
-		Future<Boolean> startIrrigationFuture= startIrrigation();
+		Future<Boolean> startIrrigationFuture= startIrrigation(ConfigurationController.releAut);
 		//Se si e' avviata con successo l'irrigazione
 		startIrrigationFuture.onSuccess(r->{
 			
@@ -191,7 +220,7 @@ public class IrrigationController extends Thread{
 				
 				
 				//Dopodiche' invochiamo lo stop dell'irrigazione
-				Future<Boolean> stopIrr=stopIrrigation();
+				Future<Boolean> stopIrr=stopIrrigation(ConfigurationController.releAut);
 				stopIrr.onSuccess(stS->{
 					System.out.println(new Timestamp(System.currentTimeMillis()).toString()+"  IrrigationController: irrigazione correttamente terminata.");
 					
@@ -262,11 +291,14 @@ public class IrrigationController extends Thread{
 	
 	
 	
-	public Future<Boolean> startIrrigation() {
+	public Future<Boolean> startIrrigation(int rele) {
 		
 		Promise<Boolean> resultStart= Promise.promise();
 		
-		if(this.stato==Utilities.stateOn) {
+		//Controlliamo che i due rele non siano gia' azionati e se il rele' scelto e' uno tra quello automatico o manuale
+		if(((rele == ConfigurationController.releAut) &&  this.statoRelAut==Utilities.stateOn) ||
+		   ((rele == ConfigurationController.releMan) &&  this.statoRelMan==Utilities.stateOn) ||
+		   ( (rele != ConfigurationController.releAut) || (rele != ConfigurationController.releMan) ) ){
 			resultStart.fail("Already started!");
 			return resultStart.future();
 		}
@@ -278,7 +310,7 @@ public class IrrigationController extends Thread{
 			this.logClient.connect(1883, this.confContr.getIpMiddleLayer(), s -> {	
 				
 				System.out.println(tm+": Avvio irrigazione.");
-				this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+"-IrrigazioneLogGateway: "+this.stateOn),
+				this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+"-IrrigazioneLogGateway: rele: "+rele+" "+this.stateOn),
 						  MqttQoS.AT_LEAST_ONCE,
 						  false,
 						  false);		
@@ -294,7 +326,7 @@ public class IrrigationController extends Thread{
 		//Aggiungere lo script di irrigazione al quale va aggiunto 
 		Process process;
 		try {
-			process = Runtime.getRuntime().exec(this.scriptPathIrrigation+" on "+ConfigurationController.releAut);
+			process = Runtime.getRuntime().exec(this.scriptPathIrrigation+" on "+rele);
 			int processOutput=process.waitFor();
 			
 			//TESTING 
@@ -304,7 +336,10 @@ public class IrrigationController extends Thread{
 			//Controlliamo se il processo e' stato eseguito correttamente
 			if(processOutput==0) {
 				//Modifico stato irrigazione
-				this.stato=this.stateOn;
+				if(rele == ConfigurationController.releAut)
+					this.statoRelAut=this.stateOn;
+				else if(rele == ConfigurationController.releMan)
+					this.statoRelMan=this.stateOn;
 				
 				System.out.println("IrrigationControllerLOG: state On processo eseguito con successo!");
 				/*
@@ -422,11 +457,13 @@ public class IrrigationController extends Thread{
 	*/
 	
 	
-	public Future<Boolean> stopIrrigation() {
+	public Future<Boolean> stopIrrigation(int rele) {
 		
 		Promise<Boolean> resultStop= Promise.promise();
 		
-		if(this.stato==Utilities.stateOff) {
+		if(((rele == ConfigurationController.releAut) &&  this.statoRelAut==Utilities.stateOff) ||
+		   ((rele == ConfigurationController.releMan) &&  this.statoRelMan==Utilities.stateOff) ||
+		   ((rele != ConfigurationController.releAut) || (rele != ConfigurationController.releMan) )) {
 			resultStop.fail("Already stopped!");
 			return resultStop.future();
 		}
@@ -437,7 +474,7 @@ public class IrrigationController extends Thread{
 			this.logClient.connect(1883, this.confContr.getIpMiddleLayer(), s -> {	
 				
 				System.out.println(tm+": Stop irrigazione.");
-				this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+"-IrrigazioneLogGateway: "+this.stateOff),
+				this.logClient.publish("Irrigation-LOG", Buffer.buffer(tm+"-IrrigazioneLogGateway: rele: "+rele+" "+this.stateOff),
 						  MqttQoS.AT_LEAST_ONCE,
 						  false,
 						  false);		
@@ -451,7 +488,7 @@ public class IrrigationController extends Thread{
 		//FERMARE IRRIGAZIONE CON SCRIPT
 		Process process;
 		try {
-			process = Runtime.getRuntime().exec(this.scriptPathIrrigation+" off "+ConfigurationController.releAut);
+			process = Runtime.getRuntime().exec(this.scriptPathIrrigation+" off "+rele);
 			int processOutput=process.waitFor();
 			
 			//TESTING 
@@ -463,7 +500,10 @@ public class IrrigationController extends Thread{
 				System.out.println("IrrigationControllerLOG: state OFF, processo eseguito con successo!");
 				
 				//Modifichiamo stato
-				this.stato=this.stateOff;
+				if(rele == ConfigurationController.releAut)
+					this.statoRelAut=this.stateOff;
+				else if(rele == ConfigurationController.releMan)
+					this.statoRelMan=this.stateOff;
 				
 				//Se il processo e' stato eseguito con successo bisogna comunicarlo al middlelayer
 				if(this.logClient!=null) {
@@ -559,7 +599,7 @@ public class IrrigationController extends Thread{
 				this.logClient.connect(1883, this.confContr.getIpMiddleLayer(), s -> {	
 					
 					System.out.println("Comunicazione esito POSITIVO del processo...");
-					this.logClient.publish("Irrigation-LOG", Buffer.buffer(new Timestamp(System.currentTimeMillis())+"-IrrigazioneLogGateway: "+this.stato),
+					this.logClient.publish("Irrigation-LOG", Buffer.buffer(new Timestamp(System.currentTimeMillis())+"-IrrigazioneLogGateway: "+this.statoRelAut),
 							  MqttQoS.AT_LEAST_ONCE,
 							  false,
 							  false);		
@@ -613,8 +653,8 @@ public class IrrigationController extends Thread{
 	}
 	
 	
-	public String getStato() {
-		return this.stato;
+	public String getStatoRelAut() {
+		return this.statoRelAut;
 	}
 
 

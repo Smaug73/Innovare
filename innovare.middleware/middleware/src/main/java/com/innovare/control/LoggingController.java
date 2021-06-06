@@ -63,7 +63,7 @@ public class LoggingController {
 	 */
 	public void logout() {
 		this.loggedUser=null;
-		System.out.println("Logout eseguito.");
+		Logger.getLogger().print("Logout eseguito.");
 	}
 	
 	public User getUserLogged() throws NoUserLogException {

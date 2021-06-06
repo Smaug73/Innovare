@@ -76,9 +76,9 @@ public class TestClassificator {
 		try {
 			
 			classifications= new ObjectMapper().readValue(jsonString, new TypeReference<ArrayList<PlantClassification>>(){});
-			System.out.println(classifications.toString());
+			Logger.getLogger().print(classifications.toString());
 		} catch (JsonProcessingException e) {
-			System.err.println("Errore creazione oggetto nel Before");
+			Logger.getLogger().print("Errore creazione oggetto nel Before");
 			e.printStackTrace();
 		}
 	}*/
@@ -90,7 +90,7 @@ public class TestClassificator {
 		ArrayList<PlantClassification> listOfClassification;
 		try {
 			listOfClassification = c.newClassification(this.modelName);
-			System.out.println("Test: "+listOfClassification);
+			Logger.getLogger().print("Test: "+listOfClassification);
 			assertTrue(listOfClassification.size() == 2);
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -105,7 +105,7 @@ public class TestClassificator {
 		ArrayList<PlantClassification> listOfClassification;
 		try {
 			listOfClassification=c.unZipAndClassification(this.modelName);
-			System.out.println("Test: "+listOfClassification);
+			Logger.getLogger().print("Test: "+listOfClassification);
 			//assertTrue(listOfClassification.size() == 2);
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -116,7 +116,7 @@ public class TestClassificator {
 	public void testDecompressioneAndClassificazione() {
 		DateTimeFormatter formatter= DateTimeFormatter.ofPattern("yy-MM-dd");
 		LocalDate date= LocalDate.parse("20-08-31",formatter);
-		System.out.println(date.toString());
+		Logger.getLogger().print(date.toString());
 	}*/
 	
 	/*@Test
@@ -124,11 +124,11 @@ public class TestClassificator {
 		String plantClassificationArray="[{\"originalImage\": \"/home/stefano/InnovareData/InnovareSegmentDS/testDataset/2020_08_31_Thermal_Optical-Fila_3_4-Session1-DJI_1234-erased_background_with_boxes.jpg\", \"hash\": \"e1a80286757bde4e942d4003cd4a2904\", \"classification\": {\"classifications\": [{\"classe\": \"Pianta Normale\", \"score\": 8.533674478530884}, {\"classe\": \"Carenza di acqua\", \"score\": 8.533674478530884}, {\"classe\": \"Eccesso di acqua\", \"score\": 8.533674478530884}, {\"classe\": \"Infestanti\", \"score\": 8.533674478530884}, {\"classe\": \"Ambigua\", \"score\": 8.533674478530884}], \"hash\": \"'e1a80286757bde4e942d4003cd4a2904'\"}, \"date\": \"20-08-31\", \"path\": \"/home/stefano/InnovareData/InnovareSegmentDS/testDataset/2020_08_31_Thermal_Optical-Fila_3_4-Session1-DJI_1234-plant_0.jpg\", \"model\": \"stub.h5\"}, {\"originalImage\": \"/home/stefano/InnovareData/InnovareSegmentDS/testDataset/2020_08_31_Thermal_Optical-Fila_3_4-Session1-DJI_1234-erased_background_with_boxes.jpg\", \"hash\": \"e047efb93b7b4508c364c56477f44990\", \"classification\": {\"classifications\": [{\"classe\": \"Pianta Normale\", \"score\": 8.533674478530884}, {\"classe\": \"Carenza di acqua\", \"score\": 8.533674478530884}, {\"classe\": \"Eccesso di acqua\", \"score\": 8.533674478530884}, {\"classe\": \"Infestanti\", \"score\": 8.533674478530884}, {\"classe\": \"Ambigua\", \"score\": 8.533674478530884}], \"hash\": \"'e047efb93b7b4508c364c56477f44990'\"}, \"date\": \"20-08-31\", \"path\": \"/home/stefano/InnovareData/InnovareSegmentDS/testDataset/020_08_31_Thermal_Optical-Fila_3_4-Session1-DJI_1234-plant_1.jpg\", \"model\": \"stub.h5\"}]";
 		
 		ArrayList<PlantClassification> pc=  new ObjectMapper().readValue(plantClassificationArray, new TypeReference<ArrayList<PlantClassification>>(){});
-		System.out.println("Piante da classificare: "+pc.toString());
+		Logger.getLogger().print("Piante da classificare: "+pc.toString());
 		ClassificationSint cs= new ClassificationSint(pc);
-		System.out.println("Classificazione sintetica: "+cs.toString());
+		Logger.getLogger().print("Classificazione sintetica: "+cs.toString());
 		String jsonCs= new ObjectMapper().writeValueAsString(cs);
-		System.out.println(jsonCs);
+		Logger.getLogger().print(jsonCs);
 
 	}
 	
@@ -136,11 +136,11 @@ public class TestClassificator {
 	public void foundModel() throws FileNotFoundException {
 		ModelController mc= new ModelController();
 		if(mc.foundModel("stub.h5"))
-			System.out.println("Trovato!");
+			Logger.getLogger().print("Trovato!");
 		else
-			System.out.println("no :(");
+			Logger.getLogger().print("no :(");
 		mc.setModelSelected("stub.h5");
-		System.out.println("Modello selezionato: "+mc.getSelectedModel().getName());
+		Logger.getLogger().print("Modello selezionato: "+mc.getSelectedModel().getName());
 	}
 	*/
 	/*@Test
@@ -163,7 +163,7 @@ public class TestClassificator {
 	@Test
 	public void testSensorDataController() {
 		ConfigurationController cc= new ConfigurationController();
-		System.out.println(cc.getChannelForClassification());
+		Logger.getLogger().print(cc.getChannelForClassification());
 		
 		Vertx vertx = Vertx.vertx();
 		String uri = "mongodb://localhost:27017";
@@ -172,7 +172,7 @@ public class TestClassificator {
 		        .put("connection_string", uri)
 		        .put("db_name", db);
 		
-		System.out.println("ok");
+		Logger.getLogger().print("ok");
 		
 		MongoClient mongoClient= MongoClient.create(vertx, mongoconfig);
 		SensorDataController sc= new SensorDataController(mongoClient, cc.getChannelForClassification());
@@ -181,14 +181,14 @@ public class TestClassificator {
 			Future<HashMap<Integer, Sample>> result =sc.getLastSamples();
 			result.onComplete(res->{
 				HashMap<Integer, Sample> rr=res.result();
-				System.out.println("OK");
+				Logger.getLogger().print("OK");
 				for(Integer i:  rr.keySet())
-					System.out.println("Channel: "+i+" value: "+rr.get(i).toString() );
+					Logger.getLogger().print("Channel: "+i+" value: "+rr.get(i).toString() );
 			});
 			
 			
 		} catch (Exception e) {
-			System.err.println("FAIL");
+			Logger.getLogger().print("FAIL");
 			e.printStackTrace();
 		}
 	}
@@ -209,14 +209,14 @@ public class TestClassificator {
 		SensorDataControllerSync sd= new SensorDataControllerSync();
 		
 		Sample ls=sd.getLastSamplesFromMongoSynch(1);
-		System.out.println("Last sample: "+ls.toString());
+		Logger.getLogger().print("Last sample: "+ls.toString());
 		
 		//Attenzione utilizzare cast long altrimenti va in overflow e errore sul calcolo
 		Timestamp tm = new Timestamp(System.currentTimeMillis()-(long)(1000*60*60*24)*7);
-		System.out.println("Sample from "+tm.toString()+" : ");
+		Logger.getLogger().print("Sample from "+tm.toString()+" : ");
 		ArrayList<Sample> samples=sd.getAllSamplesFromTimeFrame((long) (1000*60*60*24*120), 1);
 		for(Sample s: samples)
-			System.out.println(s.toString());
+			Logger.getLogger().print(s.toString());
 		
 	}
 	
@@ -234,13 +234,13 @@ public class TestClassificator {
 		temps.add(new Sample());
 		double res= Evapotranspiration.calculate(30.0, 30.0, temps, 20.0*3.386, 0.0);
 		
-		System.out.println("Risultato: "+(float)res);
+		Logger.getLogger().print("Risultato: "+(float)res);
 	}
 	
 	/*
 	@Test
 	public void testWeatherStation() throws IOException, InterruptedException {
-		System.out.println("cd && cd "+Utilities.scriptPath+"vproweather-1.1"+System.getProperty("file.separator")+" && sudo ./vproweather -x /dev/ttyUSB0\n");
+		Logger.getLogger().print("cd && cd "+Utilities.scriptPath+"vproweather-1.1"+System.getProperty("file.separator")+" && sudo ./vproweather -x /dev/ttyUSB0\n");
 		Process processSt= Runtime.getRuntime().exec("./vproweather -x /dev/ttyUSB0\n >> sample.txt",null,new File(Utilities.scriptPath+"vproweather-1.1"+System.getProperty("file.separator")));
 		//Attendiamo la fine della segmentazione
 		InputStream is = processSt.getInputStream();
@@ -248,10 +248,10 @@ public class TestClassificator {
 		    BufferedReader br = new BufferedReader(isr);
 		    String line;
 		    while ((line = br.readLine()) != null) {
-		      System.out.println(line);
+		      Logger.getLogger().print(line);
 		    }
 		//OutputStream outPSeg= processSt.getOutputStream();
-		//System.out.println(outPSeg.toString());
+		//Logger.getLogger().print(outPSeg.toString());
 	}
 	*
 	
@@ -270,12 +270,12 @@ public class TestClassificator {
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 	    Date parsedDate = dateFormat.parse(data);
 	    Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
-		System.out.println(timestamp.toString());
-		System.out.println(parsedDate.toString());
+		Logger.getLogger().print(timestamp.toString());
+		Logger.getLogger().print(parsedDate.toString());
 		String jsonTimestamp= "1606334624959";
 		timestamp= new ObjectMapper().readValue(jsonTimestamp, Timestamp.class);
 		//String jsonTimeStamp= new ObjectMapper().writeValueAsString(timestamp);
-		System.out.println("Prova con long:"+timestamp);
+		Logger.getLogger().print("Prova con long:"+timestamp);
 	}
 	*/
 	/*

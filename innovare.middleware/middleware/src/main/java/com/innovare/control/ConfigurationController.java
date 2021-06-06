@@ -66,7 +66,7 @@ public class ConfigurationController {
 		File confF= new File(Utilities.configurationMiddleLayerPath);
 		
 		
-		System.out.println("CONFIGURATION-FILE: Lettura file di configurazione...");
+		Logger.getLogger().print("CONFIGURATION-FILE: Lettura file di configurazione...");
 		//leggiamo l'intero file
 		try {
 			Scanner sc= new Scanner(confF);
@@ -86,10 +86,10 @@ public class ConfigurationController {
 								try {
 									this.channelForClassification.add(sc.nextInt());
 								}catch(Exception e) {
-									System.err.println("ERRORE CONFIGURATION-FILE middlelayer: errore di lettura di uno dei canali di channelForClassification");
+									Logger.getLogger().print("ERRORE CONFIGURATION-FILE middlelayer: errore di lettura di uno dei canali di channelForClassification");
 								}
 							}
-							System.out.println("CONFIGURATION-FILE middlelayer: channelForClassification : "+this.channelForClassification.toString());
+							Logger.getLogger().print("CONFIGURATION-FILE middlelayer: channelForClassification : "+this.channelForClassification.toString());
 							break;
 							
 						case "irrigationMaxTime":
@@ -97,10 +97,10 @@ public class ConfigurationController {
 							try {
 								this.setMaxTimeIrrigationFromInt(sc.nextInt());
 							}catch(Exception e) {
-								System.err.println("ERRORE CONFIGURATION-FILE middlelayer: errore lettura irrigationMaxTime , configurazione valori di base: 60 minuti");
+								Logger.getLogger().print("ERRORE CONFIGURATION-FILE middlelayer: errore lettura irrigationMaxTime , configurazione valori di base: 60 minuti");
 								this.setMaxTimeIrrigationFromInt(60);
 							}
-							System.out.println("CONFIGURATION-FILE middlelayer: irrigationMaxTime : "+this.irrigationMaxTime);
+							Logger.getLogger().print("CONFIGURATION-FILE middlelayer: irrigationMaxTime : "+this.irrigationMaxTime);
 							sc.nextLine();
 							break;
 							
@@ -111,7 +111,7 @@ public class ConfigurationController {
 								int hour=sc.nextInt();//ora;
 								int minute= sc.nextInt();//minuti
 								if(hour>IrrigationController.maxHour || minute>IrrigationController.maxMinute) {
-									System.err.println("ERRORE CONFIRATION-FILE middlelayer: configurazione con valori di base: 14:00");
+									Logger.getLogger().print("ERRORE CONFIRATION-FILE middlelayer: configurazione con valori di base: 14:00");
 									this.timeIrrigation[0]= IrrigationController.defaultHour;//ora
 									this.timeIrrigation[1]= IrrigationController.defaultMinute;//minuti
 								}else {
@@ -125,19 +125,19 @@ public class ConfigurationController {
 								this.timeIrrigation= LocalTime.parse(localTimeString);
 								
 							}catch(DateTimeException ed) {
-								System.err.println("ERRORE CONFIRATION-FILE middlelayer: "+ed.getMessage());
-								System.err.println("ERRORE CONFIRATION-FILE middlelayer: configurazione con valori di base: 14:00:00");
+								Logger.getLogger().print("ERRORE CONFIRATION-FILE middlelayer: "+ed.getMessage());
+								Logger.getLogger().print("ERRORE CONFIRATION-FILE middlelayer: configurazione con valori di base: 14:00:00");
 								this.timeIrrigation= LocalTime.of(IrrigationController.defaultHour,IrrigationController.defaultMinute,IrrigationController.defaultSecond);
 								
 							}
 							catch(Exception e) {
-								System.err.println("ERRORE CONFIRATION-FILE middlelayer: "+e.getMessage());
-								System.err.println("ERRORE CONFIRATION-FILE middlelayer: configurazione con valori di base: 14:00:00");
+								Logger.getLogger().print("ERRORE CONFIRATION-FILE middlelayer: "+e.getMessage());
+								Logger.getLogger().print("ERRORE CONFIRATION-FILE middlelayer: configurazione con valori di base: 14:00:00");
 								this.timeIrrigation= LocalTime.of(IrrigationController.defaultHour,IrrigationController.defaultMinute,IrrigationController.defaultSecond);
 								//this.timeIrrigation[0]= IrrigationController.defaultHour;//ora
 								//this.timeIrrigation[1]= IrrigationController.defaultMinute;//minuti
 							}
-							System.out.println("CONFIGURATION-FILE middlelayer: irrigationTime : "+this.timeIrrigation);
+							Logger.getLogger().print("CONFIGURATION-FILE middlelayer: irrigationTime : "+this.timeIrrigation);
 							sc.nextLine();
 							break;	
 						
@@ -151,10 +151,10 @@ public class ConfigurationController {
 								
 							}
 							catch(Exception e) {
-								System.err.println("ERRORE CONFIRATION-FILE middlelayer: lettura portata "+e.getMessage());
+								Logger.getLogger().print("ERRORE CONFIRATION-FILE middlelayer: lettura portata "+e.getMessage());
 								this.portataIrrigation= IrrigationController.defaultPortata;
 							}
-							System.out.println("CONFIGURATION-FILE middlelayer: irrigationPortata : "+this.portataIrrigation);
+							Logger.getLogger().print("CONFIGURATION-FILE middlelayer: irrigationPortata : "+this.portataIrrigation);
 							sc.nextLine();
 							break;
 						
@@ -166,16 +166,16 @@ public class ConfigurationController {
 								// test case
 								if(delaySet==1) {
 									this.delayIrrigation= IrrigationController.delayDay;
-									System.out.println("CONFIGURATION-FILE middlelayer: delayIrrigation : "+this.delayIrrigation);
+									Logger.getLogger().print("CONFIGURATION-FILE middlelayer: delayIrrigation : "+this.delayIrrigation);
 									break;
 								}else
 									this.setDelayFromNextIrrigationFromInt(sc.nextInt());
 								
 							}catch(Exception e) {
-								System.err.println("ERRORE CONFIGURATION-FILE middlelayer: errore lettura irrigationDelay , configurazione valori di base: "+IrrigationController.delayOneMinutetTest);
+								Logger.getLogger().print("ERRORE CONFIGURATION-FILE middlelayer: errore lettura irrigationDelay , configurazione valori di base: "+IrrigationController.delayOneMinutetTest);
 								this.delayIrrigation= IrrigationController.delayOneMinutetTest;
 							}
-							System.out.println("CONFIGURATION-FILE middlelayer: delayIrrigation : "+this.delayIrrigation);
+							Logger.getLogger().print("CONFIGURATION-FILE middlelayer: delayIrrigation : "+this.delayIrrigation);
 							sc.nextLine();
 							break;
 							
@@ -186,10 +186,10 @@ public class ConfigurationController {
 									this.gatewayIP = sc.next();
 								else throw new Exception("Nessun gateway Ip presente nel file di configurazione");
 							}catch(Exception e) {
-								System.err.println("ERRORE CONFIGURATION-FILE middlelayer: errore lettura gateway Ip , configurazione valori di base: "+this.gatewayIP);
+								Logger.getLogger().print("ERRORE CONFIGURATION-FILE middlelayer: errore lettura gateway Ip , configurazione valori di base: "+this.gatewayIP);
 								
 							}
-							System.out.println("CONFIGURATION-FILE middlelayer: gateway Ip : "+this.gatewayIP);
+							Logger.getLogger().print("CONFIGURATION-FILE middlelayer: gateway Ip : "+this.gatewayIP);
 							if(sc.hasNextLine())
 								sc.nextLine();
 							break;
@@ -208,12 +208,12 @@ public class ConfigurationController {
 								this.channelMeasureArray.add(new ChannelMeasure(16,measureChannel16));
 								
 							}catch(Exception e){
-								System.err.println("ERRORE CONFIGURATION-FILE middlelayer: errore lettura channelMeasure , configurazione valori di base per i channel: null");
+								Logger.getLogger().print("ERRORE CONFIGURATION-FILE middlelayer: errore lettura channelMeasure , configurazione valori di base per i channel: null");
 								this.channelMeasureArray= new ArrayList<ChannelMeasure>();
 								this.channelMeasureArray.add(new ChannelMeasure(15,"none"));
 								this.channelMeasureArray.add(new ChannelMeasure(16,"none"));
 							}
-							System.out.println("CONFIGURATION-FILE middlelayer: ChannelMeasure : "+this.channelMeasureArray.toString());
+							Logger.getLogger().print("CONFIGURATION-FILE middlelayer: ChannelMeasure : "+this.channelMeasureArray.toString());
 							
 							break;
 							
@@ -222,10 +222,10 @@ public class ConfigurationController {
 								this.quantitastand= sc.nextFloat();
 								
 							}catch(Exception e) {
-								System.err.println("ERRORE CONFIGURATION-FILE middlelayer: errore lettura quantStandard , configurazione valori di base: 0");
+								Logger.getLogger().print("ERRORE CONFIGURATION-FILE middlelayer: errore lettura quantStandard , configurazione valori di base: 0");
 								this.quantitastand=0;
 							}
-							System.out.println("CONFIGURATION-FILE middlelayer: quantStandard : "+this.quantitastand);
+							Logger.getLogger().print("CONFIGURATION-FILE middlelayer: quantStandard : "+this.quantitastand);
 							if(sc.hasNextLine())
 								sc.nextLine();
 						break;
@@ -235,10 +235,10 @@ public class ConfigurationController {
 								this.sogliaclassificazione= sc.nextFloat();
 								
 							}catch(Exception e) {
-								System.err.println("ERRORE CONFIGURATION-FILE middlelayer: errore lettura sogliaClassificazione , configurazione valori di base: 2");
+								Logger.getLogger().print("ERRORE CONFIGURATION-FILE middlelayer: errore lettura sogliaClassificazione , configurazione valori di base: 2");
 								this.sogliaclassificazione=0;
 							}
-							System.out.println("CONFIGURATION-FILE middlelayer: sogliaClassificazione : "+this.sogliaclassificazione);
+							Logger.getLogger().print("CONFIGURATION-FILE middlelayer: sogliaClassificazione : "+this.sogliaclassificazione);
 							if(sc.hasNextLine())
 								sc.nextLine();
 						break;
@@ -250,10 +250,10 @@ public class ConfigurationController {
 								try {
 									this.idSerialChannel.add(sc.nextInt());
 								}catch(Exception e) {
-									System.err.println("ERRORE CONFIGURATION-FILE middlelayer: errore di lettura di uno dei canali di serialChannel");
+									Logger.getLogger().print("ERRORE CONFIGURATION-FILE middlelayer: errore di lettura di uno dei canali di serialChannel");
 								}
 							}
-						System.out.println("CONFIGURATION-FILE middlelayer: serialChannel : "+this.idSerialChannel.toString());
+						Logger.getLogger().print("CONFIGURATION-FILE middlelayer: serialChannel : "+this.idSerialChannel.toString());
 						break;
 						
 						
@@ -271,11 +271,11 @@ public class ConfigurationController {
 			sc.close();
 
 		} catch (FileNotFoundException e) {
-			System.err.println("ERRORE LETTURA FILE CONFIGURAZIONE: file non presente.");
-			System.err.println("Caricamento impostazioni predefinite..");
+			Logger.getLogger().print("ERRORE LETTURA FILE CONFIGURAZIONE: file non presente.");
+			Logger.getLogger().print("Caricamento impostazioni predefinite..");
 			
 		}catch(Exception e) {
-			System.err.println("ERRORE lettura generico.."+e.getMessage());
+			Logger.getLogger().print("ERRORE lettura generico.."+e.getMessage());
 			e.printStackTrace();
 		}
 		
@@ -283,7 +283,7 @@ public class ConfigurationController {
 	
 	
 	public void kcFileRead() {
-		System.out.println("Lettura valori KC dal file kc.csv ..");
+		Logger.getLogger().print("Lettura valori KC dal file kc.csv ..");
 		//Apriamo il file csv contenente i dati sul kc per ogni data
 		try {
 			//leggiamo il file csv
@@ -298,24 +298,24 @@ public class ConfigurationController {
 			SimpleDateFormat df = new SimpleDateFormat("dd-MM-yy");
 			
 			r.forEach( x -> {
-				System.out.println(Arrays.toString(x));
+				Logger.getLogger().print(Arrays.toString(x));
 				try {
-					//System.out.println("DEBUG :"+x[0]);
-					//System.out.println("DEBUG Sdf:"+df.toPattern());
+					//Logger.getLogger().print("DEBUG :"+x[0]);
+					//Logger.getLogger().print("DEBUG Sdf:"+df.toPattern());
 					Date d= df.parse(x[0]);
 					Double kc = Double.parseDouble(x[1]);
-					//System.out.println("DEBUG  data: "+d.toString()+" kc:"+kc);
+					//Logger.getLogger().print("DEBUG  data: "+d.toString()+" kc:"+kc);
 					//Aggiungiamola alla mappa
 					kcMap.put(d, kc);
 					
 				} catch (ParseException e) {
-					System.err.println("Errore lettura Data");
+					Logger.getLogger().print("Errore lettura Data");
 					e.printStackTrace();
 				}
 				
 			});
 		}catch(Exception e) {
-			System.err.println("Errore durante lettura file KC");
+			Logger.getLogger().print("Errore durante lettura file KC");
 			e.printStackTrace();
 		}
 	}
