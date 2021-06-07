@@ -135,7 +135,6 @@ public class MainVerticle extends AbstractVerticle {
 	  
 	  //Connessione a MongoDB    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
       Logger.getLogger().print("Starting MongoConnection..");
-      Logger.getLogger().print("Starting MongoConnection..");
       
 	  JsonObject config = Vertx.currentContext().config();
 
@@ -150,8 +149,7 @@ public class MainVerticle extends AbstractVerticle {
 	      db = "innovare";
 	    }
 	    Logger.getLogger().print(db);
-	    Logger.getLogger().print(db);
-	    
+	   
 	    JsonObject mongoconfig = new JsonObject()
 	        .put("connection_string", uri)
 	        .put("db_name", db);
@@ -1470,7 +1468,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	    		Logger.getLogger().print("Invio comando di start dell'irrigazione...");
     	    	    		
     	    	    		//Controlliamo che non abbia query param per indicare il campo tradizionale
-    	    	    		if(routingContext.request().getParam("campo").equalsIgnoreCase(Campo.MANUAL.getNome())) {
+    	    	    		if(routingContext.request().query().contains("campo") && routingContext.request().getParam("campo").equalsIgnoreCase(Campo.MANUAL.getNome())) {
     	    	    			
     	    	    			Logger.getLogger().print("Richiesta avvio irrigazione campo tradizionale");
     	    	    			
@@ -1492,9 +1490,10 @@ public class MainVerticle extends AbstractVerticle {
 	        						.end("Stato attuale: errore attivazione.");
                 	    	    	Logger.getLogger().print("Stato attuale: errore attivazione.");
     	    	    			});
-    	    	    		}else
-    	    	    		if(this.irrigationController.getState() != Utilities.stateOn) {
- 
+    	    	    		}
+    	    	    		else //if(this.irrigationController.getState() != Utilities.stateOn) {
+    	    	    		//if(!routingContext.request().query().contains("campo") &&(this.irrigationController.getState() != Utilities.stateOn)){
+    	    	    		if(routingContext.request().getParam("campo").equalsIgnoreCase(Campo.AUTO.getNome()) && (this.irrigationController.getState() != Utilities.stateOn)){
     	    	    			Future<Irrigazione> result=this.irrigationController.startIrrigationDirect(Campo.AUTO);
     	    	    			
     	    	    			result.onSuccess( c->{
@@ -1527,8 +1526,10 @@ public class MainVerticle extends AbstractVerticle {
                 	    	    	Logger.getLogger().print("Stato attuale: errore attivazione.");
     	    	    			});
     	    	    				
-	    	    	    	}else {
-  	    	    			
+	    	    	    	}else
+	    	    	    		//if(!routingContext.request().query().contains("campo") &&(this.irrigationController.getState() == Utilities.stateOn))
+   
+  	    	    			 {
             	    	    	routingContext
     							.response()
     							.setStatusCode(400)
@@ -1581,7 +1582,7 @@ public class MainVerticle extends AbstractVerticle {
     	    	    			});
     	    	    		}else
     	    	    		//STOP IRRIGAZIONE CAMPO AUTOMATICO			-------------------------------------------------	
-    	    	    		if(this.irrigationController.getState() != Utilities.stateOff) {
+    	    	    		if(routingContext.request().getParam("campo").equalsIgnoreCase(Campo.AUTO.getNome()) && (this.irrigationController.getState() != Utilities.stateOff)) {
     	    	    			
     	    	    			Logger.getLogger().print("Invio comando di stop dell'irrigazione...");
     	    	    			

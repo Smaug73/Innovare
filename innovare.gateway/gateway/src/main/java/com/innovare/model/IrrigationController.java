@@ -295,10 +295,15 @@ public class IrrigationController extends Thread{
 		
 		Promise<Boolean> resultStart= Promise.promise();
 		
+		System.out.println("DEBUG 1: "+((rele == ConfigurationController.releAut) &&  this.statoRelAut==Utilities.stateOn));
+		System.out.println("DEBUG 2: "+((rele == ConfigurationController.releMan) &&  this.statoRelMan==Utilities.stateOn));
+		System.out.println("DEBUG 3: "+((rele != ConfigurationController.releAut) || (rele != ConfigurationController.releMan)) );
+		
+		
 		//Controlliamo che i due rele non siano gia' azionati e se il rele' scelto e' uno tra quello automatico o manuale
 		if(((rele == ConfigurationController.releAut) &&  this.statoRelAut==Utilities.stateOn) ||
 		   ((rele == ConfigurationController.releMan) &&  this.statoRelMan==Utilities.stateOn) ||
-		   ( (rele != ConfigurationController.releAut) || (rele != ConfigurationController.releMan) ) ){
+		   ( (rele != ConfigurationController.releAut) && (rele != ConfigurationController.releMan) ) ){
 			resultStart.fail("Already started!");
 			return resultStart.future();
 		}
@@ -463,7 +468,7 @@ public class IrrigationController extends Thread{
 		
 		if(((rele == ConfigurationController.releAut) &&  this.statoRelAut==Utilities.stateOff) ||
 		   ((rele == ConfigurationController.releMan) &&  this.statoRelMan==Utilities.stateOff) ||
-		   ((rele != ConfigurationController.releAut) || (rele != ConfigurationController.releMan) )) {
+		   ((rele != ConfigurationController.releAut) && (rele != ConfigurationController.releMan) )) {
 			resultStop.fail("Already stopped!");
 			return resultStop.future();
 		}
