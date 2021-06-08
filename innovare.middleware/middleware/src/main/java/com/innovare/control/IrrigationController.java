@@ -67,7 +67,7 @@ public class IrrigationController extends TimerTask {
 	
 	private String state=Utilities.stateOff;
 	//stato irrigazione campo manuale
-	//private String statoRelMan=Utilities.stateOff;
+	private String statoRelMan=Utilities.stateOff;
 	private Irrigazione irr=null;
 	
 	//Comandi irrigazione secondo campo manuale
@@ -579,7 +579,7 @@ public class IrrigationController extends TimerTask {
 			}
 			
 			//AVVIO IRRIGAZIONE SECONDO CAMPO ==========================================================================================
-		}else if(c.getNome().equalsIgnoreCase(Campo.MANUAL.getNome())) {
+		}else if(this.statoRelMan==Utilities.stateOff && c.getNome().equalsIgnoreCase(Campo.MANUAL.getNome()) ) {
 			//invio comando avvio campo irrigazione classica
 			if(!this.irrigationTradCommandCliet.isConnected())
 				//Invio il comando di irrigazione al gateway
@@ -588,6 +588,9 @@ public class IrrigationController extends TimerTask {
 					this.irrigationTradCommandCliet.publishHandler(resp->{
 						if(resp.payload().toString().contains("DONE")) {
 							Logger.getLogger().print("Irrigazione secondo campo avviata!");
+							
+							this.statoRelMan=Utilities.stateOn;
+							
 							//Creiamo nuova irrigazione
 							this.irr= new Irrigazione(System.currentTimeMillis());
 							resultStart.complete(this.irr);
@@ -622,6 +625,8 @@ public class IrrigationController extends TimerTask {
 						Logger.getLogger().print("Irrigazione campo tradizionale avviata!");
 						//Creiamo nuova irrigazione
 						this.irr= new Irrigazione(System.currentTimeMillis());
+						
+						this.statoRelMan=Utilities.stateOn;
 						
 						resultStart.complete(this.irr);
 						
@@ -803,7 +808,7 @@ public class IrrigationController extends TimerTask {
 		
 		
 		//STOP CAMPO MANUALE ----------------------------------------------------------------------------------------------
-		else if(c.getNome().equalsIgnoreCase(Campo.MANUAL.getNome())) {
+		else if(this.statoRelMan==Utilities.stateOn &&  c.getNome().equalsIgnoreCase(Campo.MANUAL.getNome())) {
 			
 			if(!this.irrigationTradCommandCliet.isConnected())
 				this.irrigationTradCommandCliet.connect(1883, Utilities.ipMqtt, v ->{
@@ -811,6 +816,8 @@ public class IrrigationController extends TimerTask {
 					this.irrigationTradCommandCliet.publishHandler(resp->{
 						if(resp.payload().toString().contains("DONE")) {
 							Logger.getLogger().print("Irrigazione campo tradizionale fermata!");
+							
+							this.statoRelMan=Utilities.stateOff;
 							
 							resultStop.complete(this.irr);
 							
@@ -838,6 +845,9 @@ public class IrrigationController extends TimerTask {
 				this.irrigationTradCommandCliet.publishHandler(resp->{
 					if(resp.payload().toString().contains("DONE")) {
 						Logger.getLogger().print("Irrigazione campo tradizionale fermata!");
+						
+						this.statoRelMan=Utilities.stateOff;
+						
 						resultStop.complete(this.irr);		
 					}else if(resp.payload().toString().contains("FAIL")) {
 						Logger.getLogger().print("Errore stop irrigazione!");
@@ -912,6 +922,10 @@ public class IrrigationController extends TimerTask {
 	
 	public String getState() {
 		return state;
+	}
+	
+	public String getStateTrad() {
+		return this.statoRelMan;
 	}
 
 	public void setState(String state) {

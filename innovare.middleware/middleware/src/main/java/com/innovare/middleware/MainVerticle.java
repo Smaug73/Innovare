@@ -1634,11 +1634,22 @@ public class MainVerticle extends AbstractVerticle {
     	    	    	if(this.loggingController.isUserLogged()) {
     	    	    		//Caso nel quale non è stata creata nessuna irrigazione
     	    	    		if(this.irrigationController != null) {
-    	    	    			routingContext
-	      		    	   	      .response()
-	      			              .setStatusCode(200)
-	      			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-	      			              .end(this.irrigationController.getState());
+    	    	    			
+    	    	    			System.out.println("DEBUG ======================== "+routingContext.request().getParam("campo"));
+    	    	    			
+    	    	    			if(routingContext.request().getParam("campo").equalsIgnoreCase(Campo.AUTO.getNome()))
+    	    	    				routingContext
+	  	      		    	   	      .response()
+	  	      			              .setStatusCode(200)
+	  	      			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+	  	      			              .end(this.irrigationController.getState());
+    	    	    			else if(routingContext.request().getParam("campo").equalsIgnoreCase(Campo.MANUAL.getNome()))
+    	    	    				routingContext
+	  	      		    	   	      .response()
+	  	      			              .setStatusCode(200)
+	  	      			              .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+	  	      			              .end(this.irrigationController.getStateTrad());
+    	    	    			
     	    	    		}else {
     	    	    			routingContext
 	      		    	   	      .response()
