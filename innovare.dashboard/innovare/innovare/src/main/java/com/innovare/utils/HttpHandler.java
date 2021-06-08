@@ -54,12 +54,21 @@ public class HttpHandler {
 	// Crea l'URIBuilder con l'uri a cui inviare la richiesta
 	private static URIBuilder createURIBuilder(String path) {
 		URIBuilder builder = new URIBuilder();
-		builder.setScheme("http").setHost(HOST).setPath(path);
+		if(path.contains("?")) {
+			String uri = path.substring(0, path.indexOf("?"));
+			String queryParamName = path.substring(path.indexOf("?") + 1, path.indexOf("="));
+			String queryParamValue = path.substring(path.indexOf("=") + 1);
+			builder.setScheme("http").setHost(HOST).setPath(uri).setParameter(queryParamName, queryParamValue);
+		}
+		else {
+			builder.setScheme("http").setHost(HOST).setPath(path);
+		}
 		return builder;
 	}
 
 	// Invia la richiesta http e restituisce la relativa risposta
 	private static HttpResponse<String> sendRequest(String path) {
+		//System.out.println("DEBUG2 "+path);
 		URIBuilder builder = createURIBuilder(path);
 		HttpClient client = HttpClient.newHttpClient();
 		HttpRequest request;
@@ -69,6 +78,7 @@ public class HttpHandler {
 						.uri(builder.build())
 						.timeout(Duration.ofSeconds(30))
 						.build();
+				//System.out.println("DEBUG3 creazione request "+ request.toString() + " per " + path);
 			}
 			else {
 				request = HttpRequest.newBuilder()
@@ -78,7 +88,7 @@ public class HttpHandler {
 
 			}
 			HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
+			//System.out.println("DEBUG4 risposta "+response + " della richiesta " + path);
 			return response;
 
 		} catch (IOException e) {
