@@ -133,7 +133,7 @@ private Component createIrrigationStateCard() {
 			int statusCode = 401;
 			
 			
-			isIrrigationOn = HttpHandler.getCurrentIrrigationState(Campo.AUTO);
+			isIrrigationOn = HttpHandler.getCurrentIrrigationState(Campo.MANUAL);
 			//isIrrigationOn = "ON";
 			if(isIrrigationOn != null) {
 				if(on_off.getText().equalsIgnoreCase("START")) {
