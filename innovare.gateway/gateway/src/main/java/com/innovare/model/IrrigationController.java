@@ -80,7 +80,7 @@ public class IrrigationController extends Thread{
 		    		Future<Boolean> resultS=startIrrigation(ConfigurationController.releAut);
 		    		resultS.onComplete(h->{
 		    			if(h.succeeded()) {
-		    				this.startResponseMqtt(true);
+		    				this.startResponseMqtt(true,IrrigationController.stateOn);
 		    				//nel caso di successo impostiamo il tempo massimo dopo il quale
 		    				//l'irrigazione deve fermarsi attraverso timer vertx
 		    				this.vertx.setTimer(ConfigurationController.irrigationMaxTime, f->{
@@ -100,7 +100,7 @@ public class IrrigationController extends Thread{
 		    				});
 		    			}
 		    			else
-		    				this.startResponseMqtt(false);
+		    				this.startResponseMqtt(false,IrrigationController.stateOn);
 		    		});
 		    	}
 		    	else
@@ -108,9 +108,9 @@ public class IrrigationController extends Thread{
 		    			Future<Boolean> resultF=stopIrrigation(ConfigurationController.releAut);
 		    			resultF.onComplete(t->{
 			    			if(t.succeeded())
-			    				this.startResponseMqtt(true);
+			    				this.startResponseMqtt(true,IrrigationController.stateOff);
 			    			else
-			    				this.startResponseMqtt(false);
+			    				this.startResponseMqtt(false,IrrigationController.stateOff);
 		    			});
 		    		}
 		    	else
@@ -119,11 +119,11 @@ public class IrrigationController extends Thread{
 		    			Future<Boolean> resultS=startIrrigation(ConfigurationController.releMan);
 			    		resultS.onComplete(h->{
 			    			if(h.succeeded()) {
-			    				this.startResponseMqtt(true);
+			    				this.startResponseMqtt(true,this.stateC2On);
 			    				
 			    			}
 			    			else
-			    				this.startResponseMqtt(false);
+			    				this.startResponseMqtt(false,this.stateC2On);
 			    		});
 		    			
 		    			
@@ -131,9 +131,9 @@ public class IrrigationController extends Thread{
 		    			Future<Boolean> resultF=stopIrrigation(ConfigurationController.releMan);
 		    			resultF.onComplete(t->{
 			    			if(t.succeeded())
-			    				this.startResponseMqtt(true);
+			    				this.startResponseMqtt(true,this.stateC2Off);
 			    			else
-			    				this.startResponseMqtt(false);
+			    				this.startResponseMqtt(false,this.stateC2Off);
 		    			});
 		    			
 		    		}
@@ -297,7 +297,7 @@ public class IrrigationController extends Thread{
 		
 		System.out.println("DEBUG 1: "+((rele == ConfigurationController.releAut) &&  this.statoRelAut==Utilities.stateOn));
 		System.out.println("DEBUG 2: "+((rele == ConfigurationController.releMan) &&  this.statoRelMan==Utilities.stateOn));
-		System.out.println("DEBUG 3: "+((rele != ConfigurationController.releAut) || (rele != ConfigurationController.releMan)) );
+		System.out.println("DEBUG 3: "+((rele != ConfigurationController.releAut) && (rele != ConfigurationController.releMan)) );
 		
 		
 		//Controlliamo che i due rele non siano gia' azionati e se il rele' scelto e' uno tra quello automatico o manuale
@@ -596,7 +596,7 @@ public class IrrigationController extends Thread{
 	
 	
 	
-	public void startResponseMqtt(boolean result) {
+	public void startResponseMqtt(boolean result, String comando) {
 		
 		if(result) {
 			//Connesione al server mqtt
@@ -604,7 +604,7 @@ public class IrrigationController extends Thread{
 				this.logClient.connect(1883, this.confContr.getIpMiddleLayer(), s -> {	
 					
 					System.out.println("Comunicazione esito POSITIVO del processo...");
-					this.logClient.publish("Irrigation-LOG", Buffer.buffer(new Timestamp(System.currentTimeMillis())+"-IrrigazioneLogGateway: "+this.statoRelAut),
+					this.logClient.publish("Irrigation-LOG", Buffer.buffer(new Timestamp(System.currentTimeMillis())+"-IrrigazioneLogGateway: esito positivo "+comando),
 							  MqttQoS.AT_LEAST_ONCE,
 							  false,
 							  false);		
@@ -633,7 +633,7 @@ public class IrrigationController extends Thread{
 				this.logClient.connect(1883, this.confContr.getIpMiddleLayer(), s -> {	
 					
 					System.out.println("Comunicazione esito NEGATIVO del processo...");
-					this.logClient.publish("Irrigation-LOG", Buffer.buffer(new Timestamp(System.currentTimeMillis())+"-IrrigazioneLogGateway: ERROR."),
+					this.logClient.publish("Irrigation-LOG", Buffer.buffer(new Timestamp(System.currentTimeMillis())+"-IrrigazioneLogGateway: ERRORE comando "+comando),
 							  MqttQoS.AT_LEAST_ONCE,
 							  false,
 							  false);		

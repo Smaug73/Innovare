@@ -78,6 +78,7 @@ public class IrrigationController extends TimerTask {
 	private LocalTime StartingTimeIrrigation;
 	private MongoClient mongoClient;
 	private MqttClient irrigationCommandClient;
+	private MqttClient irrigationTradCommandCliet;
 	private long delayFromIrrigation;
 	
 	//Timer per l'irrigazione 
@@ -96,9 +97,10 @@ public class IrrigationController extends TimerTask {
 	
 	
 	
-	public IrrigationController(MongoClient mongC,MqttClient irrigationComClient,Timer t,LocalTime StartingTimeIrrigation) {
+	public IrrigationController(MongoClient mongC,MqttClient irrigationComClient,MqttClient irrigationTraClient,Timer t,LocalTime StartingTimeIrrigation) {
 		this.mongoClient=mongC;
 		this.irrigationCommandClient= irrigationComClient;
+		this.irrigationTradCommandCliet=irrigationTraClient;
 		this.timer=t;
 		this.StartingTimeIrrigation= StartingTimeIrrigation;
 		this.delayFromIrrigation= this.delayFromNewIrrigation(StartingTimeIrrigation);
@@ -110,8 +112,14 @@ public class IrrigationController extends TimerTask {
 		
 		//Connettiamo il client mqtt per i comandi verso l'irrigazione
 		this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, x ->{
-			Logger.getLogger().print(this.LOGIRR+" Client per i comandi connesso correttamente.");
+			Logger.getLogger().print(this.LOGIRR+" Client per i comandi IRRIGAZIONE AUTOMATICA connesso correttamente.");
 		});
+		
+		//Connettiamo il client mqtt per irrigazione tradizionale
+		this.irrigationTradCommandCliet.connect(1883, Utilities.ipMqtt, x ->{
+			Logger.getLogger().print(this.LOGIRR+" Client per i comandi IRRIGAZIONE TRADIZIONALE connesso correttamente.");
+		});
+		
 	}
 	
 	/*
@@ -570,14 +578,14 @@ public class IrrigationController extends TimerTask {
 				
 			}
 			
-			//AVVIO IRRIGAZIONE SECONDO CAMPO
+			//AVVIO IRRIGAZIONE SECONDO CAMPO ==========================================================================================
 		}else if(c.getNome().equalsIgnoreCase(Campo.MANUAL.getNome())) {
 			//invio comando avvio campo irrigazione classica
-			if(!this.irrigationCommandClient.isConnected())
+			if(!this.irrigationTradCommandCliet.isConnected())
 				//Invio il comando di irrigazione al gateway
-				this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, t ->{
+				this.irrigationTradCommandCliet.connect(1883, Utilities.ipMqtt, t ->{
 					
-					this.irrigationCommandClient.publishHandler(resp->{
+					this.irrigationTradCommandCliet.publishHandler(resp->{
 						if(resp.payload().toString().contains("DONE")) {
 							Logger.getLogger().print("Irrigazione secondo campo avviata!");
 							//Creiamo nuova irrigazione
@@ -588,15 +596,17 @@ public class IrrigationController extends TimerTask {
 							Logger.getLogger().print("Errore avvio irrigazione");
 							resultStart.fail("FAIL");
 						}
-						this.irrigationCommandClient.disconnect();
+						this.irrigationTradCommandCliet.disconnect();
 					}).subscribe("Irrigation-RESPONSE", 2);
 					
 					Logger.getLogger().print("DEBUG IRRIGAZIONE--- INVIO STATE-ON AL GATEWAY PER IRRIGAZIONE SECONDO CAMPO");
-					this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
+					this.irrigationTradCommandCliet.publish(Utilities.irrigationCommandMqttChannel,
 		    	    		  Buffer.buffer(this.stateC2On),
 								  MqttQoS.AT_LEAST_ONCE,
 								  false,
 								  false);
+					
+					//Per evitare problemi con handler della irrigazione automatica
 					
 					//attendiamo l'effettivo invio del comando
 					//this.irrigationCommandClient.publishCompletionHandler(id ->{
@@ -606,10 +616,10 @@ public class IrrigationController extends TimerTask {
 				});
 			//CASO GIA' CONNESSO============================================================================
 			else {
-				this.irrigationCommandClient.publishHandler(resp->{
+				this.irrigationTradCommandCliet.publishHandler(resp->{
 					if(resp.payload().toString().contains("DONE")) {
-						this.state=Utilities.stateOn;
-						Logger.getLogger().print("Irrigazione avviata!");
+						
+						Logger.getLogger().print("Irrigazione campo tradizionale avviata!");
 						//Creiamo nuova irrigazione
 						this.irr= new Irrigazione(System.currentTimeMillis());
 						
@@ -617,19 +627,18 @@ public class IrrigationController extends TimerTask {
 						
 					}
 					else if(resp.payload().toString().contains("FAIL")) {
-						Logger.getLogger().print("Errore avvio irrigazione");
+						Logger.getLogger().print("Errore avvio irrigazione campo tradizionale");
 						resultStart.fail("FAIL");
 					}
 					//this.irrigationCommandClient.disconnect();
 				}).subscribe("Irrigation-RESPONSE", 2);
 				
 				Logger.getLogger().print("DEBUG IRRIGAZIONE--- INVIO STATE-ON AL GATEWAY");
-				this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
-	    	    		  Buffer.buffer(Utilities.stateOn),
+				this.irrigationTradCommandCliet.publish(Utilities.irrigationCommandMqttChannel,
+	    	    		  Buffer.buffer(this.stateC2On),
 							  MqttQoS.AT_LEAST_ONCE,
 							  false,
-							  false);
-				
+							  false);	
 			}	
 		}else {
 			Logger.getLogger().print("Irrigazione gia' avviata!");
@@ -793,13 +802,13 @@ public class IrrigationController extends TimerTask {
 				}
 		
 		
-		//STOP CAMPO MANUALE -----------------------
+		//STOP CAMPO MANUALE ----------------------------------------------------------------------------------------------
 		else if(c.getNome().equalsIgnoreCase(Campo.MANUAL.getNome())) {
 			
-			if(!this.irrigationCommandClient.isConnected())
-				this.irrigationCommandClient.connect(1883, Utilities.ipMqtt, v ->{
+			if(!this.irrigationTradCommandCliet.isConnected())
+				this.irrigationTradCommandCliet.connect(1883, Utilities.ipMqtt, v ->{
 					
-					this.irrigationCommandClient.publishHandler(resp->{
+					this.irrigationTradCommandCliet.publishHandler(resp->{
 						if(resp.payload().toString().contains("DONE")) {
 							Logger.getLogger().print("Irrigazione campo tradizionale fermata!");
 							
@@ -811,13 +820,13 @@ public class IrrigationController extends TimerTask {
 							
 						}
 						//Disconnessione
-						this.irrigationCommandClient.disconnect();
+						this.irrigationTradCommandCliet.disconnect();
 						
 					}).subscribe("Irrigation-RESPONSE", 2);
 					
 					Logger.getLogger().print("stopIrrigazione diretta-DEBUG: INVIO STATE-OFF AL GATEWAY");
 					
-					this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
+					this.irrigationTradCommandCliet.publish(Utilities.irrigationCommandMqttChannel,
 		    	    		  Buffer.buffer(this.stateC2Off),
 								  MqttQoS.AT_LEAST_ONCE,
 								  false,
@@ -826,7 +835,7 @@ public class IrrigationController extends TimerTask {
 					});		
 			else {
 				//CASO GIA' CONNESSO============================================================================
-				this.irrigationCommandClient.publishHandler(resp->{
+				this.irrigationTradCommandCliet.publishHandler(resp->{
 					if(resp.payload().toString().contains("DONE")) {
 						Logger.getLogger().print("Irrigazione campo tradizionale fermata!");
 						resultStop.complete(this.irr);		
@@ -835,13 +844,13 @@ public class IrrigationController extends TimerTask {
 						resultStop.fail("FAIL");
 					}
 					//Disconnessione
-					this.irrigationCommandClient.disconnect();
+					this.irrigationTradCommandCliet.disconnect();
 					
 				}).subscribe("Irrigation-RESPONSE", 2);
 				
 				Logger.getLogger().print("stopIrrigazione diretta-DEBUG: INVIO STATE-OFF AL GATEWAY");
 				
-				this.irrigationCommandClient.publish(Utilities.irrigationCommandMqttChannel,
+				this.irrigationTradCommandCliet.publish(Utilities.irrigationCommandMqttChannel,
 	    	    		  Buffer.buffer(this.stateC2Off),
 							  MqttQoS.AT_LEAST_ONCE,
 							  false,

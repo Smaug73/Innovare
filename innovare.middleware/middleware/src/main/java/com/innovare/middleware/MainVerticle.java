@@ -164,7 +164,6 @@ public class MainVerticle extends AbstractVerticle {
 	      for (JsonObject json : res.result()) {
 	        Logger.getLogger().print(json.encodePrettily());
 	        Logger.getLogger().print("Connessione effettuata con successo al db!");
-	        Logger.getLogger().print("Connessione effettuata con successo al db!");
 	      }
 	    } else {
 	      res.cause().printStackTrace();
@@ -203,12 +202,10 @@ public class MainVerticle extends AbstractVerticle {
 	   */
 	  this.modelController= new ModelController();
 	  Logger.getLogger().print(this.LOG+": modelController creato: "+this.modelController.toString());
-	  Logger.getLogger().print(this.LOG+": modelController creato: "+this.modelController.toString());
 	  /*
 	   *Recuperiamo il modello selezionato in precedenza 
 	   */
 	  JsonObject querySelectedModel = new JsonObject();
-	  Logger.getLogger().print(this.LOG+" Avvio ricerca modello selezionato.");
 	  Logger.getLogger().print(this.LOG+" Avvio ricerca modello selezionato.");
 	  mongoClient.find("selectedModel", querySelectedModel, res -> {
 	    if (res.succeeded()) {
@@ -250,7 +247,6 @@ public class MainVerticle extends AbstractVerticle {
 	   */
 	  this.loggingController= new LoggingController();
 	  Logger.getLogger().print(this.LOG+": loggingController creato: "+this.loggingController.toString());
-	  Logger.getLogger().print(this.LOG+": loggingController creato: "+this.loggingController.toString());
 	  /*
 	   * MQTT CLIENT        =====================================================================================================
 	   * 
@@ -271,7 +267,6 @@ public class MainVerticle extends AbstractVerticle {
 	    		  //Logger.getLogger().print("Content(as string) of the message: " + c.payload().toString());
 	    		  //Logger.getLogger().print("QoS: " + c.qosLevel());	
 	    		  Logger.getLogger().print("LOG-GATEWAY: "+c.payload().toString());
-	    		  Logger.getLogger().print("LOG-GATEWAY: "+c.payload().toString());
 	    		  
 	    		  if(c.payload().toString().startsWith("channelNumber:")) {
 	    			  String num=c.payload().toString().substring(14);
@@ -288,7 +283,6 @@ public class MainVerticle extends AbstractVerticle {
 	    		  if(c.payload().toString().contains("id")) {
 	    			 this.configuration.add(new JsonObject(c.payload().toString()));
 	    			 Logger.getLogger().print("LOG-GATEWAY: Aggiunto "+c.payload().toString()+" alle configurazioni.");
-	    			 Logger.getLogger().print("LOG-GATEWAY: Aggiunto "+c.payload().toString()+" alle configurazioni.");
 	    		  }
 	    		  //JsonObject confJson= new JsonObject( c.payload().toString());
 	    		})
@@ -301,30 +295,25 @@ public class MainVerticle extends AbstractVerticle {
 	   * Client per l'invio di comandi 
 	   */
 	  Logger.getLogger().print("Creazione client mqtt per i comandi di irrigazione.");
-	  Logger.getLogger().print("Creazione client mqtt per i comandi di irrigazione.");
 	  this.irrigationCommandClient= MqttClient.create(vertx);
 	  
 	  /*
 	   * Client per la ricezione del log dell'irrigazione. 
 	   */
 	  Logger.getLogger().print("Creazione client mqtt per il log dell'irrigazione.");
-	  Logger.getLogger().print("Creazione client mqtt per il log dell'irrigazione.");
 	  this.irrigationLog= MqttClient.create(vertx);
 	  this.irrigationLog.connect(1883, Utilities.ipMqtt, s ->{
 		  irrigationLog.publishHandler(c -> {
 	    		  
 	    		  Logger.getLogger().print(Utilities.irrigationLogMqttChannel+":"+c.payload().toString());
-	    		  Logger.getLogger().print(Utilities.irrigationLogMqttChannel+":"+c.payload().toString());
 	    		  //Modifichiamo lo stato dell'irrigazione corrente
 	    		  if(c.payload().toString().contains(Utilities.stateOn)) {
 	    			  this.irrigationState=Utilities.stateOn;
-	    			  Logger.getLogger().print("---DEBUG IRRIGAZIONE---- stato irrigazione modificato ON");
 	    			  Logger.getLogger().print("---DEBUG IRRIGAZIONE---- stato irrigazione modificato ON");
 	    		  }
 	    		  else
 	    			  if(c.payload().toString().contains(Utilities.stateOff)) {
 	    				  this.irrigationState=Utilities.stateOff;
-	    				  Logger.getLogger().print("---DEBUG IRRIGAZIONE---- stato irrigazione modificato OFF");
 	    				  Logger.getLogger().print("---DEBUG IRRIGAZIONE---- stato irrigazione modificato OFF");
 	    			  }
 	    		  
@@ -2223,7 +2212,7 @@ public class MainVerticle extends AbstractVerticle {
 	    
 	    
 	    //this.irrigationController= new IrrigationController(MongoClient.createShared(vertx, mongoconfig),this.irrigationCommandClient);
-	    this.irrigationController= new IrrigationController(mongoClient,MqttClient.create(vertx),timer,irrigationStartTime);
+	    this.irrigationController= new IrrigationController(mongoClient,MqttClient.create(vertx),MqttClient.create(vertx),timer,irrigationStartTime);
 	    //Iniziamo lo scheduling
 	    this.irrigationController.start();
 	    

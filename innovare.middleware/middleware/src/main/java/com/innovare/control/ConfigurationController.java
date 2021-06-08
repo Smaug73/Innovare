@@ -276,7 +276,7 @@ public class ConfigurationController {
 			
 		}catch(Exception e) {
 			Logger.getLogger().print("ERRORE lettura generico.."+e.getMessage());
-			e.printStackTrace();
+			//e.printStackTrace();
 		}
 		
 	}
