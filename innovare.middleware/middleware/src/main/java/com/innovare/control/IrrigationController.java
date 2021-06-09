@@ -593,6 +593,8 @@ public class IrrigationController extends TimerTask {
 							
 							//Creiamo nuova irrigazione
 							this.irr= new Irrigazione(System.currentTimeMillis());
+							
+							System.out.println(this.irr.toString());
 							resultStart.complete(this.irr);
 						}
 						else if(resp.payload().toString().contains("FAIL")) {

@@ -8,7 +8,7 @@ public class Irrigazione {
 
 	private long inizioIrrig;
 	private long fineIrrig;
-	private float quantita= 600;
+	private float quantita;
 	
 	
 	
@@ -17,6 +17,10 @@ public class Irrigazione {
 	public Irrigazione(long timeStart) {
 		this.inizioIrrig=timeStart;
 		this.fineIrrig=ConfigurationController.irrigationMaxTime+this.inizioIrrig;
+		this.quantita= ((this.fineIrrig-this.inizioIrrig)/1000)*ConfigurationController.portataIrrigation;
+		
+		System.out.println("DEBUG : "+ConfigurationController.irrigationMaxTime);
+		System.out.println("DEBUG IRR: durata "+(this.fineIrrig-this.inizioIrrig)/1000l+" secondi ");
 	}
 	
 	/*

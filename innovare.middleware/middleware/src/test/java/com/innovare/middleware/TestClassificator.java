@@ -40,6 +40,7 @@ import com.innovare.control.SensorDataController;
 import com.innovare.control.SensorDataControllerSync;
 import com.innovare.model.ClassificationSint;
 import com.innovare.model.Evapotranspiration;
+import com.innovare.model.Irrigazione;
 import com.innovare.model.PlantClassification;
 import com.innovare.model.Sample;
 import com.innovare.utils.Utilities;
@@ -226,7 +227,7 @@ public class TestClassificator {
 		ConfigurationController cc= new ConfigurationController();
 		cc.kcFileRead();
 	}
-	*/
+	
 	
 	@Test
 	public void testEvapotrasp() {
@@ -236,6 +237,14 @@ public class TestClassificator {
 		
 		Logger.getLogger().print("Risultato: "+(float)res);
 	}
+	*/
+	
+	@Test
+	public void testIrr() {
+		Irrigazione irr= new Irrigazione(System.currentTimeMillis());
+		System.out.println(irr.toString());
+	}
+	
 	
 	/*
 	@Test

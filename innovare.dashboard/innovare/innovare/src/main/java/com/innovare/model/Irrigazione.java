@@ -43,6 +43,14 @@ public class Irrigazione {
 	public void set_id(String _id) {
 		this._id = _id;
 	}
+
+	@Override
+	public String toString() {
+		return "Irrigazione [inizioIrrig=" + inizioIrrig + ", fineIrrig=" + fineIrrig + ", quantita=" + quantita
+				+ ", _id=" + _id + "]";
+	}
+	
+	
 	
 	
 }

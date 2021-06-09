@@ -1630,12 +1630,12 @@ public class MainVerticle extends AbstractVerticle {
     	    	     * STATO IRRIGAZIONE
     	    	     */
     	    	    routerFactory.addHandlerByOperationId("getStatoIrrigazione", routingContext ->{
-    	    	    	Logger.getLogger().print("Chiamata REST getStatoIrrigazione");
+    	    	    	//Logger.getLogger().print("Chiamata REST getStatoIrrigazione");
     	    	    	if(this.loggingController.isUserLogged()) {
     	    	    		//Caso nel quale non è stata creata nessuna irrigazione
     	    	    		if(this.irrigationController != null) {
     	    	    			
-    	    	    			System.out.println("DEBUG ======================== "+routingContext.request().getParam("campo"));
+    	    	    			//System.out.println("DEBUG ======================== "+routingContext.request().getParam("campo"));
     	    	    			
     	    	    			if(routingContext.request().getParam("campo").equalsIgnoreCase(Campo.AUTO.getNome()))
     	    	    				routingContext

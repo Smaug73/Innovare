@@ -369,7 +369,7 @@ public class HttpHandler {
 	// Recupera lo stato attuale dell'irrigazione dal middleware
 	public static String getCurrentIrrigationState(Campo campo) {
 		String path = CURR_IRR_STATE + "?campo=" + campo.getNome();
-		System.out.println("DEBUG "+path);
+		//System.out.println("DEBUG "+path);
 		HttpResponse<String> response = sendRequest(path);
 		if(response == null) return null;
 		return getIrrigationState(response);

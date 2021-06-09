@@ -283,7 +283,8 @@ public class ConfigurazioneView extends Div {
 			double portata = lastIrrigation.getQuantita()/durata;
 			double aggiornamentoQuantita = Math.round(portata * intervallo * 100.0) / 100.0;
 			
-			//System.out.println("Durata: " + durata/1000 + "s\nIntervallo: " + intervallo/1000 + "s\nPortata: " + portata*1000 + " L/s\nAggiornamento: " + aggiornamentoQuantita);
+			System.out.println(lastIrrigation.toString());
+			System.out.println("Durata: " + durata/1000 + "s\nIntervallo: " + intervallo/1000 + "s\nPortata: " + portata*1000 + " L/s\nAggiornamento: " + aggiornamentoQuantita);
 			
 			quantitaL = new FlexBoxLayout();
 			quantitaAttuale = (float) ((System.currentTimeMillis() - lastIrrigation.getInizioIrrig()) * portata);

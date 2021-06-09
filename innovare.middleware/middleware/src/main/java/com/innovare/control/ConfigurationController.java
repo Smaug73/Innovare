@@ -95,7 +95,7 @@ public class ConfigurationController {
 						case "irrigationMaxTime":
 							//Leggiamo il tempo in minuti e lo convertiamo in long
 							try {
-								this.setMaxTimeIrrigationFromInt(sc.nextInt());
+								this.setMaxTimeIrrigationFromInt(sc.nextInt()*60);
 							}catch(Exception e) {
 								Logger.getLogger().print("ERRORE CONFIGURATION-FILE middlelayer: errore lettura irrigationMaxTime , configurazione valori di base: 60 minuti");
 								this.setMaxTimeIrrigationFromInt(60);
