@@ -63,7 +63,7 @@ public class SerialChannelReader {
 				//Attendiamo la fine della segmentazione
 				int processSegOutput=processSeg.waitFor();
 				if(processSegOutput == 1)
-					throw new Exception("Errore lettura da sensore con id: "+i);
+					System.out.println("Errore lettura da sensore con id: "+i);
 				else {
 					
 					System.out.println("DONE!");
