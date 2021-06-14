@@ -3,6 +3,7 @@ package com.innovare.utils;
 
 public final class Utilities {
 
+	public static final String scriptUtils=System.getProperty("user.home")+System.getProperty("file.separator")+"Innovare"+System.getProperty("file.separator")+"innovare.utils"+System.getProperty("file.separator")+"pythonScript"+System.getProperty("file.separator");
 	public static final String scriptPath=System.getProperty("user.home")+System.getProperty("file.separator")+"InnovareData"+System.getProperty("file.separator")+"InnovareScript"+System.getProperty("file.separator");
 	public static final String scriptWeatherPath=System.getProperty("user.home")+System.getProperty("file.separator")+"InnovareData"+System.getProperty("file.separator")+"InnovareScript"+System.getProperty("file.separator")+"vproweather-1.1"+System.getProperty("file.separator");
 	public static final String datasetPath=System.getProperty("user.home")+System.getProperty("file.separator")+"InnovareData"+System.getProperty("file.separator")+"InnovareImages"+System.getProperty("file.separator");

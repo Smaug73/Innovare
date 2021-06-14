@@ -151,15 +151,21 @@ public class WeatherStationController extends TimerTask implements Runnable{
 				this.campionamentoFromProcess();
 				
 				//Creiamo arraylist sample da seriale
-				//SerialChannelReader serial= new SerialChannelReader();
-				//ArrayList<Sample> serialSample= serial.getMeasursFromSerial();
+				SerialChannelReader serial= new SerialChannelReader();
+				ArrayList<Sample> serialSample= serial.getMeasursFromSerial();
+				
+				ArrayList<Sample> newSamples= new ArrayList<Sample>();
+				
+				for(int i=0;i<serialSample.size(); i++) {
+					newSamples.add(serialSample.get(i));
+				}
 				
 				//Dopo il campionamento inviamo tramite mqtt i dati
 				this.mqttClient.connect(1883, ConfigurationController.ipMiddleLayer, s -> {	
 						
 						System.out.println("DEBUG CONNESSO PER INVIO NUOVI SAMPLE");
 						
-						ArrayList<Sample> newSamples= new ArrayList<Sample>();
+						//ArrayList<Sample> newSamples= new ArrayList<Sample>();
 					
 						for(int i=0; i<Utilities.channelsNames.length; i++) {
 							try {

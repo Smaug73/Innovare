@@ -2273,8 +2273,12 @@ public class MainVerticle extends AbstractVerticle {
 		    			  if(singleMisure.containsKey("channel")){
 		    				  //Logger.getLogger().print("--DEBUG-----Canale trovato-----");
 		    				  channelName=singleMisure.getString("channel");
-		    				  if(channelName.contains("Seriale")) {
-		    					  channelId=Utilities.channelsNames.length;//primo canale dopo le misure della weatherstation
+		    				  if(channelName.contains("Serial")) {
+		    					  String[] strSpl = channelName.split("-");
+		    					  if(channelName.contains("Temp"))
+		    						  channelId=Utilities.channelsNames.length+Integer.parseInt(strSpl[2]);  //primo canale dopo le misure della weatherstation
+		    					  else
+		    						  channelId=Utilities.channelsNames.length+Integer.parseInt(strSpl[2])+1;
 		    				  }else
 			    				  for(int k=0;k<Utilities.channelsNames.length;k++) {
 			    					  if(channelName.equalsIgnoreCase(Utilities.channelsNames[k]))

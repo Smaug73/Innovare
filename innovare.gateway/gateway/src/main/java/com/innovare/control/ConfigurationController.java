@@ -34,6 +34,9 @@ public class ConfigurationController {
 	//id rele irrigazione manuale
 	public static int releMan=2;
 	
+	//numero sensori
+	public static int numSens=1;
+	
 	
 	public ConfigurationController(){
 		//verifichiamo l'esistenza del file di configurazione e lo leggiamo
@@ -49,6 +52,12 @@ public class ConfigurationController {
 					switch(token) {
 						case "ipMiddlelayer" :
 							this.ipMiddleLayer=sc.next();
+							if(sc.hasNext())
+								sc.nextLine();
+							break;
+						case "numSensor" :
+							if(sc.hasNextInt())
+								this.numSens=sc.nextInt();
 							if(sc.hasNext())
 								sc.nextLine();
 							break;

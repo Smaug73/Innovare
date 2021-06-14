@@ -1,6 +1,8 @@
 package com.innovare.control;
 
+import java.io.BufferedReader;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
@@ -28,37 +30,58 @@ public class SerialChannelReader {
 	
 	//Da definire, per testing creiamo dato simulato
 	public ArrayList<Sample> getMeasursFromSerial() throws Exception {
-		/*ArrayList<Sample> meas= new ArrayList<Sample>();
-		meas.add(new Sample(System.currentTimeMillis(),this.channelName,10));
-		if(meas==null)
-			throw new Exception("Errore lettura seriale!");
-		return meas;
-		*/
-		SerialPort sp= SerialPort.getCommPort(this.serialPort);
-		if(sp.openPort()) {
-			sp.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
-			//scriviamo comando di rilascio dati
-			OutputStream out= sp.getOutputStream();
-			InputStream in= sp.getInputStream();
+		
+		ArrayList<Sample> meas= new ArrayList<Sample>();
+		
+		try {
+			//Prendiamo il numero di sensori da dover interrogare
+			int numSen= ConfigurationController.numSens;
 			
-			String prepMis="aM!";
-			String getdata="aD0!";
-			//richiedo preparazione invio dati
-			out.write(getdata.getBytes());
-			byte[] dataResp=in.readAllBytes();
-			String dataStr= dataResp.toString();
+			for(int i=0; i<numSen; i++) {
+				System.out.println("Lettura sensore da terra con codice : "+i);
+				Process processSeg= Runtime.getRuntime().exec("python3 "+Utilities.scriptUtils+"serialSensor.py "+i);
+				//OutputStream outPSeg= processSeg.getOutputStream();
+				InputStreamReader isr = new InputStreamReader(processSeg.getInputStream());
+				BufferedReader rdr = new BufferedReader(isr);
+				String line;
+				Sample temp, umi;
+				while((line = rdr.readLine()) != null) {
+					System.out.println(line);
+					System.out.println("Genero la misura di temperatura..");
+					float temperatura= Float.parseFloat(line);
+					temp= new Sample(System.currentTimeMillis(),"Serial-Temp-"+i,temperatura);
+					meas.add(temp);
+					
+					line = rdr.readLine();
+					float um= Float.parseFloat(line);
+					umi = new Sample(System.currentTimeMillis(),"Serial-Umi-"+i,um);
+					System.out.println(line);
+					System.out.println("Genero la misura di umidita'..");
+					meas.add(umi);
+				}	
+				
+				//Attendiamo la fine della segmentazione
+				int processSegOutput=processSeg.waitFor();
+				if(processSegOutput == 1)
+					throw new Exception("Errore lettura da sensore con id: "+i);
+				else {
+					
+					System.out.println("DONE!");
+				}
+			}
+
+		}catch(Exception e) {
+			System.out.println("Errore lettura dati dal sensore seriale!");
+		}
 			
-			//Recuperiamo dati sensore dalla stringa
+		
+		//meas.add();
+		return meas;	
 			
-			
-			
-			ArrayList<Sample> meas= new ArrayList<Sample>();
-			//meas.add();
-			return meas;
-			
-		}else throw new Exception("Errore lettura seriale!");
-	
 	}
+
+
+	
 
 
 	public ArrayList<Integer> getChannelsId() {
