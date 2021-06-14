@@ -2225,7 +2225,7 @@ public class MainVerticle extends AbstractVerticle {
 	    //this.irrigationController= new IrrigationController(MongoClient.createShared(vertx, mongoconfig),this.irrigationCommandClient);
 	    this.irrigationController= new IrrigationController(mongoClient,MqttClient.create(vertx),MqttClient.create(vertx),timer,irrigationStartTime);
 	    //Iniziamo lo scheduling
-	    this.irrigationController.start();
+	    //this.irrigationController.start();
 	    
 	    
   }

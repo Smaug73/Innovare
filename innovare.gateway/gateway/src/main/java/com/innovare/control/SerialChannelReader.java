@@ -15,6 +15,10 @@ public class SerialChannelReader {
 	private String channelName= "Seriale-"; // INSERIRE NUMERO SENSORE SERIALE NEL FARLO
 	private String serialPort;
 	
+	private String identification = "I!";
+	private String startMeasure = "M!";
+	private String getMeasure = "D0!";
+	
 	public SerialChannelReader(){
 		//recupera gli id dei canali da leggere
 		this.channelsId=ConfigurationController.idSerialChannel;
