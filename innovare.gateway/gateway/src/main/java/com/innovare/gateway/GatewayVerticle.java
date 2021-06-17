@@ -102,7 +102,7 @@ public class GatewayVerticle extends AbstractVerticle {
 	    	 //Comunicazione numero di canali
 	    	 client.publish("gatewayLog",
 	    			 //Configurazione di test salvata come oggetto json
-		    		  Buffer.buffer("channelNumber:"+this.numberOfChannel),
+		    		  Buffer.buffer("channelNumber:"+(this.numberOfChannel+ConfigurationController.numSens)),
 		    		  MqttQoS.AT_LEAST_ONCE,
 		    		  false,
 		    		  false);

@@ -35,7 +35,7 @@ public class ConfigurationController {
 	public static int releMan=2;
 	
 	//numero sensori
-	public static int numSens=1;
+	public static int numSens=0;
 	
 	
 	public ConfigurationController(){
@@ -58,6 +58,7 @@ public class ConfigurationController {
 						case "numSensor" :
 							if(sc.hasNextInt())
 								this.numSens=sc.nextInt();
+							System.out.println("numSens: "+this.numSens);
 							if(sc.hasNext())
 								sc.nextLine();
 							break;
@@ -80,7 +81,7 @@ public class ConfigurationController {
 								System.err.println("ERRORE CONFIGURATION-FILE middlelayer: errore lettura irrigationMaxTime , configurazione valori di base: 60 minuti");
 								this.setMaxTimeIrrigationFromInt(60);
 							}
-							System.out.println("CONFIGURATION-FILE middlelayer: irrigationMaxTime : "+this.irrigationMaxTime);
+							System.out.println("CONFIGURATION-FILE middlelayer: irrigationMaxTime : "+this.irrigationMaxTime+ConfigurationController.numSens);
 							sc.nextLine();
 							break;
 						case "weatherStationStart":
